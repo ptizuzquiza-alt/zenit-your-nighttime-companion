@@ -43,6 +43,7 @@ const MapIdle: FC = () => {
     { name: string; coordinates: [number, number][]; position: [number, number] }[]
   >([]);
   const [showFriends, setShowFriends] = useState(false);
+  const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -89,6 +90,7 @@ const MapIdle: FC = () => {
         zoom={15}
         origin={userLocation}
         friendRoutes={showFriends ? friendRoutes : []}
+        focusBounds={focusBounds}
         className="absolute inset-0"
       />
 
@@ -140,16 +142,24 @@ const MapIdle: FC = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Amigos activos
           </p>
-          {FRIEND_ROUTES.map((fr) => (
-            <FriendActivityCard
-              key={fr.name}
-              name={fr.name}
-              activity={fr.activity}
-              destination={fr.destination}
-              address={fr.address}
-              time={fr.time}
-            />
-          ))}
+          {FRIEND_ROUTES.map((fr) => {
+            const match = friendRoutes.find((r) => r.name === fr.name);
+            return (
+              <FriendActivityCard
+                key={fr.name}
+                name={fr.name}
+                activity={fr.activity}
+                destination={fr.destination}
+                address={fr.address}
+                time={fr.time}
+                onClick={() => {
+                  if (match) {
+                    setFocusBounds(match.coordinates);
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       )}
     </div>

@@ -253,12 +253,7 @@ const Navigation: FC = () => {
           {/* Viewers list */}
           {showViewers && sharedContacts.length > 0 && (
             <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-foreground">Viendo tu ruta</p>
-                <button onClick={() => setShowViewers(false)} className="text-muted-foreground hover:text-foreground">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
               <div className="space-y-2">
                 {sharedContacts.map(id => {
                   const contact = [

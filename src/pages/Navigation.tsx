@@ -103,7 +103,7 @@ const Navigation: FC = () => {
   }];
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
         center={userPosition}
         zoom={17}

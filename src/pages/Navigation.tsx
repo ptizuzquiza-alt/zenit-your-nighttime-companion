@@ -70,7 +70,7 @@ const Navigation: FC = () => {
 
   // Simulate Juan moving
   useEffect(() => {
-    if (juanRoute.length === 0) return;
+    if (juanRoute.length < 2) return;
     const interval = setInterval(() => {
       setJuanIndex(prev => (prev + 1 < juanRoute.length ? prev + 1 : prev));
     }, 2000);

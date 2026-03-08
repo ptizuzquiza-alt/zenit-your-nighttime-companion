@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { X, Search, Check } from 'lucide-react';
 
 interface Contact {

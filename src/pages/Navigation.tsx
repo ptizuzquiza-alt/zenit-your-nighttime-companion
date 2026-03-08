@@ -332,7 +332,7 @@ const Navigation: FC = () => {
           
           <div className="flex gap-3 mt-4">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => setShowCancelConfirm(true)}
               className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold text-center transition-colors hover:bg-secondary/80"
             >
               Cancelar

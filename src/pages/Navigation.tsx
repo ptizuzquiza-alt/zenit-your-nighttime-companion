@@ -156,7 +156,8 @@ const Navigation: FC = () => {
           friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
           showUserArrow
           userPosition={userPosition}
-          fitToRoute={fitAll}
+          fitToRoute={fitAll && !focusJuan}
+          focusBounds={focusJuan ? juanRoute : undefined}
           className="w-full h-full"
         />
       </div>

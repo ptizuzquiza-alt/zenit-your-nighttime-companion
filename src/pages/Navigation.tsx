@@ -105,8 +105,43 @@ const Navigation: FC = () => {
     coordinates: juanRoute,
     position: juanPosition,
   }];
+  // Get the full height of the sheet content (minus handle area)
+  const getSheetContentHeight = () => {
+    if (!sheetRef.current) return 300;
+    return sheetRef.current.offsetHeight - 40; // keep handle visible
+  };
 
-  return (
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0) setSheetOffset(delta); // only allow dragging down
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    const threshold = getSheetContentHeight() * 0.3;
+    if (sheetOffset > threshold) {
+      // Snap to collapsed (show only handle + title)
+      setSheetOffset(getSheetContentHeight());
+    } else {
+      // Snap back to expanded
+      setSheetOffset(0);
+    }
+  };
+
+  const toggleSheet = () => {
+    if (sheetOffset > 0) {
+      setSheetOffset(0);
+    } else {
+      setSheetOffset(getSheetContentHeight());
+    }
+  };
+
     <>
       <div className="fixed inset-0">
         <ZenitMap

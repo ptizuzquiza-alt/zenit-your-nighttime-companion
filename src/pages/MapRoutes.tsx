@@ -115,8 +115,23 @@ const MapRoutes: FC = () => {
       </div>
 
       {/* Bottom sheet */}
-      <div className="zenit-bottom-sheet p-6 pb-8 z-[1000]">
-        <div className="zenit-sheet-handle mb-4" />
+      <div
+        ref={sheetRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="zenit-bottom-sheet p-6 pb-8 z-[1000]"
+        style={{
+          transform: sheetCollapsed
+            ? `translateY(calc(100% - 48px + ${Math.min(dragOffset, 0)}px))`
+            : `translateY(${Math.max(dragOffset, 0)}px)`,
+          transition: isDragging.current ? 'none' : 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        <div
+          className="zenit-sheet-handle mb-4 cursor-grab"
+          onClick={() => setSheetCollapsed((c) => !c)}
+        />
         
         <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>
         

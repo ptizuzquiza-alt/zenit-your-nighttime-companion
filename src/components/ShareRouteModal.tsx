@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { X, Search, Check } from 'lucide-react';
 
 interface Contact {
@@ -12,16 +12,25 @@ interface ShareRouteModalProps {
   onClose: () => void;
   onShare: (selectedContacts: string[]) => void;
   contacts: Contact[];
+  initialSelected?: string[];
 }
 
 export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   isOpen,
   onClose,
   onShare,
-  contacts
+  contacts,
+  initialSelected = [],
 }) => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(initialSelected);
   const [search, setSearch] = useState('');
+
+  // Sync with external state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelected(initialSelected);
+    }
+  }, [isOpen, initialSelected]);
 
   if (!isOpen) return null;
 

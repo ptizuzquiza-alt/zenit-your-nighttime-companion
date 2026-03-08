@@ -332,7 +332,7 @@ const Navigation: FC = () => {
           
           <div className="flex gap-3 mt-4">
             <button 
-              onClick={() => setShowCancelConfirm(true)}
+              onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
               className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold text-center transition-colors hover:bg-secondary/80"
             >
               Cancelar
@@ -373,7 +373,7 @@ const Navigation: FC = () => {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setShowCancelConfirm(false)}
+                onClick={() => { setShowCancelConfirm(false); setSheetOffset(0); }}
                 className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold transition-colors hover:bg-secondary/80"
               >
                 Volver

@@ -155,7 +155,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         polylinesRef.current.push(main);
       } else {
         const dashed = L.polyline(route, {
-          color: '#FFD700', weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_SAFE_COLOR, weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(dashed);
       }

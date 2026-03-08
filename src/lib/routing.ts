@@ -87,6 +87,8 @@ export async function fetchSafeAndFastRoutes(
 
   if (safeRes?.code === 'Ok' && safeRes.routes?.length) {
     safe = parseOSRMRoute(safeRes.routes[0]);
+    // Zenit route: +25% time penalty (prioritizes safer, wider streets)
+    safe.duration = safe.duration * 1.25;
   }
 
   if (fastRes?.code === 'Ok' && fastRes.routes?.length) {

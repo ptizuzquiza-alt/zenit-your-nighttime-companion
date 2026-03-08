@@ -25,7 +25,10 @@ const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
-  const [sheetExpanded, setSheetExpanded] = useState(true);
+  const [sheetOffset, setSheetOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const storedRoute = getStoredRoute();
   const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [

@@ -144,13 +144,13 @@ export async function fetchSafeAndFastRoutes(
   const fast = byDistance[0];
 
   // Score all routes by straightness
+  const fastScore = straightnessScore(fast);
   const scored = allRoutes.map(route => ({
     route,
     score: straightnessScore(route),
     angularChange: totalAngularChange(route.coordinates),
   }));
 
-  // For Zenit: prefer straightest route that is meaningfully different from fast
   // Sort by straightness score (lower = straighter)
   scored.sort((a, b) => a.score - b.score);
 
@@ -160,16 +160,43 @@ export async function fetchSafeAndFastRoutes(
     scorePerKm: Math.round(s.score) + '°/km',
   })));
 
-  // Pick the straightest route that's at least 10% longer, or simply the straightest overall
+  // Pick the straightest route that is:
+  // 1. At least 10% longer than standard (so it's a different route)
+  // 2. AND straighter per km than standard (core Zenit value: fewer turns)
+  // If no candidate is both longer AND straighter, pick the straightest overall
+  // that's at least different from standard
   let safe: RouteResult | null = null;
-  for (const { route } of scored) {
-    if (route.distance >= fast.distance * 1.1) {
+  
+  // First pass: find a route that's longer AND straighter per km
+  for (const { route, score } of scored) {
+    if (route.distance >= fast.distance * 1.1 && score < fastScore) {
       safe = route;
       break;
     }
   }
 
-  // If no longer straight route, just use the straightest one
+  // Second pass: if none is both longer and straighter, pick the straightest longer route
+  // but only if it's not dramatically worse in straightness (within 50% more turns/km)
+  if (!safe) {
+    for (const { route, score } of scored) {
+      if (route.distance >= fast.distance * 1.1 && score < fastScore * 1.5) {
+        safe = route;
+        break;
+      }
+    }
+  }
+
+  // If still nothing, use the straightest overall that differs from fast
+  if (!safe) {
+    for (const { route } of scored) {
+      if (route.distance !== fast.distance) {
+        safe = route;
+        break;
+      }
+    }
+  }
+
+  // Last resort: use the straightest one
   if (!safe) {
     safe = scored[0].route;
   }

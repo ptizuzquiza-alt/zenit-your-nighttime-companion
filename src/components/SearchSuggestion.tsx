@@ -17,7 +17,7 @@ export const SearchSuggestion: FC<SearchSuggestionProps> = ({
   onClick
 }) => {
   return (
-    <button onClick={onClick} className="zenit-search-item w-full text-left">
+    <button onClick={onClick} className="zenit-search-item w-full text-left overflow-hidden">
       <div className="flex items-center gap-3 flex-1">
         <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center">
           {isRecent ? (

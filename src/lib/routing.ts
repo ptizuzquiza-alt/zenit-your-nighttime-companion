@@ -139,74 +139,23 @@ export async function fetchSafeAndFastRoutes(
     return { safe: null, fast: null };
   }
 
-  // Sort by distance to find shortest (standard)
+  // Standard (fast) = shortest route → naturally more turns, side streets
   const byDistance = [...allRoutes].sort((a, b) => a.distance - b.distance);
   const fast = byDistance[0];
 
-  // Score all routes by straightness
-  const fastScore = straightnessScore(fast);
-  const scored = allRoutes.map(route => ({
-    route,
-    score: straightnessScore(route),
-    angularChange: totalAngularChange(route.coordinates),
-  }));
+  // Zenit (safe) = longest route → goes through main avenues, straighter per km
+  const byDistanceDesc = [...allRoutes].sort((a, b) => b.distance - a.distance);
+  let safe = byDistanceDesc[0];
 
-  // Sort by straightness score (lower = straighter)
-  scored.sort((a, b) => a.score - b.score);
-
-  console.log('Route candidates:', scored.map(s => ({
-    distance: Math.round(s.route.distance) + 'm',
-    angularChange: Math.round(s.angularChange) + '°',
-    scorePerKm: Math.round(s.score) + '°/km',
+  console.log('Route candidates:', allRoutes.map(r => ({
+    distance: Math.round(r.distance) + 'm',
+    angularChange: Math.round(totalAngularChange(r.coordinates)) + '°',
+    scorePerKm: Math.round(straightnessScore(r)) + '°/km',
   })));
 
-  // Pick the straightest route that is:
-  // 1. At least 10% longer than standard (so it's a different route)
-  // 2. AND straighter per km than standard (core Zenit value: fewer turns)
-  // If no candidate is both longer AND straighter, pick the straightest overall
-  // that's at least different from standard
-  let safe: RouteResult | null = null;
-  
-  // First pass: find a route that's longer AND straighter per km
-  for (const { route, score } of scored) {
-    if (route.distance >= fast.distance * 1.1 && score < fastScore) {
-      safe = route;
-      break;
-    }
-  }
-
-  // Second pass: if none is both longer and straighter, pick the straightest longer route
-  // but only if it's not dramatically worse in straightness (within 50% more turns/km)
-  if (!safe) {
-    for (const { route, score } of scored) {
-      if (route.distance >= fast.distance * 1.1 && score < fastScore * 1.5) {
-        safe = route;
-        break;
-      }
-    }
-  }
-
-  // If still nothing, use the straightest overall that differs from fast
-  if (!safe) {
-    for (const { route } of scored) {
-      if (route.distance !== fast.distance) {
-        safe = route;
-        break;
-      }
-    }
-  }
-
-  // Last resort: use the straightest one
-  if (!safe) {
-    safe = scored[0].route;
-  }
-
-  // If safe and fast ended up identical, create distinction
-  if (safe.distance === fast.distance && safe.coordinates.length === fast.coordinates.length) {
-    // Use the second straightest if available
-    if (scored.length > 1) {
-      safe = scored[1].route;
-    }
+  // If they're the same route, try the second longest
+  if (safe.distance === fast.distance && byDistanceDesc.length > 1) {
+    safe = byDistanceDesc[1];
   }
 
   // Apply 25% time penalty for safety/comfort priority

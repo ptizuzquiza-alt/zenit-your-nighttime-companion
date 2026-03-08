@@ -274,7 +274,7 @@ const Navigation: FC = () => {
       <ShareRouteModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); }}
+        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); setSheetOffset(0); }}
         contacts={[
           { id: '1', name: 'Maria' },
           { id: '2', name: 'Carlos' },

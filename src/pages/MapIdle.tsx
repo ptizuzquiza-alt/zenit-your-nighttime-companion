@@ -142,16 +142,24 @@ const MapIdle: FC = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Amigos activos
           </p>
-          {FRIEND_ROUTES.map((fr) => (
-            <FriendActivityCard
-              key={fr.name}
-              name={fr.name}
-              activity={fr.activity}
-              destination={fr.destination}
-              address={fr.address}
-              time={fr.time}
-            />
-          ))}
+          {FRIEND_ROUTES.map((fr) => {
+            const match = friendRoutes.find((r) => r.name === fr.name);
+            return (
+              <FriendActivityCard
+                key={fr.name}
+                name={fr.name}
+                activity={fr.activity}
+                destination={fr.destination}
+                address={fr.address}
+                time={fr.time}
+                onClick={() => {
+                  if (match) {
+                    setFocusBounds(match.coordinates);
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       )}
     </div>

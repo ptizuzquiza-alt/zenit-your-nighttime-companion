@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
-import { fetchWalkingRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination } from '@/lib/geocoding';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [routes, setRoutes] = useState<RouteResult[]>([]);
+  const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
+  const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Bottom sheet drag state
@@ -69,18 +70,15 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchWalkingRoute(userLocation, destination, true).then((results) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
       if (cancelled) return;
-      setRoutes(results);
+      setSafeRoute(safe);
+      setFastRoute(fast);
       setLoading(false);
     });
 
     return () => { cancelled = true; };
-  }, [userLocation[0], userLocation[1]]);
-
-  // OSRM returns fastest route first; second is the alternative (longer but potentially safer)
-  const fastRoute = routes[0];
-  const safeRoute = routes[1] || routes[0];
+  }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
   const currentRouteData = selectedRoute === 'safe' ? safeRoute : fastRoute;
   const alternativeRouteData = selectedRoute === 'safe' ? fastRoute : safeRoute;
@@ -155,7 +153,7 @@ const MapRoutes: FC = () => {
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />
-            {routes.length > 1 && (
+            {fastRoute && (
               <RouteCard
                 type="fast"
                 distance={formatDistance(fastRoute.distance)}

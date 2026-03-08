@@ -1,5 +1,8 @@
-// OSRM public API for real street routing (walking profile)
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1/foot';
+// OSRM public API for real street routing
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+
+// Average walking speed in m/s (~5 km/h)
+const WALKING_SPEED = 1.4;
 
 export interface RouteResult {
   coordinates: [number, number][];
@@ -7,39 +10,66 @@ export interface RouteResult {
   duration: number; // seconds
 }
 
+function parseOSRMRoute(route: any): RouteResult {
+  return {
+    coordinates: route.geometry.coordinates.map(
+      ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+    ),
+    distance: route.distance,
+    duration: route.duration,
+  };
+}
+
 /**
- * Fetch a real walking route between two points using OSRM.
- * Returns decoded coordinates that follow real streets.
- * @param origin [lat, lng]
- * @param destination [lat, lng]
- * @param alternative whether to request an alternative route
+ * Fetch two route types:
+ * - Safe route: uses `car` profile → prefers main/wide streets, recalculated with walking speed
+ * - Fast route: uses `foot` profile → shortest walking path through smaller streets
  */
+export async function fetchSafeAndFastRoutes(
+  origin: [number, number],
+  destination: [number, number]
+): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
+  const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+
+  const [safeRes, fastRes] = await Promise.all([
+    fetch(`${OSRM_BASE}/car/${coords}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .catch(() => null),
+    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .catch(() => null),
+  ]);
+
+  let safe: RouteResult | null = null;
+  let fast: RouteResult | null = null;
+
+  if (safeRes?.code === 'Ok' && safeRes.routes?.length) {
+    const parsed = parseOSRMRoute(safeRes.routes[0]);
+    // Recalculate duration as walking time
+    safe = { ...parsed, duration: parsed.distance / WALKING_SPEED };
+  }
+
+  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
+    fast = parseOSRMRoute(fastRes.routes[0]);
+  }
+
+  return { safe, fast };
+}
+
+/** @deprecated Use fetchSafeAndFastRoutes instead */
 export async function fetchWalkingRoute(
   origin: [number, number],
   destination: [number, number],
   alternative = false
 ): Promise<RouteResult[]> {
-  // OSRM uses lng,lat order
   const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
-  const url = `${OSRM_BASE}/${coords}?overview=full&geometries=geojson&alternatives=${alternative}`;
+  const url = `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=${alternative}`;
 
   try {
     const res = await fetch(url);
     const data = await res.json();
-
-    if (data.code !== 'Ok' || !data.routes?.length) {
-      console.warn('OSRM routing failed:', data);
-      return [];
-    }
-
-    return data.routes.map((route: any) => ({
-      // GeoJSON is [lng, lat], convert to [lat, lng] for Leaflet
-      coordinates: route.geometry.coordinates.map(
-        ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
-      ),
-      distance: route.distance,
-      duration: route.duration,
-    }));
+    if (data.code !== 'Ok' || !data.routes?.length) return [];
+    return data.routes.map(parseOSRMRoute);
   } catch (err) {
     console.error('Failed to fetch route:', err);
     return [];

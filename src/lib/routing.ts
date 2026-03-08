@@ -21,8 +21,28 @@ function parseOSRMRoute(route: any): RouteResult {
     duration: distance / WALKING_SPEED,
   };
 }
-
 /**
+ * Count significant turns (direction changes > threshold degrees) in a route.
+ * Fewer turns = straighter route = Zenit candidate.
+ */
+function countSignificantTurns(coords: [number, number][], thresholdDeg: number = 30): number {
+  if (coords.length < 3) return 0;
+  let turns = 0;
+  for (let i = 1; i < coords.length - 1; i++) {
+    const [lat1, lon1] = coords[i - 1];
+    const [lat2, lon2] = coords[i];
+    const [lat3, lon3] = coords[i + 1];
+    // Bearing from point i-1 to i
+    const b1 = Math.atan2(lon2 - lon1, lat2 - lat1);
+    // Bearing from point i to i+1
+    const b2 = Math.atan2(lon3 - lon2, lat3 - lat2);
+    let diff = Math.abs(b2 - b1) * (180 / Math.PI);
+    if (diff > 180) diff = 360 - diff;
+    if (diff > thresholdDeg) turns++;
+  }
+  return turns;
+}
+
  * Calculate a perpendicular offset point to use as waypoint for the safe route.
  * This forces the route to diverge from the direct path, going through different streets.
  */

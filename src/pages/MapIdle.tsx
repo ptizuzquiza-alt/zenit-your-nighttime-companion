@@ -121,6 +121,7 @@ const MapIdle: FC = () => {
       <div className="absolute bottom-6 right-4 z-[1000]">
         <button
           onClick={() => {
+            setFocusBounds(undefined);
             if ('geolocation' in navigator) {
               navigator.geolocation.getCurrentPosition((position) => {
                 setUserLocation([position.coords.latitude, position.coords.longitude]);

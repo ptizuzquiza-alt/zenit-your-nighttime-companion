@@ -152,9 +152,6 @@ export async function fetchSafeAndFastRoutes(
   if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };
   if (!fast && safe) fast = safe;
 
-  // Fallback
-  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };
-  if (!fast && safe) fast = safe;
 
   return { safe, fast };
 }

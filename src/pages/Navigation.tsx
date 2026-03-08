@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
@@ -25,7 +25,10 @@ const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
-  const [sheetExpanded, setSheetExpanded] = useState(true);
+  const [sheetOffset, setSheetOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const storedRoute = getStoredRoute();
   const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [
@@ -102,6 +105,42 @@ const Navigation: FC = () => {
     coordinates: juanRoute,
     position: juanPosition,
   }];
+  // Get the full height of the sheet content (minus handle area)
+  const getSheetContentHeight = () => {
+    if (!sheetRef.current) return 300;
+    return sheetRef.current.offsetHeight - 40; // keep handle visible
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0) setSheetOffset(delta); // only allow dragging down
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    const threshold = getSheetContentHeight() * 0.3;
+    if (sheetOffset > threshold) {
+      // Snap to collapsed (show only handle + title)
+      setSheetOffset(getSheetContentHeight());
+    } else {
+      // Snap back to expanded
+      setSheetOffset(0);
+    }
+  };
+
+  const toggleSheet = () => {
+    if (sheetOffset > 0) {
+      setSheetOffset(0);
+    } else {
+      setSheetOffset(getSheetContentHeight());
+    }
+  };
 
   return (
     <>
@@ -133,8 +172,15 @@ const Navigation: FC = () => {
       {/* Bottom sheet - portal to escape overflow-hidden ancestor */}
       {createPortal(
         <div 
-          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999]"
-          style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
+          ref={sheetRef}
+          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999] ${!isDragging ? 'transition-transform duration-300 ease-out' : ''}`}
+          style={{ 
+            boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
+            transform: `translateY(${sheetOffset}px)`,
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {/* FAB floating above the sheet */}
           <button
@@ -148,7 +194,10 @@ const Navigation: FC = () => {
             <Users className="w-5 h-5" />
           </button>
 
-          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+          <div 
+            className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4 cursor-pointer" 
+            onClick={toggleSheet}
+          />
           
           <h3 className="text-foreground font-semibold mb-4">
             Actividades de tus amigos

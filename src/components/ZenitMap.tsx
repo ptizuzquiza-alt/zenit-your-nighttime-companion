@@ -15,6 +15,7 @@ interface ZenitMapProps {
   friendLocations?: [number, number][];
   showUserArrow?: boolean;
   userPosition?: [number, number];
+  fitToRoute?: boolean;
   className?: string;
 }
 

@@ -1,27 +1,50 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { LocationInput } from '@/components/LocationInput';
 import { SearchSuggestion } from '@/components/SearchSuggestion';
-
-const suggestions = [
-  { id: '1', name: 'BAU · College of Arts & Design ', address: 'Carrer de Pujades, 118, Sant Martí, Barcelona', distance: '2,3 km' },
-  { id: '2', name: 'La Sagrada Familia, Eixample, Barcelona', address: 'Carrer de Mallorca, 401, Eixample, 80013, Barcelona', distance: '2,2 km' },
-  { id: '3', name: 'Plaza de Catalunya', address: 'Plaza de Catalunya, Eixample, 08002 Barcelona', distance: '3,3 km' },
-  { id: '4', name: 'Museo del Disseny de Barcelona', address: 'Plaça de les Glòries Catalanes, 38, c, Sant Martí, 08018 Barcelona', distance: '1,4 km' },
-  { id: '5', name: 'La Pedrera - Casa Milà', address: 'Pg. de Gràcia, 92, Eixample, 08008 Barcelona', distance: '2,8 km' },
-  { id: '6', name: 'Jardines del Baix Guinardó', address: 'Carrer de Lepant, 410, Horta-Guinardó, 08025', distance: '3,1 km' },
-];
+import { searchPlaces, storeDestination, GeocodingResult } from '@/lib/geocoding';
 
 const MapSearch: FC = () => {
   const navigate = useNavigate();
   const [origin, setOrigin] = useState('Tu ubicación');
   const [destination, setDestination] = useState('');
+  const [results, setResults] = useState<GeocodingResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  const handleSelectDestination = (suggestion: typeof suggestions[0]) => {
-    setDestination(suggestion.name);
+  // Get user location for distance calc
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      });
+    }
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (!destination || destination.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    setLoading(true);
+    const timeout = setTimeout(() => {
+      searchPlaces(destination, userLocation?.lat, userLocation?.lon).then((res) => {
+        setResults(res);
+        setLoading(false);
+      });
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [destination, userLocation]);
+
+  const handleSelectDestination = useCallback((result: GeocodingResult) => {
+    storeDestination({ name: result.name, lat: result.lat, lon: result.lon });
+    setDestination(result.name);
     navigate('/routes');
-  };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,17 +73,25 @@ const MapSearch: FC = () => {
         </div>
       </div>
 
-      {/* Suggestions list */}
+      {/* Results list */}
       <div className="px-4 pt-4">
-        <p className="text-sm font-medium text-muted-foreground mb-3">Reciente</p>
+        {loading && (
+          <p className="text-sm text-muted-foreground mb-3">Buscando…</p>
+        )}
+        {!loading && results.length === 0 && destination.length >= 2 && (
+          <p className="text-sm text-muted-foreground mb-3">No se encontraron resultados</p>
+        )}
+        {!loading && results.length === 0 && destination.length < 2 && (
+          <p className="text-sm font-medium text-muted-foreground mb-3">Escribe para buscar lugares</p>
+        )}
         <div className="space-y-1">
-          {suggestions.map(suggestion => (
+          {results.map(result => (
             <SearchSuggestion
-              key={suggestion.id}
-              name={suggestion.name}
-              address={suggestion.address}
-              distance={suggestion.distance}
-              onClick={() => handleSelectDestination(suggestion)}
+              key={result.id}
+              name={result.name}
+              address={result.address}
+              distance={result.distance || ''}
+              onClick={() => handleSelectDestination(result)}
             />
           ))}
         </div>

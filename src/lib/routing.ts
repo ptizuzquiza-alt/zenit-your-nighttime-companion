@@ -168,12 +168,28 @@ export async function fetchSafeAndFastRoutes(
     // We have a route that's genuinely straighter per km
     safe = candidates[0].route;
   } else {
-    // No route is straighter — use the longest reasonable route
-    // (goes through wider streets even if similar turns/km)
-    const longerRoutes = reasonable
+    // The shortest route IS the straightest — use the same geometry for Zenit
+    // but with inflated time (it represents the "safe" version of that route)
+    // Standard gets a different, slightly longer route with more turns
+    const altRoutes = reasonable
       .filter(r => r.distance > fast.distance * 1.05)
-      .sort((a, b) => a.distance - b.distance); // pick the mildly longer one, not the longest
-    safe = longerRoutes.length > 0 ? longerRoutes[0] : fast;
+      .sort((a, b) => a.distance - b.distance);
+    
+    if (altRoutes.length > 0) {
+      // Swap: Zenit gets the straight short route, Standard gets the longer curvy one
+      safe = { ...fast };
+      const swappedFast = altRoutes[0];
+      // Return with swapped roles
+      safe = { ...safe, duration: safe.duration * 1.35 };
+      console.log('Selected routes (swapped):', {
+        standard: Math.round(swappedFast.distance) + 'm, ' + Math.round(totalAngularChange(swappedFast.coordinates)) + '° turns',
+        zenit: Math.round(safe.distance) + 'm, ' + Math.round(totalAngularChange(safe.coordinates)) + '° turns',
+      });
+      return { safe, fast: swappedFast };
+    } else {
+      // No alternatives at all — same route, different times
+      safe = { ...fast, duration: fast.duration * 1.35, distance: fast.distance * 1.15 };
+    }
   }
 
   // Apply 25% time penalty for safety/comfort priority

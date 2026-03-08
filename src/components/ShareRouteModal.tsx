@@ -25,12 +25,13 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [search, setSearch] = useState('');
 
-  // Sync with external state when modal opens
+  // Sync with external state only when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelected(initialSelected);
     }
-  }, [isOpen, initialSelected]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -6,25 +6,10 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { getStoredRoute } from '@/lib/routing';
 
-const friendRoutes = [
-  {
-    name: 'Juan',
-    coordinates: [
-      [41.4055, 2.1770],
-      [41.4060, 2.1760],
-      [41.4068, 2.1755],
-      [41.4075, 2.1765],
-      [41.4080, 2.1780],
-      [41.4085, 2.1800],
-    ] as [number, number][],
-    position: [41.4055, 2.1770] as [number, number],
-  },
-];
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
-const friendLocations: [number, number][] = [
-  [41.4055, 2.1770],
-  [41.4075, 2.1800],
-];
+const JUAN_ORIGIN: [number, number] = [41.4055, 2.1770];
+const JUAN_DEST: [number, number] = [41.4100, 2.1850];
 
 const Navigation: FC = () => {
   const navigate = useNavigate();
@@ -43,7 +28,39 @@ const Navigation: FC = () => {
   const [routeIndex, setRouteIndex] = useState(0);
   const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
 
-  // Simulate navigation movement along the real route
+  // Juan's real route + animated position
+  const [juanRoute, setJuanRoute] = useState<[number, number][]>([]);
+  const [juanIndex, setJuanIndex] = useState(0);
+  const juanPosition = juanRoute.length > 0 ? juanRoute[juanIndex] : JUAN_ORIGIN;
+
+  // Fetch Juan's real street route from OSRM
+  useEffect(() => {
+    const coords = `${JUAN_ORIGIN[1]},${JUAN_ORIGIN[0]};${JUAN_DEST[1]},${JUAN_DEST[0]}`;
+    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.code === 'Ok' && data.routes?.length) {
+          const pts: [number, number][] = data.routes[0].geometry.coordinates.map(
+            ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+          );
+          setJuanRoute(pts);
+          // Start Juan at ~50% progress
+          setJuanIndex(Math.floor(pts.length * 0.4));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Simulate Juan moving
+  useEffect(() => {
+    if (juanRoute.length === 0) return;
+    const interval = setInterval(() => {
+      setJuanIndex(prev => (prev + 1 < juanRoute.length ? prev + 1 : prev));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [juanRoute]);
+
+  // Simulate user movement along the real route
   useEffect(() => {
     const interval = setInterval(() => {
       setRouteIndex((prev) => {
@@ -55,11 +72,16 @@ const Navigation: FC = () => {
         return prev;
       });
     }, 3000);
-
     return () => clearInterval(interval);
   }, [routeCoords]);
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
+
+  const friendRoutes = juanRoute.length > 0 ? [{
+    name: 'Juan',
+    coordinates: juanRoute,
+    position: juanPosition,
+  }] : [];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -69,7 +91,7 @@ const Navigation: FC = () => {
         destination={destination}
         route={routeCoords.slice(routeIndex)}
         friendRoutes={friendRoutes}
-        friendLocations={friendLocations}
+        friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
         showUserArrow
         userPosition={userPosition}
         className="absolute inset-0"

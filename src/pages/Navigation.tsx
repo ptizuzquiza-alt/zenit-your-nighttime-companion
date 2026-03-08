@@ -142,6 +142,7 @@ const Navigation: FC = () => {
     }
   };
 
+  return (
     <>
       <div className="fixed inset-0">
         <ZenitMap

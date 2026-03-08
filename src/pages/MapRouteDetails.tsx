@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { BackButton } from '@/components/BackButton';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
+import { getStoredRoute } from '@/lib/routing';
 
 const contacts = [
   { id: '1', name: 'Juan' },
@@ -11,19 +12,16 @@ const contacts = [
   { id: '4', name: 'Javier' },
 ];
 
-const route: [number, number][] = [
-  [41.4036, 2.1744],
-  [41.4050, 2.1750],
-  [41.4060, 2.1780],
-  [41.4080, 2.1790],
-  [41.4095, 2.1820],
-  [41.4110, 2.1850],
-];
-
 const MapRouteDetails: FC = () => {
   const navigate = useNavigate();
   const [showShareModal, setShowShareModal] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
+
+  const storedRoute = getStoredRoute();
+  const routeCoords = storedRoute?.coordinates ?? [
+    [41.4036, 2.1744],
+    [41.4110, 2.1850],
+  ];
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -36,16 +34,19 @@ const MapRouteDetails: FC = () => {
   }, []);
 
   const origin = userLocation;
-  const destination: [number, number] = [41.4110, 2.1850];
+  const destination: [number, number] = routeCoords[routeCoords.length - 1] as [number, number];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
-        center={[41.4070, 2.1790]}
-        zoom={15}
+        center={[
+          (origin[0] + destination[0]) / 2,
+          (origin[1] + destination[1]) / 2,
+        ]}
+        zoom={14}
         origin={origin}
         destination={destination}
-        route={route}
+        route={routeCoords as [number, number][]}
         className="absolute inset-0"
       />
 

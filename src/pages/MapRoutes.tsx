@@ -1,51 +1,66 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapGrid } from '@/components/MapGrid';
+import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
+
+// Sample route coordinates (Barcelona area)
+const safeRoute: [number, number][] = [
+  [41.4036, 2.1744],
+  [41.4050, 2.1750],
+  [41.4060, 2.1780],
+  [41.4080, 2.1790],
+  [41.4095, 2.1820],
+  [41.4110, 2.1850],
+];
+
+const fastRoute: [number, number][] = [
+  [41.4036, 2.1744],
+  [41.4045, 2.1760],
+  [41.4065, 2.1800],
+  [41.4090, 2.1830],
+  [41.4110, 2.1850],
+];
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
+  const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+        }
+      );
+    }
+  }, []);
+
+  const origin = userLocation;
+  const destination: [number, number] = [41.4110, 2.1850];
+  const currentRoute = selectedRoute === 'safe' ? safeRoute : fastRoute;
+  const alternativeRoute = selectedRoute === 'safe' ? fastRoute : safeRoute;
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
-      <MapGrid className="absolute inset-0">
-        {/* Origin marker */}
-        <div className="absolute" style={{ top: '25%', left: '20%' }}>
-          <div className="w-5 h-5 rounded-full bg-accent shadow-lg"
-               style={{ boxShadow: '0 0 16px 4px hsl(45 100% 50% / 0.5)' }} />
-        </div>
-        
-        {/* Route line (main) */}
-        <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
-          <path 
-            d="M 80 200 L 80 280 L 160 280 L 160 380 L 260 380 L 260 470"
-            className="zenit-route-line"
-          />
-          {/* Alternative route */}
-          <path 
-            d="M 80 200 L 140 200 L 140 320 L 200 320 L 200 400 L 260 400 L 260 470"
-            className="zenit-route-line-alt"
-          />
-        </svg>
-        
-        {/* Destination marker */}
-        <div className="absolute" style={{ top: '55%', left: '65%' }}>
-          <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center"
-               style={{ boxShadow: '0 0 12px 3px hsl(45 100% 50% / 0.4)' }}>
-            <div className="w-2 h-2 rounded-full bg-background" />
-          </div>
-        </div>
-      </MapGrid>
+      <ZenitMap
+        center={[41.4070, 2.1790]}
+        zoom={15}
+        origin={origin}
+        destination={destination}
+        route={currentRoute}
+        alternativeRoute={alternativeRoute}
+        className="absolute inset-0"
+      />
 
       {/* Back button */}
-      <div className="absolute top-12 left-4">
+      <div className="absolute top-12 left-4 z-[1000]">
         <BackButton onClick={() => navigate('/search')} />
       </div>
 
       {/* Bottom sheet */}
-      <div className="zenit-bottom-sheet p-6 pb-8">
+      <div className="zenit-bottom-sheet p-6 pb-8 z-[1000]">
         <div className="zenit-sheet-handle mb-4" />
         
         <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>

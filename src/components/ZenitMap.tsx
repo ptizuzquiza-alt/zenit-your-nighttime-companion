@@ -150,6 +150,19 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       markersRef.current.push(marker);
     }
 
+    // Friend routes (purple dashed)
+    friendRoutes.forEach(fr => {
+      if (fr.coordinates.length > 1) {
+        const friendPolyline = L.polyline(fr.coordinates, {
+          color: '#a78bfa',
+          weight: 4,
+          dashArray: '6, 6',
+          opacity: 0.7,
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(friendPolyline);
+      }
+    });
+
     // Friend markers (purple)
     friendLocations.forEach(loc => {
       const friendIcon = L.divIcon({

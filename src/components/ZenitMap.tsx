@@ -100,37 +100,52 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     const safeSelected = selectedRoute === 'safe';
 
-    // Ruta Estándar (lila)
+    // Ruta Estándar (lila) — continua si seleccionada, discontinua si no
     if (alternativeRoute && alternativeRoute.length > 1) {
       const altPolyline = L.polyline(alternativeRoute, {
-        color: 'rgba(167, 139, 250, ' + (safeSelected ? '0.35' : '0.85') + ')',
-        weight: safeSelected ? 4 : 6,
-        dashArray: '8, 8',
+        color: 'rgba(167, 139, 250, ' + (safeSelected ? '0.4' : '0.9') + ')',
+        weight: safeSelected ? 4 : 5,
+        dashArray: safeSelected ? '8, 8' : undefined,
+        lineCap: 'round',
+        lineJoin: 'round',
       }).addTo(mapRef.current);
       polylinesRef.current.push(altPolyline);
     }
 
-    // Ruta Zenit (amarilla con glow)
+    // Ruta Zenit (amarilla) — continua con glow si seleccionada, discontinua si no
     if (route && route.length > 1) {
-      // Outer glow layer
-      const glowPolyline = L.polyline(route, {
-        color: '#FFD700',
-        weight: safeSelected ? 12 : 6,
-        opacity: safeSelected ? 0.25 : 0.1,
-        lineCap: 'round',
-        lineJoin: 'round',
-      }).addTo(mapRef.current);
-      polylinesRef.current.push(glowPolyline);
+      if (safeSelected) {
+        // Glow
+        const glowPolyline = L.polyline(route, {
+          color: '#FFD700',
+          weight: 12,
+          opacity: 0.25,
+          lineCap: 'round',
+          lineJoin: 'round',
+        }).addTo(mapRef.current);
+        polylinesRef.current.push(glowPolyline);
 
-      // Core line
-      const mainPolyline = L.polyline(route, {
-        color: '#FFD700',
-        weight: safeSelected ? 4 : 3,
-        opacity: safeSelected ? 0.95 : 0.4,
-        lineCap: 'round',
-        lineJoin: 'round',
-      }).addTo(mapRef.current);
-      polylinesRef.current.push(mainPolyline);
+        // Core solid
+        const mainPolyline = L.polyline(route, {
+          color: '#FFD700',
+          weight: 4,
+          opacity: 0.95,
+          lineCap: 'round',
+          lineJoin: 'round',
+        }).addTo(mapRef.current);
+        polylinesRef.current.push(mainPolyline);
+      } else {
+        // Dashed yellow when not selected
+        const dashedPolyline = L.polyline(route, {
+          color: '#FFD700',
+          weight: 3,
+          opacity: 0.5,
+          dashArray: '8, 8',
+          lineCap: 'round',
+          lineJoin: 'round',
+        }).addTo(mapRef.current);
+        polylinesRef.current.push(dashedPolyline);
+      }
     }
 
     // Origin marker (yellow circle)

@@ -172,8 +172,15 @@ const Navigation: FC = () => {
       {/* Bottom sheet - portal to escape overflow-hidden ancestor */}
       {createPortal(
         <div 
-          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999]"
-          style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
+          ref={sheetRef}
+          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999] ${!isDragging ? 'transition-transform duration-300 ease-out' : ''}`}
+          style={{ 
+            boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
+            transform: `translateY(${sheetOffset}px)`,
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {/* FAB floating above the sheet */}
           <button
@@ -187,7 +194,10 @@ const Navigation: FC = () => {
             <Users className="w-5 h-5" />
           </button>
 
-          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+          <div 
+            className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4 cursor-pointer" 
+            onClick={toggleSheet}
+          />
           
           <h3 className="text-foreground font-semibold mb-4">
             Actividades de tus amigos

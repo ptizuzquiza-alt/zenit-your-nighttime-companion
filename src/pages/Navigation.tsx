@@ -28,7 +28,7 @@ const Navigation: FC = () => {
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [sharedContacts] = useState(['Maria', 'Carlos', 'Ana']);
+  const [sharedContacts, setSharedContacts] = useState<string[]>([]);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -270,7 +270,7 @@ const Navigation: FC = () => {
       <ShareRouteModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onShare={(ids) => setShowShareModal(false)}
+        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); }}
         contacts={[
           { id: '1', name: 'Maria' },
           { id: '2', name: 'Carlos' },

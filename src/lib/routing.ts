@@ -160,24 +160,21 @@ export async function fetchSafeAndFastRoutes(
     backtrack: hasBacktracking(r.coordinates),
   })));
 
-  // Find candidates for Zenit: different from fast + straighter per km
-  const fastTpk = turnsPerKm(fast);
-  const zenitCandidates = clean
+  // Find candidates for Zenit: any route different from fast
+  const differentRoutes = clean
     .filter(r => r.distance > fast.distance * 1.03)
     .map(r => ({ route: r, tpk: turnsPerKm(r) }))
-    .sort((a, b) => a.tpk - b.tpk);
+    .sort((a, b) => a.tpk - b.tpk); // straightest first
 
   let safe: RouteResult;
 
-  if (zenitCandidates.length > 0 && zenitCandidates[0].tpk < fastTpk) {
-    // Genuine straighter alternative exists → use it for Zenit
-    safe = zenitCandidates[0].route;
+  if (differentRoutes.length > 0) {
+    // Always pick the straightest different route for Zenit (even if not straighter than fast)
+    safe = differentRoutes[0].route;
     // Ensure Zenit is always slower than Standard
     safe = { ...safe, duration: Math.max(safe.duration, fast.duration * 1.25) };
   } else {
-    // The shortest route is already the straightest.
-    // Zenit = same geometry as shortest, but slower time
-    // Standard = stays as shortest (fastest)
+    // No different route at all — fake it
     safe = { ...fast, duration: fast.duration * 1.30, distance: fast.distance * 1.15 };
   }
 

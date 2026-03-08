@@ -146,7 +146,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (!route || route.length < 2) return;
       if (safeSelected) {
         const glow = L.polyline(route, {
-          color: '#FFD700', weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_SAFE_COLOR, weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(glow);
         const main = L.polyline(route, {

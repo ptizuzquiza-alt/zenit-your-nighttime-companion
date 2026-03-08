@@ -65,17 +65,18 @@ export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  // Fast route: direct foot path
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
   
-  // Safe route: foot path via offset waypoint (goes through different streets)
-  const waypoint = getOffsetWaypoint(origin, destination);
+  // Standard route: offset waypoint forces zigzag through side streets
+  const waypoint = getOffsetWaypoint(origin, destination, 0.35);
   const waypointCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
 
-  const [fastRes, safeRes] = await Promise.all([
+  const [safeRes, fastRes] = await Promise.all([
+    // Zenit (safe): direct path → straighter, main avenues
     fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
+    // Standard (fast): via waypoint → more turns, side streets
     fetch(`${OSRM_BASE}/foot/${waypointCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),

@@ -177,7 +177,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         html: `<div style="
           width: 20px;
           height: 20px;
-          background: #FFCC00;
+          background: ${MAP_MARKER_ORIGIN_COLOR};
           border-radius: 50%;
           box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
         "></div>`,

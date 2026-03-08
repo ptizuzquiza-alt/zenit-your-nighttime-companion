@@ -300,7 +300,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       <div 
         ref={containerRef} 
         className="w-full h-full"
-        style={{ background: 'hsl(240 25% 8%)' }}
+        style={{ background: 'hsl(240 15% 12%)' }}
       />
     </div>
   );

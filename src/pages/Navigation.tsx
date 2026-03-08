@@ -207,7 +207,15 @@ const Navigation: FC = () => {
           
           {showFriendActivity && (
             <FriendActivityCard
-              onClick={() => setFitAll(prev => !prev)}
+              onClick={() => {
+                setFocusJuan(prev => !prev);
+                setFitAll(false);
+                // Collapse sheet to see the map
+                if (!focusJuan) {
+                  const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
+                  setSheetOffset(h);
+                }
+              }}
               name="Juan"
               activity="ha completado el 50% de su ruta."
               destination="L'Auditori"

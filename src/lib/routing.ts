@@ -57,9 +57,10 @@ function getOffsetWaypoint(
 }
 
 /**
- * Fetch two walking routes (both pedestrian):
- * - Fast: direct foot route (shortest path, small streets, shortcuts)
- * - Safe: foot route via an offset waypoint (forces through different/bigger streets)
+ * Fetch two contrasting walking routes:
+ * - Zenit (safe): Uses car profile to force main avenues (straighter, fewer turns),
+ *   then recalculates duration at walking speed.
+ * - Standard (fast): Uses foot profile with offset waypoints for more turns through side streets.
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -67,17 +68,29 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
   
-  // Standard route: offset waypoint forces zigzag through side streets
-  const waypoint = getOffsetWaypoint(origin, destination, 0.35);
-  const waypointCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
+  // Standard: two offset waypoints to force zigzag through side streets
+  const wp1 = getOffsetWaypoint(origin, destination, 0.25);
+  const wp2 = getOffsetWaypoint(origin, destination, -0.15);
+  const midLat = (origin[0] + destination[0]) / 2;
+  const midLon = (origin[1] + destination[1]) / 2;
+  // Place waypoints at 1/3 and 2/3 of the route
+  const third1: [number, number] = [
+    origin[0] + (destination[0] - origin[0]) * 0.33 + (wp1[0] - midLat),
+    origin[1] + (destination[1] - origin[1]) * 0.33 + (wp1[1] - midLon),
+  ];
+  const third2: [number, number] = [
+    origin[0] + (destination[0] - origin[0]) * 0.66 + (wp2[0] - midLat),
+    origin[1] + (destination[1] - origin[1]) * 0.66 + (wp2[1] - midLon),
+  ];
+  const zigzagCoords = `${origin[1]},${origin[0]};${third1[1]},${third1[0]};${third2[1]},${third2[0]};${destination[1]},${destination[0]}`;
 
   const [safeRes, fastRes] = await Promise.all([
-    // Zenit (safe): direct path → straighter, main avenues
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson`)
+    // Zenit: car profile → main avenues, straight paths
+    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
-    // Standard (fast): via waypoint → more turns, side streets
-    fetch(`${OSRM_BASE}/foot/${waypointCoords}?overview=full&geometries=geojson`)
+    // Standard: foot profile with zigzag waypoints → side streets, more turns
+    fetch(`${OSRM_BASE}/foot/${zigzagCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
   ]);
@@ -85,12 +98,12 @@ export async function fetchSafeAndFastRoutes(
   let fast: RouteResult | null = null;
   let safe: RouteResult | null = null;
 
-  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
-    fast = parseOSRMRoute(fastRes.routes[0]);
-  }
-
   if (safeRes?.code === 'Ok' && safeRes.routes?.length) {
     safe = parseOSRMRoute(safeRes.routes[0]);
+  }
+
+  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
+    fast = parseOSRMRoute(fastRes.routes[0]);
   }
 
   // Fallback

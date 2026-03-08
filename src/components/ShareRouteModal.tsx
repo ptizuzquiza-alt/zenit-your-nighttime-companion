@@ -12,6 +12,7 @@ interface ShareRouteModalProps {
   onClose: () => void;
   onShare: (selectedContacts: string[]) => void;
   contacts: Contact[];
+  initialSelected?: string[];
 }
 
 export const ShareRouteModal: FC<ShareRouteModalProps> = ({

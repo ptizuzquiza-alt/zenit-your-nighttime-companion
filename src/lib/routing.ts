@@ -43,6 +43,7 @@ function countSignificantTurns(coords: [number, number][], thresholdDeg: number 
   return turns;
 }
 
+/**
  * Calculate a perpendicular offset point to use as waypoint for the safe route.
  * This forces the route to diverge from the direct path, going through different streets.
  */

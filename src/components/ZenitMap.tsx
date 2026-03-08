@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -20,7 +20,6 @@ const originIcon = L.divIcon({
     background: #FFCC00;
     border-radius: 50%;
     box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
-    animation: pulse 2s infinite;
   "></div>`,
   iconSize: [20, 20],
   iconAnchor: [10, 10],
@@ -69,7 +68,7 @@ const userArrowIcon = L.divIcon({
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const DARK_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const DARK_ATTRIBUTION = '&copy; OpenStreetMap &copy; CARTO';
 
 interface ZenitMapProps {
   center?: [number, number];
@@ -84,19 +83,21 @@ interface ZenitMapProps {
   className?: string;
 }
 
-// Component to handle map centering
-const MapController: FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
+// Component to handle map view updates - must be child of MapContainer
+function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView(center, zoom);
+    if (center && zoom) {
+      map.setView(center, zoom);
+    }
   }, [center, zoom, map]);
   
   return null;
-};
+}
 
 export const ZenitMap: FC<ZenitMapProps> = ({
-  center = [41.4036, 2.1744], // Barcelona by default
+  center = [41.4036, 2.1744],
   zoom = 15,
   origin,
   destination,
@@ -111,26 +112,27 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     <div className={`relative w-full h-full ${className}`}>
       <style>{`
         .leaflet-container {
-          background: hsl(240 25% 8%);
+          background: hsl(240 25% 8%) !important;
+          width: 100%;
+          height: 100%;
         }
         .custom-marker {
-          background: transparent;
-          border: none;
+          background: transparent !important;
+          border: none !important;
         }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
+        .leaflet-control-attribution {
+          display: none;
         }
       `}</style>
       <MapContainer
         center={center}
         zoom={zoom}
-        className="w-full h-full"
+        style={{ width: '100%', height: '100%' }}
         zoomControl={false}
         attributionControl={false}
       >
-        <MapController center={center} zoom={zoom} />
         <TileLayer url={DARK_TILE_URL} attribution={DARK_ATTRIBUTION} />
+        <MapViewUpdater center={center} zoom={zoom} />
         
         {/* Alternative route (dashed purple) */}
         {alternativeRoute && alternativeRoute.length > 1 && (

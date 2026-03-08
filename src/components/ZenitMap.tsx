@@ -250,7 +250,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       const marker = L.marker(userPosition, { icon: arrowIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);
     }
-  }, [origin, destination, route, alternativeRoute, friendLocations, friendRoutes, showUserArrow, userPosition]);
+  }, [origin, destination, route, alternativeRoute, selectedRoute, friendLocations, friendRoutes, showUserArrow, userPosition]);
 
   return (
     <div className={`relative w-full h-full ${className}`}>

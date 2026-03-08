@@ -111,6 +111,7 @@ const MapRoutes: FC = () => {
         destination={destination}
         route={safeRoute?.coordinates}
         alternativeRoute={fastRoute?.coordinates}
+        selectedRoute={selectedRoute}
         fitToRoute
         className="absolute inset-0"
       />

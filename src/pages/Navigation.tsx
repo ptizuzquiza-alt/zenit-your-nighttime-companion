@@ -38,6 +38,7 @@ const Navigation: FC = () => {
     } catch { return []; }
   });
   const [sheetOffset, setSheetOffset] = useState(0);
+  const sheetCollapsedByUser = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);

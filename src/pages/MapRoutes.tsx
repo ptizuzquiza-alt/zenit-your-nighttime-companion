@@ -109,8 +109,8 @@ const MapRoutes: FC = () => {
         zoom={14}
         origin={userLocation}
         destination={destination}
-        route={selectedRoute === 'safe' ? safeRoute?.coordinates : fastRoute?.coordinates}
-        alternativeRoute={selectedRoute === 'safe' ? fastRoute?.coordinates : safeRoute?.coordinates}
+        route={safeRoute?.coordinates}
+        alternativeRoute={fastRoute?.coordinates}
         fitToRoute
         className="absolute inset-0"
       />

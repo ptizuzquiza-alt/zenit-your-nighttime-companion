@@ -38,6 +38,7 @@ const Navigation: FC = () => {
     } catch { return []; }
   });
   const [sheetOffset, setSheetOffset] = useState(0);
+  const sheetCollapsedByUser = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -138,19 +139,30 @@ const Navigation: FC = () => {
     setIsDragging(false);
     const threshold = getSheetContentHeight() * 0.3;
     if (sheetOffset > threshold) {
-      // Snap to collapsed (show only handle + title)
       setSheetOffset(getSheetContentHeight());
+      sheetCollapsedByUser.current = true;
     } else {
-      // Snap back to expanded
       setSheetOffset(0);
+      sheetCollapsedByUser.current = false;
     }
   };
 
   const toggleSheet = () => {
     if (sheetOffset > 0) {
       setSheetOffset(0);
+      sheetCollapsedByUser.current = false;
     } else {
       setSheetOffset(getSheetContentHeight());
+      sheetCollapsedByUser.current = true;
+    }
+  };
+
+  // Restore sheet to its user-intended state
+  const restoreSheetState = () => {
+    if (sheetCollapsedByUser.current) {
+      setSheetOffset(getSheetContentHeight());
+    } else {
+      setSheetOffset(0);
     }
   };
 
@@ -202,7 +214,7 @@ const Navigation: FC = () => {
                 // Re-center on user
                 setFitAll(false);
                 setFocusJuan(false);
-                setSheetOffset(0);
+                restoreSheetState();
               } else {
                 setFitAll(prev => !prev);
               }
@@ -351,7 +363,7 @@ const Navigation: FC = () => {
       <ShareRouteModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); setSheetOffset(0); }}
+        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); restoreSheetState(); }}
         initialSelected={sharedContacts}
         contacts={CONTACTS}
       />
@@ -366,7 +378,7 @@ const Navigation: FC = () => {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowCancelConfirm(false); setSheetOffset(0); }}
+                onClick={() => { setShowCancelConfirm(false); restoreSheetState(); }}
                 className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold transition-colors hover:bg-secondary/80"
               >
                 Volver

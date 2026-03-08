@@ -1,74 +1,9 @@
-import { FC, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { FC, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icons in Leaflet with bundlers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Custom yellow origin marker
-const originIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    width: 20px;
-    height: 20px;
-    background: #FFCC00;
-    border-radius: 50%;
-    box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
-  "></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
-});
-
-// Custom yellow destination marker with inner dot
-const destinationIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    width: 24px;
-    height: 24px;
-    background: #FFCC00;
-    border-radius: 50%;
-    box-shadow: 0 0 12px 3px rgba(255, 204, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  "><div style="width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%;"></div></div>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-});
-
-// Purple friend marker
-const friendIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    width: 14px;
-    height: 14px;
-    background: #a78bfa;
-    border-radius: 50%;
-    box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
-  "></div>`,
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
-
-// User navigation arrow
-const userArrowIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<svg width="40" height="48" viewBox="0 0 40 48" fill="none" style="filter: drop-shadow(0 4px 8px rgba(255, 204, 0, 0.5));">
-    <path d="M20 0L40 48L20 36L0 48L20 0Z" fill="#FFCC00"/>
-  </svg>`,
-  iconSize: [40, 48],
-  iconAnchor: [20, 24],
-});
-
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const DARK_ATTRIBUTION = '&copy; OpenStreetMap &copy; CARTO';
 
 interface ZenitMapProps {
   center?: [number, number];
@@ -83,19 +18,6 @@ interface ZenitMapProps {
   className?: string;
 }
 
-// Component to handle map view updates - must be child of MapContainer
-function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (center && zoom) {
-      map.setView(center, zoom);
-    }
-  }, [center, zoom, map]);
-  
-  return null;
-}
-
 export const ZenitMap: FC<ZenitMapProps> = ({
   center = [41.4036, 2.1744],
   zoom = 15,
@@ -108,73 +30,153 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   userPosition,
   className = '',
 }) => {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+  const polylinesRef = useRef<L.Polyline[]>([]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    mapRef.current = L.map(containerRef.current, {
+      center: center,
+      zoom: zoom,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer(DARK_TILE_URL).addTo(mapRef.current);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update center and zoom
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setView(center, zoom);
+    }
+  }, [center, zoom]);
+
+  // Update markers and routes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing markers and polylines
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+    polylinesRef.current.forEach(polyline => polyline.remove());
+    polylinesRef.current = [];
+
+    // Add alternative route (dashed purple)
+    if (alternativeRoute && alternativeRoute.length > 1) {
+      const altPolyline = L.polyline(alternativeRoute, {
+        color: 'rgba(167, 139, 250, 0.5)',
+        weight: 4,
+        dashArray: '10, 10',
+      }).addTo(mapRef.current);
+      polylinesRef.current.push(altPolyline);
+    }
+
+    // Add main route (solid white)
+    if (route && route.length > 1) {
+      const mainPolyline = L.polyline(route, {
+        color: '#ffffff',
+        weight: 4,
+      }).addTo(mapRef.current);
+      polylinesRef.current.push(mainPolyline);
+    }
+
+    // Origin marker (yellow circle)
+    if (origin) {
+      const originIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<div style="
+          width: 20px;
+          height: 20px;
+          background: #FFCC00;
+          border-radius: 50%;
+          box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
+        "></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+      const marker = L.marker(origin, { icon: originIcon }).addTo(mapRef.current);
+      markersRef.current.push(marker);
+    }
+
+    // Destination marker (yellow with dot)
+    if (destination) {
+      const destIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<div style="
+          width: 24px;
+          height: 24px;
+          background: #FFCC00;
+          border-radius: 50%;
+          box-shadow: 0 0 12px 3px rgba(255, 204, 0, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "><div style="width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%;"></div></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+      const marker = L.marker(destination, { icon: destIcon }).addTo(mapRef.current);
+      markersRef.current.push(marker);
+    }
+
+    // Friend markers (purple)
+    friendLocations.forEach(loc => {
+      const friendIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<div style="
+          width: 14px;
+          height: 14px;
+          background: #a78bfa;
+          border-radius: 50%;
+          box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
+        "></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const marker = L.marker(loc, { icon: friendIcon }).addTo(mapRef.current!);
+      markersRef.current.push(marker);
+    });
+
+    // User navigation arrow
+    if (showUserArrow && userPosition) {
+      const arrowIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<svg width="40" height="48" viewBox="0 0 40 48" fill="none" style="filter: drop-shadow(0 4px 8px rgba(255, 204, 0, 0.5));">
+          <path d="M20 0L40 48L20 36L0 48L20 0Z" fill="#FFCC00"/>
+        </svg>`,
+        iconSize: [40, 48],
+        iconAnchor: [20, 24],
+      });
+      const marker = L.marker(userPosition, { icon: arrowIcon }).addTo(mapRef.current);
+      markersRef.current.push(marker);
+    }
+  }, [origin, destination, route, alternativeRoute, friendLocations, showUserArrow, userPosition]);
+
   return (
     <div className={`relative w-full h-full ${className}`}>
       <style>{`
-        .leaflet-container {
-          background: hsl(240 25% 8%) !important;
-          width: 100%;
-          height: 100%;
-        }
-        .custom-marker {
+        .zenit-marker {
           background: transparent !important;
           border: none !important;
         }
-        .leaflet-control-attribution {
-          display: none;
-        }
       `}</style>
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ width: '100%', height: '100%' }}
-        zoomControl={false}
-        attributionControl={false}
-      >
-        <TileLayer url={DARK_TILE_URL} attribution={DARK_ATTRIBUTION} />
-        <MapViewUpdater center={center} zoom={zoom} />
-        
-        {/* Alternative route (dashed purple) */}
-        {alternativeRoute && alternativeRoute.length > 1 && (
-          <Polyline
-            positions={alternativeRoute}
-            pathOptions={{
-              color: 'rgba(167, 139, 250, 0.5)',
-              weight: 4,
-              dashArray: '10, 10',
-            }}
-          />
-        )}
-        
-        {/* Main route (solid white) */}
-        {route && route.length > 1 && (
-          <Polyline
-            positions={route}
-            pathOptions={{
-              color: '#ffffff',
-              weight: 4,
-              lineCap: 'round',
-              lineJoin: 'round',
-            }}
-          />
-        )}
-        
-        {/* Origin marker */}
-        {origin && <Marker position={origin} icon={originIcon} />}
-        
-        {/* Destination marker */}
-        {destination && <Marker position={destination} icon={destinationIcon} />}
-        
-        {/* Friend markers */}
-        {friendLocations.map((loc, index) => (
-          <Marker key={`friend-${index}`} position={loc} icon={friendIcon} />
-        ))}
-        
-        {/* User navigation arrow */}
-        {showUserArrow && userPosition && (
-          <Marker position={userPosition} icon={userArrowIcon} />
-        )}
-      </MapContainer>
+      <div 
+        ref={containerRef} 
+        className="w-full h-full"
+        style={{ background: 'hsl(240 25% 8%)' }}
+      />
     </div>
   );
 };

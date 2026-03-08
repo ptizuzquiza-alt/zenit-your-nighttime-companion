@@ -28,6 +28,7 @@ const Navigation: FC = () => {
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
   const [sharedContacts, setSharedContacts] = useState<string[]>([]);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);

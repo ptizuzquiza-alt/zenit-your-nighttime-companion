@@ -105,7 +105,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       const altPolyline = L.polyline(alternativeRoute, {
         color: 'rgba(167, 139, 250, ' + (safeSelected ? '0.35' : '0.85') + ')',
         weight: safeSelected ? 4 : 6,
-        dashArray: safeSelected ? '8, 8' : undefined,
+        dashArray: '8, 8',
       }).addTo(mapRef.current);
       polylinesRef.current.push(altPolyline);
     }

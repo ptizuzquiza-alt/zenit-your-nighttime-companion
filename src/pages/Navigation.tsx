@@ -27,6 +27,8 @@ const Navigation: FC = () => {
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharedContacts] = useState(['Maria', 'Carlos', 'Ana']);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);

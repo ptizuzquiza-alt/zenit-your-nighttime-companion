@@ -99,52 +99,53 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     const safeSelected = selectedRoute === 'safe';
 
-    // Ruta Estándar (lila) — continua si seleccionada, discontinua si no
-    if (alternativeRoute && alternativeRoute.length > 1) {
-      const altPolyline = L.polyline(alternativeRoute, {
-        color: 'rgba(167, 139, 250, ' + (safeSelected ? '0.4' : '0.9') + ')',
-        weight: safeSelected ? 4 : 5,
-        dashArray: safeSelected ? '8, 8' : undefined,
-        lineCap: 'round',
-        lineJoin: 'round',
-      }).addTo(mapRef.current);
-      polylinesRef.current.push(altPolyline);
-    }
-
-    // Ruta Zenit (amarilla) — continua con glow si seleccionada, discontinua si no
-    if (route && route.length > 1) {
-      if (safeSelected) {
-        // Glow
-        const glowPolyline = L.polyline(route, {
-          color: '#FFD700',
-          weight: 12,
-          opacity: 0.25,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }).addTo(mapRef.current);
-        polylinesRef.current.push(glowPolyline);
-
-        // Core solid
-        const mainPolyline = L.polyline(route, {
-          color: '#FFD700',
-          weight: 4,
-          opacity: 0.95,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }).addTo(mapRef.current);
-        polylinesRef.current.push(mainPolyline);
+    // Helper: draw Ruta Estándar (lila)
+    const drawStandard = () => {
+      if (!alternativeRoute || alternativeRoute.length < 2) return;
+      if (!safeSelected) {
+        const glow = L.polyline(alternativeRoute, {
+          color: '#a78bfa', weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(glow);
+        const main = L.polyline(alternativeRoute, {
+          color: '#a78bfa', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(main);
       } else {
-        // Dashed yellow when not selected
-        const dashedPolyline = L.polyline(route, {
-          color: '#FFD700',
-          weight: 3,
-          opacity: 0.5,
-          dashArray: '8, 8',
-          lineCap: 'round',
-          lineJoin: 'round',
-        }).addTo(mapRef.current);
-        polylinesRef.current.push(dashedPolyline);
+        const alt = L.polyline(alternativeRoute, {
+          color: 'rgba(167, 139, 250, 0.4)', weight: 4, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(alt);
       }
+    };
+
+    // Helper: draw Ruta Zenit (amarilla)
+    const drawZenit = () => {
+      if (!route || route.length < 2) return;
+      if (safeSelected) {
+        const glow = L.polyline(route, {
+          color: '#FFD700', weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(glow);
+        const main = L.polyline(route, {
+          color: '#FFD700', weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(main);
+      } else {
+        const dashed = L.polyline(route, {
+          color: '#FFD700', weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(dashed);
+      }
+    };
+
+    // Draw unselected first (behind), then selected on top
+    if (safeSelected) {
+      drawStandard();
+      drawZenit();
+    } else {
+      drawZenit();
+      drawStandard();
     }
 
     // Origin marker (yellow circle)

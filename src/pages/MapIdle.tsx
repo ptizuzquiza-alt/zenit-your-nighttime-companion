@@ -44,7 +44,7 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Locate me FAB */}
-      <div className="absolute bottom-48 right-4 z-[1000]">
+      <div className="absolute bottom-6 right-4 z-[1000]">
         <button
           onClick={() => {
             if ('geolocation' in navigator) {

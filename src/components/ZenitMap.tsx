@@ -24,6 +24,7 @@ interface ZenitMapProps {
   showUserArrow?: boolean;
   userPosition?: [number, number];
   fitToRoute?: boolean;
+  focusBounds?: [number, number][];
   className?: string;
 }
 

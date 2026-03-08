@@ -78,8 +78,9 @@ const MapRoutes: FC = () => {
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1]]);
 
-  const safeRoute = routes[0];
-  const fastRoute = routes[1] || routes[0];
+  // OSRM returns fastest route first; second is the alternative (longer but potentially safer)
+  const fastRoute = routes[0];
+  const safeRoute = routes[1] || routes[0];
 
   const currentRouteData = selectedRoute === 'safe' ? safeRoute : fastRoute;
   const alternativeRouteData = selectedRoute === 'safe' ? fastRoute : safeRoute;

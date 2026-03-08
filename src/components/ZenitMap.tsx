@@ -1,13 +1,21 @@
 import { FC, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import {
+  MAP_TILE_FILTER,
+  MAP_BACKGROUND,
+  MAP_ROUTE_SAFE_COLOR,
+  MAP_ROUTE_FAST_COLOR,
+  MAP_MARKER_ORIGIN_COLOR,
+  MAP_MARKER_FRIEND_COLOR,
+} from '@/config/theme';
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
 const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
 
 const MAP_CSS = `
-  .leaflet-tile-pane { filter: sepia(0.3) hue-rotate(45deg) saturate(1.8) brightness(0.85); }
+  .leaflet-tile-pane { filter: ${MAP_TILE_FILTER}; }
 `;
 
 interface FriendRoute {
@@ -118,11 +126,11 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (!alternativeRoute || alternativeRoute.length < 2) return;
       if (!safeSelected) {
         const glow = L.polyline(alternativeRoute, {
-          color: '#a78bfa', weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_FAST_COLOR, weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(glow);
         const main = L.polyline(alternativeRoute, {
-          color: '#a78bfa', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_FAST_COLOR, weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {
@@ -138,16 +146,16 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (!route || route.length < 2) return;
       if (safeSelected) {
         const glow = L.polyline(route, {
-          color: '#FFD700', weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_SAFE_COLOR, weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(glow);
         const main = L.polyline(route, {
-          color: '#FFD700', weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_SAFE_COLOR, weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {
         const dashed = L.polyline(route, {
-          color: '#FFD700', weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_SAFE_COLOR, weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(dashed);
       }
@@ -169,7 +177,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         html: `<div style="
           width: 20px;
           height: 20px;
-          background: #FFCC00;
+          background: ${MAP_MARKER_ORIGIN_COLOR};
           border-radius: 50%;
           box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
         "></div>`,
@@ -293,7 +301,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       <div 
         ref={containerRef} 
         className="w-full h-full"
-        style={{ background: 'hsl(249 42% 17%)' }}
+        style={{ background: `hsl(${MAP_BACKGROUND})` }}
       />
     </div>
   );

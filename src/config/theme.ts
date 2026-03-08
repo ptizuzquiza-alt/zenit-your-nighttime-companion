@@ -30,10 +30,10 @@ export const COLOR_PRIMARY_LIGHT = '265 80% 70%';
 export const COLOR_ACCENT = '45 100% 50%';
 
 // Colores secundarios
-export const COLOR_SECONDARY = '249 35% 26%';
-export const COLOR_MUTED = '249 35% 24%';
-export const COLOR_MUTED_FG = '249 20% 60%';
-export const COLOR_BORDER = '249 30% 26%';
+export const COLOR_SECONDARY = '249 35% 20%';
+export const COLOR_MUTED = '249 35% 18%';
+export const COLOR_MUTED_FG = '249 20% 55%';
+export const COLOR_BORDER = '249 30% 22%';
 
 // Colores funcionales
 export const COLOR_DESTRUCTIVE = '0 84% 60%';

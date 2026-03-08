@@ -4,6 +4,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import { fetchWalkingRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { getStoredDestination } from '@/lib/geocoding';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();

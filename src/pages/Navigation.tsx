@@ -6,25 +6,10 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { getStoredRoute } from '@/lib/routing';
 
-const friendRoutes = [
-  {
-    name: 'Juan',
-    coordinates: [
-      [41.4055, 2.1770],
-      [41.4060, 2.1760],
-      [41.4068, 2.1755],
-      [41.4075, 2.1765],
-      [41.4080, 2.1780],
-      [41.4085, 2.1800],
-    ] as [number, number][],
-    position: [41.4055, 2.1770] as [number, number],
-  },
-];
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
-const friendLocations: [number, number][] = [
-  [41.4055, 2.1770],
-  [41.4075, 2.1800],
-];
+const JUAN_ORIGIN: [number, number] = [41.4055, 2.1770];
+const JUAN_DEST: [number, number] = [41.4100, 2.1850];
 
 const Navigation: FC = () => {
   const navigate = useNavigate();

@@ -109,10 +109,12 @@ const Navigation: FC = () => {
         zoom={17}
         destination={destination}
         route={routeCoords.slice(routeIndex)}
+        alternativeRoute={fitAll ? juanRoute : undefined}
         friendRoutes={friendRoutes}
         friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
         showUserArrow
         userPosition={userPosition}
+        fitToRoute={fitAll}
         className="absolute inset-0"
       />
 

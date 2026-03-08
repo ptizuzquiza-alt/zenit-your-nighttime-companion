@@ -7,6 +7,7 @@ interface FriendActivityCardProps {
   destination: string;
   address: string;
   time: string;
+  onClick?: () => void;
 }
 
 export const FriendActivityCard: FC<FriendActivityCardProps> = ({

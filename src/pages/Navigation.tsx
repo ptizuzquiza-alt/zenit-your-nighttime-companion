@@ -103,31 +103,33 @@ const Navigation: FC = () => {
   }];
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
-      <ZenitMap
-        center={userPosition}
-        zoom={17}
-        destination={destination}
-        route={routeCoords.slice(routeIndex)}
-        alternativeRoute={fitAll ? juanRoute : undefined}
-        friendRoutes={friendRoutes}
-        friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
-        showUserArrow
-        userPosition={userPosition}
-        fitToRoute={fitAll}
-        className="absolute inset-0"
-      />
-
-      {/* Direction card */}
-      <div className="absolute top-12 left-4 right-4 z-[1000]">
-        <DirectionCard
-          distance="Siga 900 m y"
-          instruction="gire a la derecha"
-          direction="right"
+    <>
+      <div className="relative h-screen w-full overflow-hidden">
+        <ZenitMap
+          center={userPosition}
+          zoom={17}
+          destination={destination}
+          route={routeCoords.slice(routeIndex)}
+          alternativeRoute={fitAll ? juanRoute : undefined}
+          friendRoutes={friendRoutes}
+          friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
+          showUserArrow
+          userPosition={userPosition}
+          fitToRoute={fitAll}
+          className="absolute inset-0"
         />
+
+        {/* Direction card */}
+        <div className="absolute top-12 left-4 right-4 z-[1000]">
+          <DirectionCard
+            distance="Siga 900 m y"
+            instruction="gire a la derecha"
+            direction="right"
+          />
+        </div>
       </div>
 
-      {/* Bottom sheet */}
+      {/* Bottom sheet - outside overflow-hidden container */}
       <div 
         className="zenit-bottom-sheet p-6 pb-8 z-[1000] relative"
       >
@@ -145,10 +147,7 @@ const Navigation: FC = () => {
 
         <div className="zenit-sheet-handle mb-4 mx-auto" />
         
-        <h3 
-          className="text-foreground font-semibold mb-4 cursor-pointer"
-          onClick={() => setSheetExpanded(prev => !prev)}
-        >
+        <h3 className="text-foreground font-semibold mb-4">
           Actividades de tus amigos
         </h3>
         
@@ -170,7 +169,7 @@ const Navigation: FC = () => {
           Finalizar trayecto
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

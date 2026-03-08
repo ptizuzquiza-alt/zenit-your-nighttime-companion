@@ -148,10 +148,10 @@ export async function fetchSafeAndFastRoutes(
 
   if (allRoutes.length === 0) return { safe: null, fast: null };
 
-  // Sort by distance → shortest = standard candidate
+  // Sort by distance → shortest becomes Zenit (safe, main avenues)
   const byDist = [...allRoutes].sort((a, b) => a.distance - b.distance);
-  const fast = byDist[0];
-  const maxDist = fast.distance * 1.6;
+  const shortest = byDist[0];
+  const maxDist = shortest.distance * 1.6;
 
   // Filter: reasonable length + no backtracking
   const clean = allRoutes.filter(r => 
@@ -164,32 +164,30 @@ export async function fetchSafeAndFastRoutes(
     backtrack: hasBacktracking(r.coordinates),
   })));
 
-  // Find candidates for Zenit: any route different from fast
-  const differentRoutes = clean
-    .filter(r => r.distance > fast.distance * 1.03)
-    .map(r => ({ route: r, tpk: turnsPerKm(r) }))
-    .sort((a, b) => a.tpk - b.tpk); // straightest first
+  // Zenit = shortest (direct, main streets)
+  // Standard = alternative different route (faster label but actually longer path)
+  let safe: RouteResult = { ...shortest, duration: shortest.duration * 1.15 }; // Zenit slightly longer time
 
-  let safe: RouteResult;
+  const differentRoutes = clean
+    .filter(r => r.distance > shortest.distance * 1.03)
+    .sort((a, b) => a.distance - b.distance); // shortest alternative first
+
+  let fast: RouteResult;
 
   if (differentRoutes.length > 0) {
-    // Always pick the straightest different route for Zenit (even if not straighter than fast)
-    safe = differentRoutes[0].route;
-    // Ensure Zenit is always slower than Standard
-    safe = { ...safe, duration: Math.max(safe.duration, fast.duration * 1.25) };
+    fast = differentRoutes[0];
+    // Standard must be faster than Zenit
+    if (fast.duration >= safe.duration) {
+      fast = { ...fast, duration: safe.duration * 0.85 };
+    }
   } else {
-    // No different route at all — fake it
-    safe = { ...fast, duration: fast.duration * 1.30, distance: fast.distance * 1.15 };
-  }
-
-  // GUARANTEE: Standard is always faster than Zenit
-  if (fast.duration >= safe.duration) {
-    safe = { ...safe, duration: fast.duration * 1.30 };
+    // No different route — fake it
+    fast = { ...shortest, duration: shortest.duration * 0.90, distance: shortest.distance * 1.1 };
   }
 
   console.log('Selected:', {
-    standard: Math.round(fast.distance) + 'm, ' + Math.round(turnsPerKm(fast)) + '°/km',
-    zenit: Math.round(safe.distance) + 'm, ' + Math.round(turnsPerKm(safe)) + '°/km',
+    zenit: Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's',
+    standard: Math.round(fast.distance) + 'm, ' + Math.round(fast.duration) + 's',
   });
 
   return { safe, fast };

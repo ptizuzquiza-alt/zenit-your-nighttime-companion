@@ -98,23 +98,25 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     polylinesRef.current.forEach(polyline => polyline.remove());
     polylinesRef.current = [];
 
-    // Add alternative route (lila dashed — Ruta Estándar)
+    const safeSelected = selectedRoute === 'safe';
+
+    // Ruta Estándar (lila)
     if (alternativeRoute && alternativeRoute.length > 1) {
       const altPolyline = L.polyline(alternativeRoute, {
-        color: 'rgba(167, 139, 250, 0.55)',
-        weight: 4,
-        dashArray: '8, 8',
+        color: 'rgba(167, 139, 250, ' + (safeSelected ? '0.35' : '0.85') + ')',
+        weight: safeSelected ? 4 : 6,
+        dashArray: safeSelected ? '8, 8' : undefined,
       }).addTo(mapRef.current);
       polylinesRef.current.push(altPolyline);
     }
 
-    // Add main route (Ruta Zenit — yellow glow)
+    // Ruta Zenit (amarilla con glow)
     if (route && route.length > 1) {
       // Outer glow layer
       const glowPolyline = L.polyline(route, {
         color: '#FFD700',
-        weight: 12,
-        opacity: 0.25,
+        weight: safeSelected ? 12 : 6,
+        opacity: safeSelected ? 0.25 : 0.1,
         lineCap: 'round',
         lineJoin: 'round',
       }).addTo(mapRef.current);
@@ -123,8 +125,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       // Core line
       const mainPolyline = L.polyline(route, {
         color: '#FFD700',
-        weight: 4,
-        opacity: 0.95,
+        weight: safeSelected ? 4 : 3,
+        opacity: safeSelected ? 0.95 : 0.4,
         lineCap: 'round',
         lineJoin: 'round',
       }).addTo(mapRef.current);

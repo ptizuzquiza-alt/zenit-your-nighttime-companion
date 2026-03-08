@@ -17,18 +17,16 @@ function parseOSRMRoute(route: any): RouteResult {
       ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
     ),
     distance,
-    // Recalculate duration based on walking speed for consistency
     duration: distance / WALKING_SPEED,
   };
 }
+
 /**
  * Calculate total cumulative angular change along a route (in degrees).
- * Lower value = straighter route = Zenit candidate.
- * We sample every N points to avoid noise from tiny coordinate jitter.
+ * Lower value = straighter route.
  */
 function totalAngularChange(coords: [number, number][]): number {
   if (coords.length < 3) return 0;
-  // Sample every ~50m worth of points to reduce noise
   const step = Math.max(1, Math.floor(coords.length / 50));
   const sampled: [number, number][] = [];
   for (let i = 0; i < coords.length; i += step) {
@@ -37,7 +35,7 @@ function totalAngularChange(coords: [number, number][]): number {
   if (sampled[sampled.length - 1] !== coords[coords.length - 1]) {
     sampled.push(coords[coords.length - 1]);
   }
-  
+
   let totalChange = 0;
   for (let i = 1; i < sampled.length - 1; i++) {
     const [lat1, lon1] = sampled[i - 1];
@@ -53,105 +51,144 @@ function totalAngularChange(coords: [number, number][]): number {
 }
 
 /**
- * Calculate a perpendicular offset point to use as waypoint for the safe route.
- * This forces the route to diverge from the direct path, going through different streets.
+ * Calculate "straightness score" — lower is better (straighter).
+ * Normalizes angular change by distance to fairly compare routes of different lengths.
  */
-function getOffsetWaypoint(
-  origin: [number, number],
-  destination: [number, number],
-  offsetKm: number = 0.3
-): [number, number] {
-  // Midpoint
-  const midLat = (origin[0] + destination[0]) / 2;
-  const midLon = (origin[1] + destination[1]) / 2;
+function straightnessScore(route: RouteResult): number {
+  const angularChange = totalAngularChange(route.coordinates);
+  // Angular change per km — straighter routes have fewer degrees per km
+  return angularChange / (route.distance / 1000);
+}
 
-  // Direction vector
+/**
+ * Get waypoints along the extended direct line (not perpendicular).
+ * This creates a route that goes further in the same general direction,
+ * through wider/main streets, rather than zigzagging sideways.
+ */
+function getExtendedWaypoints(
+  origin: [number, number],
+  destination: [number, number]
+): [number, number][] {
   const dLat = destination[0] - origin[0];
   const dLon = destination[1] - origin[1];
+  const len = Math.sqrt(dLat * dLat + dLon * dLon);
+  if (len === 0) return [];
 
-  // Perpendicular (rotate 90 degrees)
-  const perpLat = -dLon;
-  const perpLon = dLat;
+  // Perpendicular offset (small, to nudge onto wider parallel avenues)
+  const perpLat = -dLon / len;
+  const perpLon = dLat / len;
 
-  // Normalize and scale
-  const len = Math.sqrt(perpLat * perpLat + perpLon * perpLon);
-  if (len === 0) return [midLat, midLon];
-
-  // ~0.009 degrees ≈ 1km at Barcelona's latitude
-  const scale = (offsetKm * 0.009) / len;
-
-  return [
-    midLat + perpLat * scale,
-    midLon + perpLon * scale,
-  ];
+  // Try several small perpendicular offsets to find wider parallel streets
+  const offsets = [0.001, -0.001, 0.0018, -0.0018];
+  return offsets.map(offset => {
+    const midLat = (origin[0] + destination[0]) / 2 + perpLat * offset;
+    const midLon = (origin[1] + destination[1]) / 2 + perpLon * offset;
+    return [midLat, midLon] as [number, number];
+  });
 }
 
 /**
  * Fetch two contrasting walking routes:
- * - Standard (fast): Direct OSRM shortest path → uses shortcuts, side streets, more turns
- * - Zenit (safe): Forced through a perpendicular waypoint on main avenues → straighter, wider streets, longer
+ * - Standard (fast): Direct OSRM shortest path → shortest distance, more turns
+ * - Zenit (safe): The straightest available route → fewer turns, wider streets, longer
  *
- * Strategy: The shortest OSRM path naturally uses shortcuts/callejuelas.
- * By adding a waypoint offset from the direct line, we force Zenit through different (wider) streets.
+ * Strategy:
+ * 1. Fetch direct route with alternatives=true
+ * 2. Fetch routes through small perpendicular waypoints (nudges onto parallel avenues)
+ * 3. Score all candidates by "straightness" (angular change per km)
+ * 4. Zenit = straightest candidate that is ≥10% longer than the shortest
+ * 5. Standard = shortest route
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
-  
-  // Zenit waypoint: offset perpendicular to force through different/wider streets
-  const waypoint = getOffsetWaypoint(origin, destination, 0.25);
-  const zenitCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
 
-  const [standardRes, zenitRes] = await Promise.all([
-    // Standard: direct shortest path (shortcuts, callejuelas, more turns)
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson`)
-      .then(r => r.json()).catch(() => null),
-    // Zenit: waypoint forces through wider/different streets (straighter overall, longer)
-    fetch(`${OSRM_BASE}/foot/${zenitCoords}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null),
-  ]);
-
-  let fast: RouteResult | null = null;
-  let safe: RouteResult | null = null;
-
-  if (standardRes?.code === 'Ok' && standardRes.routes?.length) {
-    fast = parseOSRMRoute(standardRes.routes[0]);
-  }
-
-  if (zenitRes?.code === 'Ok' && zenitRes.routes?.length) {
-    safe = parseOSRMRoute(zenitRes.routes[0]);
-    // +25% time penalty for safety/comfort priority
-    safe.duration = safe.duration * 1.25;
-  }
-
-  // If both routes are identical or Zenit is shorter, try opposite offset
-  if (safe && fast && safe.distance <= fast.distance * 1.05) {
-    const waypoint2 = getOffsetWaypoint(origin, destination, -0.25);
-    const zenitCoords2 = `${origin[1]},${origin[0]};${waypoint2[1]},${waypoint2[0]};${destination[1]},${destination[0]}`;
-    try {
-      const res2 = await fetch(`${OSRM_BASE}/foot/${zenitCoords2}?overview=full&geometries=geojson&continue_straight=true`)
-        .then(r => r.json());
-      if (res2?.code === 'Ok' && res2.routes?.length) {
-        const alt = parseOSRMRoute(res2.routes[0]);
-        if (alt.distance > fast.distance * 1.05) {
-          safe = alt;
-          safe.duration = safe.duration * 1.25;
-        }
-      }
-    } catch {}
-  }
-
-  console.log('Routes:', {
-    standard: fast ? Math.round(fast.distance) + 'm' : null,
-    zenit: safe ? Math.round(safe.distance) + 'm' : null,
+  // Generate waypoint-based route coordinates
+  const waypoints = getExtendedWaypoints(origin, destination);
+  const waypointFetches = waypoints.map(wp => {
+    const coords = `${origin[1]},${origin[0]};${wp[1]},${wp[0]};${destination[1]},${destination[0]}`;
+    return fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null);
   });
 
-  // Fallback
-  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };
-  if (!fast && safe) fast = safe;
+  const [directRes, ...waypointResults] = await Promise.all([
+    // Direct route with alternatives
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+      .then(r => r.json()).catch(() => null),
+    ...waypointFetches,
+  ]);
 
+  // Collect all valid routes
+  const allRoutes: RouteResult[] = [];
+
+  if (directRes?.code === 'Ok' && directRes.routes?.length) {
+    for (const route of directRes.routes) {
+      allRoutes.push(parseOSRMRoute(route));
+    }
+  }
+
+  for (const res of waypointResults) {
+    if (res?.code === 'Ok' && res.routes?.length) {
+      allRoutes.push(parseOSRMRoute(res.routes[0]));
+    }
+  }
+
+  if (allRoutes.length === 0) {
+    return { safe: null, fast: null };
+  }
+
+  // Sort by distance to find shortest (standard)
+  const byDistance = [...allRoutes].sort((a, b) => a.distance - b.distance);
+  const fast = byDistance[0];
+
+  // Score all routes by straightness
+  const scored = allRoutes.map(route => ({
+    route,
+    score: straightnessScore(route),
+    angularChange: totalAngularChange(route.coordinates),
+  }));
+
+  // For Zenit: prefer straightest route that is meaningfully different from fast
+  // Sort by straightness score (lower = straighter)
+  scored.sort((a, b) => a.score - b.score);
+
+  console.log('Route candidates:', scored.map(s => ({
+    distance: Math.round(s.route.distance) + 'm',
+    angularChange: Math.round(s.angularChange) + '°',
+    scorePerKm: Math.round(s.score) + '°/km',
+  })));
+
+  // Pick the straightest route that's at least 10% longer, or simply the straightest overall
+  let safe: RouteResult | null = null;
+  for (const { route } of scored) {
+    if (route.distance >= fast.distance * 1.1) {
+      safe = route;
+      break;
+    }
+  }
+
+  // If no longer straight route, just use the straightest one
+  if (!safe) {
+    safe = scored[0].route;
+  }
+
+  // If safe and fast ended up identical, create distinction
+  if (safe.distance === fast.distance && safe.coordinates.length === fast.coordinates.length) {
+    // Use the second straightest if available
+    if (scored.length > 1) {
+      safe = scored[1].route;
+    }
+  }
+
+  // Apply 25% time penalty for safety/comfort priority
+  safe = { ...safe, duration: safe.duration * 1.25 };
+
+  console.log('Selected routes:', {
+    standard: Math.round(fast.distance) + 'm, ' + Math.round(totalAngularChange(fast.coordinates)) + '° turns',
+    zenit: Math.round(safe.distance) + 'm, ' + Math.round(totalAngularChange(safe.coordinates)) + '° turns',
+  });
 
   return { safe, fast };
 }

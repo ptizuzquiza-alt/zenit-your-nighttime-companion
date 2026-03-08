@@ -15,6 +15,7 @@ interface ZenitMapProps {
   friendLocations?: [number, number][];
   showUserArrow?: boolean;
   userPosition?: [number, number];
+  fitToRoute?: boolean;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   friendLocations = [],
   showUserArrow = false,
   userPosition,
+  fitToRoute = false,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -56,12 +58,18 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     };
   }, []);
 
-  // Update center and zoom
+  // Update view: fit to route bounds or set center/zoom
   useEffect(() => {
-    if (mapRef.current) {
+    if (!mapRef.current) return;
+    if (fitToRoute && route && route.length > 1) {
+      const bounds = L.latLngBounds(route);
+      if (origin) bounds.extend(origin);
+      if (destination) bounds.extend(destination);
+      mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 16, animate: true });
+    } else {
       mapRef.current.setView(center, zoom);
     }
-  }, [center, zoom]);
+  }, [center, zoom, route, fitToRoute, origin, destination]);
 
   // Update markers and routes
   useEffect(() => {

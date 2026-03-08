@@ -230,7 +230,11 @@ const Navigation: FC = () => {
               </div>
               {/* Share button */}
               <button
-                onClick={() => setShowShareModal(true)}
+                onClick={() => {
+                  setShowShareModal(true);
+                  const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
+                  setSheetOffset(h);
+                }}
                 className="w-9 h-9 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Share2 className="w-4 h-4" />

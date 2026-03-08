@@ -10,6 +10,16 @@ export interface RouteResult {
   duration: number; // seconds
 }
 
+function parseOSRMRoute(route: any): RouteResult {
+  return {
+    coordinates: route.geometry.coordinates.map(
+      ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+    ),
+    distance: route.distance,
+    duration: route.duration,
+  };
+}
+
 /**
  * Fetch two walking routes:
  * - Fast: foot profile → shortest walking path (small streets, shortcuts)

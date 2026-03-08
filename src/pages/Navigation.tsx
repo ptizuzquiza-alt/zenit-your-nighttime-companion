@@ -349,6 +349,7 @@ const Navigation: FC = () => {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); setSheetOffset(0); }}
+        initialSelected={sharedContacts}
         contacts={[
           { id: '1', name: 'Maria' },
           { id: '2', name: 'Carlos' },

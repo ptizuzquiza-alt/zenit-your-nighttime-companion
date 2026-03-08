@@ -103,35 +103,34 @@ const Navigation: FC = () => {
   }];
 
   return (
-    <>
-      <div className="relative h-screen w-full overflow-hidden">
-        <ZenitMap
-          center={userPosition}
-          zoom={17}
-          destination={destination}
-          route={routeCoords.slice(routeIndex)}
-          alternativeRoute={fitAll ? juanRoute : undefined}
-          friendRoutes={friendRoutes}
-          friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
-          showUserArrow
-          userPosition={userPosition}
-          fitToRoute={fitAll}
-          className="absolute inset-0"
-        />
+    <div className="relative h-screen w-full">
+      <ZenitMap
+        center={userPosition}
+        zoom={17}
+        destination={destination}
+        route={routeCoords.slice(routeIndex)}
+        alternativeRoute={fitAll ? juanRoute : undefined}
+        friendRoutes={friendRoutes}
+        friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
+        showUserArrow
+        userPosition={userPosition}
+        fitToRoute={fitAll}
+        className="absolute inset-0"
+      />
 
-        {/* Direction card */}
-        <div className="absolute top-12 left-4 right-4 z-[1000]">
-          <DirectionCard
-            distance="Siga 900 m y"
-            instruction="gire a la derecha"
-            direction="right"
-          />
-        </div>
+      {/* Direction card */}
+      <div className="absolute top-12 left-4 right-4 z-[1000]">
+        <DirectionCard
+          distance="Siga 900 m y"
+          instruction="gire a la derecha"
+          direction="right"
+        />
       </div>
 
-      {/* Bottom sheet - outside overflow-hidden container */}
+      {/* Bottom sheet */}
       <div 
-        className="zenit-bottom-sheet p-6 pb-8 z-[1000] relative"
+        className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[1000]"
+        style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
       >
         {/* FAB floating above the sheet */}
         <button
@@ -145,7 +144,7 @@ const Navigation: FC = () => {
           <Users className="w-5 h-5" />
         </button>
 
-        <div className="zenit-sheet-handle mb-4 mx-auto" />
+        <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
         
         <h3 className="text-foreground font-semibold mb-4">
           Actividades de tus amigos
@@ -169,7 +168,7 @@ const Navigation: FC = () => {
           Finalizar trayecto
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

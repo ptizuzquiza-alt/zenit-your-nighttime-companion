@@ -301,7 +301,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       <div 
         ref={containerRef} 
         className="w-full h-full"
-        style={{ background: 'hsl(249 42% 17%)' }}
+        style={{ background: `hsl(${MAP_BACKGROUND})` }}
       />
     </div>
   );

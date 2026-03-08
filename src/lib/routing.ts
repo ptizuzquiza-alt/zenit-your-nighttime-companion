@@ -65,7 +65,7 @@ export async function fetchSafeAndFastRoutes(
   const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
   const res = await fetch(
-    `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=5`
+    `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=3`
   ).then(r => r.json()).catch(() => null);
 
   if (!res?.code || res.code !== 'Ok' || !res.routes?.length) {

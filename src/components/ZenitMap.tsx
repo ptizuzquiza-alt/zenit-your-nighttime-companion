@@ -34,6 +34,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   route,
   alternativeRoute,
   friendLocations = [],
+  friendRoutes = [],
   showUserArrow = false,
   userPosition,
   fitToRoute = false,

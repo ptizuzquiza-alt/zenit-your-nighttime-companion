@@ -127,8 +127,18 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* Map toggle FAB */}
-      <div className="absolute bottom-48 right-4 z-[1000]">
+      {/* FABs */}
+      <div className="absolute bottom-48 right-4 z-[1000] flex flex-col gap-3">
+        <button
+          onClick={() => setFitAll(prev => !prev)}
+          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            fitAll 
+              ? 'bg-primary text-primary-foreground' 
+              : 'bg-card/80 backdrop-blur-sm text-foreground'
+          }`}
+        >
+          <Users className="w-5 h-5" />
+        </button>
         <NavigationFab mode="map" />
       </div>
 

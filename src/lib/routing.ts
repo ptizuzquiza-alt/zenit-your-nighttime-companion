@@ -21,6 +21,27 @@ function parseOSRMRoute(route: any): RouteResult {
     duration: distance / WALKING_SPEED,
   };
 }
+/**
+ * Count significant turns (direction changes > threshold degrees) in a route.
+ * Fewer turns = straighter route = Zenit candidate.
+ */
+function countSignificantTurns(coords: [number, number][], thresholdDeg: number = 30): number {
+  if (coords.length < 3) return 0;
+  let turns = 0;
+  for (let i = 1; i < coords.length - 1; i++) {
+    const [lat1, lon1] = coords[i - 1];
+    const [lat2, lon2] = coords[i];
+    const [lat3, lon3] = coords[i + 1];
+    // Bearing from point i-1 to i
+    const b1 = Math.atan2(lon2 - lon1, lat2 - lat1);
+    // Bearing from point i to i+1
+    const b2 = Math.atan2(lon3 - lon2, lat3 - lat2);
+    let diff = Math.abs(b2 - b1) * (180 / Math.PI);
+    if (diff > 180) diff = 360 - diff;
+    if (diff > thresholdDeg) turns++;
+  }
+  return turns;
+}
 
 /**
  * Calculate a perpendicular offset point to use as waypoint for the safe route.
@@ -83,12 +104,17 @@ export async function fetchSafeAndFastRoutes(
     const allRoutes = res.routes.map(parseOSRMRoute);
 
     if (allRoutes.length >= 2) {
-      // Sort by distance: shortest first
-      allRoutes.sort((a: RouteResult, b: RouteResult) => a.distance - b.distance);
-      fast = allRoutes[0]; // shortest = Standard (atajos, callejuelas)
-      safe = allRoutes[allRoutes.length - 1]; // longest = Zenit (calles amplias, recto)
+      // Sort by number of significant turns: fewest turns first = straightest
+      allRoutes.sort((a: RouteResult, b: RouteResult) => 
+        countSignificantTurns(a.coordinates) - countSignificantTurns(b.coordinates)
+      );
+      safe = allRoutes[0]; // fewest turns = Zenit (calles amplias, recto)
+      fast = allRoutes[allRoutes.length - 1]; // most turns = Standard (atajos, callejuelas)
+      console.log('Route turns:', allRoutes.map(r => ({
+        turns: countSignificantTurns(r.coordinates),
+        distance: Math.round(r.distance),
+      })));
     } else {
-      // Only one route — use it as fast, create detour for safe
       fast = allRoutes[0];
     }
   }
@@ -112,15 +138,7 @@ export async function fetchSafeAndFastRoutes(
     safe.duration = safe.duration * 1.25;
   }
 
-  // Ensure safe is always longer than fast
-  if (safe && fast && safe.distance <= fast.distance) {
-    // Swap them
-    const temp = safe;
-    safe = fast;
-    fast = temp;
-    safe.duration = safe.distance / WALKING_SPEED * 1.25;
-    fast.duration = fast.distance / WALKING_SPEED;
-  }
+  // No longer swap based on distance — Zenit is chosen by fewest turns, not longest distance
 
   // Fallback
   if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };

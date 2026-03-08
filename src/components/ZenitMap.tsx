@@ -130,7 +130,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         }).addTo(mapRef.current!);
         polylinesRef.current.push(glow);
         const main = L.polyline(alternativeRoute, {
-          color: '#a78bfa', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_FAST_COLOR, weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {

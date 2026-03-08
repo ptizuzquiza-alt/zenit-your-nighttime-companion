@@ -103,23 +103,25 @@ const Navigation: FC = () => {
   }];
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
-      <ZenitMap
-        center={userPosition}
-        zoom={17}
-        destination={destination}
-        route={routeCoords.slice(routeIndex)}
-        alternativeRoute={fitAll ? juanRoute : undefined}
-        friendRoutes={friendRoutes}
-        friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
-        showUserArrow
-        userPosition={userPosition}
-        fitToRoute={fitAll}
-        className="absolute inset-0"
-      />
+    <>
+      <div className="fixed inset-0">
+        <ZenitMap
+          center={userPosition}
+          zoom={17}
+          destination={destination}
+          route={routeCoords.slice(routeIndex)}
+          alternativeRoute={fitAll ? juanRoute : undefined}
+          friendRoutes={friendRoutes}
+          friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
+          showUserArrow
+          userPosition={userPosition}
+          fitToRoute={fitAll}
+          className="w-full h-full"
+        />
+      </div>
 
       {/* Direction card */}
-      <div className="absolute top-12 left-4 right-4 z-[1000]">
+      <div className="fixed top-12 left-4 right-4 z-[1000]">
         <DirectionCard
           distance="Siga 900 m y"
           instruction="gire a la derecha"
@@ -129,7 +131,7 @@ const Navigation: FC = () => {
 
       {/* Bottom sheet */}
       <div 
-        className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[1000]"
+        className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[1000]"
         style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
       >
         {/* FAB floating above the sheet */}
@@ -168,7 +170,7 @@ const Navigation: FC = () => {
           Finalizar trayecto
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

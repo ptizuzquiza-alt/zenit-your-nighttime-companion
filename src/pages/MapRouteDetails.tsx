@@ -59,7 +59,11 @@ const MapRouteDetails: FC = () => {
       <div className="zenit-bottom-sheet p-6 pb-8 z-[1000]">
         <div className="zenit-sheet-handle mb-4" />
         
-        <h3 className="text-foreground font-semibold mb-6">Detalles de la ruta</h3>
+        <h3 className="text-foreground font-semibold mb-6">
+          {sessionStorage.getItem('zenit_selected_route_type') === 'fast'
+            ? 'Has elegido la ruta rápida'
+            : 'Has elegido la ruta segura'}
+        </h3>
         
         <button 
           onClick={() => setShowShareModal(true)}

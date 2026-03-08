@@ -90,6 +90,7 @@ const MapRoutes: FC = () => {
     if (currentRouteData) {
       storeSelectedRoute(currentRouteData);
     }
+    sessionStorage.setItem('zenit_selected_route_type', selectedRoute);
     navigate('/route-details');
   };
 

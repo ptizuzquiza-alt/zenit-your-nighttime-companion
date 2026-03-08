@@ -128,8 +128,8 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* FABs */}
-      <div className="absolute bottom-48 right-4 z-[1100] flex flex-col gap-3">
+      {/* FAB */}
+      <div className="absolute bottom-48 right-4 z-[1100]">
         <button
           onClick={() => setFitAll(prev => !prev)}
           className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
@@ -140,7 +140,6 @@ const Navigation: FC = () => {
         >
           <Users className="w-5 h-5" />
         </button>
-        <NavigationFab mode="map" />
       </div>
 
       {/* Bottom sheet */}

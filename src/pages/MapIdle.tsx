@@ -31,21 +31,21 @@ const MapIdle: FC = () => {
         center={userLocation}
         zoom={16}
         origin={userLocation}
-        className="absolute inset-0"
-      />
+        className="absolute inset-0" />
+      
 
       {/* Search bar overlay */}
       <div className="absolute top-0 left-0 right-0 p-4 pt-12 z-[1000]">
-        <SearchBar 
-          placeholder="Buscar" 
+        <SearchBar
+          placeholder="Buscar"
           onClick={() => navigate('/search')}
-          readOnly
-        />
+          readOnly />
+        
       </div>
 
       {/* Locate me FAB */}
       <div className="absolute bottom-48 right-4 z-[1000]">
-        <button 
+        <button
           onClick={() => {
             if ('geolocation' in navigator) {
               navigator.geolocation.getCurrentPosition(
@@ -55,8 +55,8 @@ const MapIdle: FC = () => {
               );
             }
           }}
-          className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
-        >
+          className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center shadow-lg">
+          
           <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
@@ -65,20 +65,20 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Bottom sheet */}
-      <div className="zenit-bottom-sheet p-6 pb-8 z-[1000]">
-        <div className="zenit-sheet-handle mb-4" />
-        
-        <h3 className="text-foreground font-semibold mb-4">Sitios seguros cercanos</h3>
-        
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
-          <SafePlaceCard />
-          <SafePlaceCard />
-          <SafePlaceCard />
-          <SafePlaceCard />
-        </div>
-      </div>
-    </div>
-  );
+      
+
+
+
+
+
+
+
+
+
+
+      
+    </div>);
+
 };
 
 export default MapIdle;

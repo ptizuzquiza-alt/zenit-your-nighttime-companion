@@ -80,8 +80,8 @@ const MapRoutes: FC = () => {
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
-  const currentRouteData = selectedRoute === 'safe' ? safeRoute : fastRoute;
-  const alternativeRouteData = selectedRoute === 'safe' ? fastRoute : safeRoute;
+  const currentRouteData = selectedRoute === 'safe' ? (safeRoute || fastRoute) : (fastRoute || safeRoute);
+  const alternativeRouteData = selectedRoute === 'safe' ? (fastRoute || safeRoute) : (safeRoute || fastRoute);
 
   const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
   const formatDuration = (s: number) => `${Math.round(s / 60)} min`;

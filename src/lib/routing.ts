@@ -58,9 +58,8 @@ function getOffsetWaypoint(
 
 /**
  * Fetch two contrasting walking routes:
- * - Zenit (safe): Uses car profile to force main avenues (straighter, fewer turns),
- *   then recalculates duration at walking speed.
- * - Standard (fast): Uses foot profile with offset waypoints for more turns through side streets.
+ * - Zenit (safe): Foot profile with continue_straight=true → prefers straight main streets
+ * - Standard (fast): Foot profile with offset waypoint → forces detour through side streets
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -68,29 +67,17 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
   
-  // Standard: two offset waypoints to force zigzag through side streets
-  const wp1 = getOffsetWaypoint(origin, destination, 0.25);
-  const wp2 = getOffsetWaypoint(origin, destination, -0.15);
-  const midLat = (origin[0] + destination[0]) / 2;
-  const midLon = (origin[1] + destination[1]) / 2;
-  // Place waypoints at 1/3 and 2/3 of the route
-  const third1: [number, number] = [
-    origin[0] + (destination[0] - origin[0]) * 0.33 + (wp1[0] - midLat),
-    origin[1] + (destination[1] - origin[1]) * 0.33 + (wp1[1] - midLon),
-  ];
-  const third2: [number, number] = [
-    origin[0] + (destination[0] - origin[0]) * 0.66 + (wp2[0] - midLat),
-    origin[1] + (destination[1] - origin[1]) * 0.66 + (wp2[1] - midLon),
-  ];
-  const zigzagCoords = `${origin[1]},${origin[0]};${third1[1]},${third1[0]};${third2[1]},${third2[0]};${destination[1]},${destination[0]}`;
+  // Standard: offset waypoint to force a detour
+  const waypoint = getOffsetWaypoint(origin, destination, 0.3);
+  const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
 
   const [safeRes, fastRes] = await Promise.all([
-    // Zenit: car profile → main avenues, straight paths
-    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson`)
+    // Zenit: straight as possible, foot profile ignores one-way streets
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json())
       .catch(() => null),
-    // Standard: foot profile with zigzag waypoints → side streets, more turns
-    fetch(`${OSRM_BASE}/foot/${zigzagCoords}?overview=full&geometries=geojson`)
+    // Standard: detour through side streets
+    fetch(`${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
   ]);

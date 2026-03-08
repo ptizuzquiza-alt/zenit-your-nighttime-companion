@@ -1,4 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
@@ -103,23 +104,25 @@ const Navigation: FC = () => {
   }];
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
-      <ZenitMap
-        center={userPosition}
-        zoom={17}
-        destination={destination}
-        route={routeCoords.slice(routeIndex)}
-        alternativeRoute={fitAll ? juanRoute : undefined}
-        friendRoutes={friendRoutes}
-        friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
-        showUserArrow
-        userPosition={userPosition}
-        fitToRoute={fitAll}
-        className="absolute inset-0"
-      />
+    <>
+      <div className="fixed inset-0">
+        <ZenitMap
+          center={userPosition}
+          zoom={17}
+          destination={destination}
+          route={routeCoords.slice(routeIndex)}
+          alternativeRoute={fitAll ? juanRoute : undefined}
+          friendRoutes={friendRoutes}
+          friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
+          showUserArrow
+          userPosition={userPosition}
+          fitToRoute={fitAll}
+          className="w-full h-full"
+        />
+      </div>
 
       {/* Direction card */}
-      <div className="absolute top-12 left-4 right-4 z-[1000]">
+      <div className="fixed top-12 left-4 right-4 z-[1000]">
         <DirectionCard
           distance="Siga 900 m y"
           instruction="gire a la derecha"
@@ -127,54 +130,51 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* Bottom sheet */}
-      <div 
-        className="zenit-bottom-sheet p-6 pb-8 z-[1000] transition-transform duration-300 ease-in-out relative"
-        style={{ transform: sheetExpanded ? 'translateY(0)' : 'translateY(calc(100% - 72px))' }}
-      >
-        {/* FAB floating above the sheet */}
-        <button
-          onClick={() => setFitAll(prev => !prev)}
-          className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-            fitAll 
-              ? 'bg-primary text-primary-foreground' 
-              : 'bg-card/80 backdrop-blur-sm text-foreground'
-          }`}
-        >
-          <Users className="w-5 h-5" />
-        </button>
-
+      {/* Bottom sheet - portal to escape overflow-hidden ancestor */}
+      {createPortal(
         <div 
-          className="zenit-sheet-handle mb-4 cursor-pointer mx-auto" 
-          onClick={() => setSheetExpanded(prev => !prev)}
-        />
-        
-        <h3 
-          className="text-foreground font-semibold mb-4 cursor-pointer"
-          onClick={() => setSheetExpanded(prev => !prev)}
+          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999]"
+          style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
         >
-          Actividades de tus amigos
-        </h3>
-        
-        {showFriendActivity && (
-          <FriendActivityCard
+          {/* FAB floating above the sheet */}
+          <button
             onClick={() => setFitAll(prev => !prev)}
-            name="Juan"
-            activity="ha completado el 50% de su ruta."
-            destination="L'Auditori"
-            address="Carrer de Lepant, 150, Eixample"
-            time="Hace 2 min"
-          />
-        )}
-        
-        <button 
-          onClick={() => navigate('/navigation-end')}
-          className="zenit-btn-primary mt-4"
-        >
-          Finalizar trayecto
-        </button>
-      </div>
-    </div>
+            className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+              fitAll 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-card/80 backdrop-blur-sm text-foreground'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+          </button>
+
+          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+          
+          <h3 className="text-foreground font-semibold mb-4">
+            Actividades de tus amigos
+          </h3>
+          
+          {showFriendActivity && (
+            <FriendActivityCard
+              onClick={() => setFitAll(prev => !prev)}
+              name="Juan"
+              activity="ha completado el 50% de su ruta."
+              destination="L'Auditori"
+              address="Carrer de Lepant, 150, Eixample"
+              time="Hace 2 min"
+            />
+          )}
+          
+          <button 
+            onClick={() => navigate('/navigation-end')}
+            className="zenit-btn-primary mt-4"
+          >
+            Finalizar trayecto
+          </button>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 

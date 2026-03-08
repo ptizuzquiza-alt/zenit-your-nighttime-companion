@@ -4,15 +4,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
-
-const route: [number, number][] = [
-  [41.4036, 2.1744],
-  [41.4050, 2.1750],
-  [41.4060, 2.1780],
-  [41.4080, 2.1790],
-  [41.4095, 2.1820],
-  [41.4110, 2.1850],
-];
+import { getStoredRoute } from '@/lib/routing';
 
 const friendLocations: [number, number][] = [
   [41.4055, 2.1770],
@@ -22,25 +14,37 @@ const friendLocations: [number, number][] = [
 const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
-  const [userPosition, setUserPosition] = useState<[number, number]>([41.4050, 2.1755]);
-  const [routeIndex, setRouteIndex] = useState(1);
 
-  // Simulate navigation movement
+  const storedRoute = getStoredRoute();
+  const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [
+    [41.4036, 2.1744],
+    [41.4050, 2.1750],
+    [41.4060, 2.1780],
+    [41.4080, 2.1790],
+    [41.4095, 2.1820],
+    [41.4110, 2.1850],
+  ];
+
+  const [routeIndex, setRouteIndex] = useState(0);
+  const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
+
+  // Simulate navigation movement along the real route
   useEffect(() => {
     const interval = setInterval(() => {
       setRouteIndex((prev) => {
-        if (prev < route.length - 1) {
-          setUserPosition(route[prev]);
-          return prev + 1;
+        const next = prev + 1;
+        if (next < routeCoords.length) {
+          setUserPosition(routeCoords[next]);
+          return next;
         }
         return prev;
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [routeCoords]);
 
-  const destination: [number, number] = [41.4110, 2.1850];
+  const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -48,7 +52,7 @@ const Navigation: FC = () => {
         center={userPosition}
         zoom={17}
         destination={destination}
-        route={route.slice(routeIndex)}
+        route={routeCoords.slice(routeIndex)}
         friendLocations={friendLocations}
         showUserArrow
         userPosition={userPosition}

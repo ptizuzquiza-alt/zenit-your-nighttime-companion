@@ -3,29 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
-
-// Sample route coordinates (Barcelona area)
-const safeRoute: [number, number][] = [
-  [41.4036, 2.1744],
-  [41.4050, 2.1750],
-  [41.4060, 2.1780],
-  [41.4080, 2.1790],
-  [41.4095, 2.1820],
-  [41.4110, 2.1850],
-];
-
-const fastRoute: [number, number][] = [
-  [41.4036, 2.1744],
-  [41.4045, 2.1760],
-  [41.4065, 2.1800],
-  [41.4090, 2.1830],
-  [41.4110, 2.1850],
-];
+import { fetchWalkingRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
+  const [routes, setRoutes] = useState<RouteResult[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const destination: [number, number] = [41.4110, 2.1850];
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -37,20 +24,53 @@ const MapRoutes: FC = () => {
     }
   }, []);
 
-  const origin = userLocation;
-  const destination: [number, number] = [41.4110, 2.1850];
-  const currentRoute = selectedRoute === 'safe' ? safeRoute : fastRoute;
-  const alternativeRoute = selectedRoute === 'safe' ? fastRoute : safeRoute;
+  // Fetch real routes when origin changes
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    fetchWalkingRoute(userLocation, destination, true).then((results) => {
+      if (cancelled) return;
+      setRoutes(results);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [userLocation[0], userLocation[1]]);
+
+  const safeRoute = routes[0];
+  const fastRoute = routes[1] || routes[0];
+
+  const currentRouteData = selectedRoute === 'safe' ? safeRoute : fastRoute;
+  const alternativeRouteData = selectedRoute === 'safe' ? fastRoute : safeRoute;
+
+  const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
+  const formatDuration = (s: number) => `${Math.round(s / 60)} min`;
+
+  const handleContinue = () => {
+    if (currentRouteData) {
+      storeSelectedRoute(currentRouteData);
+    }
+    navigate('/route-details');
+  };
+
+  // Compute map center from route bounds
+  const mapCenter: [number, number] = safeRoute?.coordinates?.length
+    ? [
+        (userLocation[0] + destination[0]) / 2,
+        (userLocation[1] + destination[1]) / 2,
+      ]
+    : [41.4070, 2.1790];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
-        center={[41.4070, 2.1790]}
-        zoom={15}
-        origin={origin}
+        center={mapCenter}
+        zoom={14}
+        origin={userLocation}
         destination={destination}
-        route={currentRoute}
-        alternativeRoute={alternativeRoute}
+        route={currentRouteData?.coordinates}
+        alternativeRoute={alternativeRouteData?.coordinates}
         className="absolute inset-0"
       />
 
@@ -65,30 +85,37 @@ const MapRoutes: FC = () => {
         
         <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>
         
-        <div className="space-y-3">
-          <RouteCard
-            type="safe"
-            distance="2.5 km"
-            duration="31 min"
-            safetyPercentage={95}
-            tags={['Calles bien iluminadas', 'Áreas activas']}
-            selected={selectedRoute === 'safe'}
-            onClick={() => setSelectedRoute('safe')}
-          />
-          <RouteCard
-            type="fast"
-            distance="2.3 km"
-            duration="25 min"
-            safetyPercentage={73}
-            tags={['Menor distancia', 'Menos peatones']}
-            selected={selectedRoute === 'fast'}
-            onClick={() => setSelectedRoute('fast')}
-          />
-        </div>
+        {loading ? (
+          <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>
+        ) : (
+          <div className="space-y-3">
+            <RouteCard
+              type="safe"
+              distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
+              duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
+              safetyPercentage={95}
+              tags={['Calles bien iluminadas', 'Áreas activas']}
+              selected={selectedRoute === 'safe'}
+              onClick={() => setSelectedRoute('safe')}
+            />
+            {routes.length > 1 && (
+              <RouteCard
+                type="fast"
+                distance={formatDistance(fastRoute.distance)}
+                duration={formatDuration(fastRoute.duration)}
+                safetyPercentage={73}
+                tags={['Menor distancia', 'Menos peatones']}
+                selected={selectedRoute === 'fast'}
+                onClick={() => setSelectedRoute('fast')}
+              />
+            )}
+          </div>
+        )}
         
         <button 
-          onClick={() => navigate('/route-details')}
+          onClick={handleContinue}
           className="zenit-btn-primary mt-4"
+          disabled={loading}
         >
           Continuar
         </button>

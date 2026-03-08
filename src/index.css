@@ -7,47 +7,47 @@
 @layer base {
   :root {
     /* Zenit Night Mobility - Dark Theme */
-    --background: 240 25% 8%;
+    --background: 249 42% 17%;
     --foreground: 0 0% 98%;
 
-    --card: 240 20% 12%;
+    --card: 249 40% 20%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 20% 14%;
+    --popover: 249 38% 22%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 265 90% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 15% 20%;
+    --secondary: 249 35% 26%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 15% 18%;
-    --muted-foreground: 240 10% 60%;
+    --muted: 249 35% 24%;
+    --muted-foreground: 249 20% 60%;
 
     --accent: 45 100% 50%;
-    --accent-foreground: 240 25% 8%;
+    --accent-foreground: 249 42% 17%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 15% 20%;
-    --input: 240 15% 18%;
+    --border: 249 30% 26%;
+    --input: 249 35% 24%;
     --ring: 265 90% 60%;
 
     --radius: 1rem;
 
     /* Zenit Custom Colors */
-    --zenit-dark: 240 25% 8%;
-    --zenit-darker: 240 30% 5%;
-    --zenit-surface: 240 20% 12%;
-    --zenit-surface-light: 240 18% 16%;
+    --zenit-dark: 249 42% 17%;
+    --zenit-darker: 249 45% 12%;
+    --zenit-surface: 249 40% 20%;
+    --zenit-surface-light: 249 35% 26%;
     --zenit-purple: 265 90% 60%;
     --zenit-purple-light: 265 80% 70%;
     --zenit-yellow: 45 100% 50%;
     --zenit-green: 145 70% 50%;
     --zenit-blue: 220 80% 60%;
-    --zenit-grid: 240 20% 18%;
+    --zenit-grid: 249 35% 24%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(265 90% 60%), hsl(280 80% 50%));

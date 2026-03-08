@@ -103,7 +103,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         </button>
         
         <button onClick={onClose} className="zenit-btn-secondary mt-3">
-          Volver al mapa
+          Cancelar
         </button>
       </div>
     </div>

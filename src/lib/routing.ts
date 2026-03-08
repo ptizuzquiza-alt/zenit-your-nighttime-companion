@@ -138,15 +138,7 @@ export async function fetchSafeAndFastRoutes(
     safe.duration = safe.duration * 1.25;
   }
 
-  // Ensure safe is always longer than fast
-  if (safe && fast && safe.distance <= fast.distance) {
-    // Swap them
-    const temp = safe;
-    safe = fast;
-    fast = temp;
-    safe.duration = safe.distance / WALKING_SPEED * 1.25;
-    fast.duration = fast.distance / WALKING_SPEED;
-  }
+  // No longer swap based on distance — Zenit is chosen by fewest turns, not longest distance
 
   // Fallback
   if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };

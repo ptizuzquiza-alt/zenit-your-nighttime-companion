@@ -4,6 +4,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import { fetchWalkingRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { getStoredDestination } from '@/lib/geocoding';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -47,7 +48,11 @@ const MapRoutes: FC = () => {
     setDragOffset(0);
   }, [sheetCollapsed, dragOffset]);
 
-  const destination: [number, number] = [41.4110, 2.1850];
+  // Get destination from search selection or fallback
+  const storedDest = getStoredDestination();
+  const destination: [number, number] = storedDest
+    ? [storedDest.lat, storedDest.lon]
+    : [41.4110, 2.1850];
 
   useEffect(() => {
     if ('geolocation' in navigator) {

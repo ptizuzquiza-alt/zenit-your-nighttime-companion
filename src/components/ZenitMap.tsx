@@ -84,12 +84,12 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     polylinesRef.current.forEach(polyline => polyline.remove());
     polylinesRef.current = [];
 
-    // Add alternative route (dashed purple)
+    // Add alternative route (dashed, semi-transparent)
     if (alternativeRoute && alternativeRoute.length > 1) {
       const altPolyline = L.polyline(alternativeRoute, {
-        color: 'rgba(167, 139, 250, 0.5)',
-        weight: 4,
-        dashArray: '10, 10',
+        color: 'rgba(167, 139, 250, 0.6)',
+        weight: 5,
+        dashArray: '8, 8',
       }).addTo(mapRef.current);
       polylinesRef.current.push(altPolyline);
     }

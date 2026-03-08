@@ -38,9 +38,9 @@ const Navigation: FC = () => {
   const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
 
   // Juan's real route + animated position
-  const [juanRoute, setJuanRoute] = useState<[number, number][]>([]);
-  const [juanIndex, setJuanIndex] = useState(0);
-  const juanPosition = juanRoute.length > 0 ? juanRoute[juanIndex] : JUAN_ORIGIN;
+  const [juanRoute, setJuanRoute] = useState<[number, number][]>(JUAN_FALLBACK);
+  const [juanIndex, setJuanIndex] = useState(Math.floor(JUAN_FALLBACK.length * 0.4));
+  const juanPosition = juanRoute[juanIndex] ?? JUAN_ORIGIN;
 
   // Fetch Juan's real street route from OSRM
   useEffect(() => {

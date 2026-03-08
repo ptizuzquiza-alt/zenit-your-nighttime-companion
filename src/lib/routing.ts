@@ -115,9 +115,13 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  // Two small nudges (~80m each direction) to get parallel-street alternatives
-  const wp1 = getNudgeWaypoint(origin, destination, 0.0008);
-  const wp2 = getNudgeWaypoint(origin, destination, -0.0008);
+  // Larger nudges (~200-300m each direction) to force genuinely different streets
+  const dist = Math.sqrt(
+    Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
+  );
+  const nudge = Math.max(0.002, dist * 0.15); // At least ~200m, scales with distance
+  const wp1 = getNudgeWaypoint(origin, destination, nudge);
+  const wp2 = getNudgeWaypoint(origin, destination, -nudge);
   const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
   const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
 

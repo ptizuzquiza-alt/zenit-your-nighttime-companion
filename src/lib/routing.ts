@@ -104,12 +104,17 @@ export async function fetchSafeAndFastRoutes(
     const allRoutes = res.routes.map(parseOSRMRoute);
 
     if (allRoutes.length >= 2) {
-      // Sort by distance: shortest first
-      allRoutes.sort((a: RouteResult, b: RouteResult) => a.distance - b.distance);
-      fast = allRoutes[0]; // shortest = Standard (atajos, callejuelas)
-      safe = allRoutes[allRoutes.length - 1]; // longest = Zenit (calles amplias, recto)
+      // Sort by number of significant turns: fewest turns first = straightest
+      allRoutes.sort((a: RouteResult, b: RouteResult) => 
+        countSignificantTurns(a.coordinates) - countSignificantTurns(b.coordinates)
+      );
+      safe = allRoutes[0]; // fewest turns = Zenit (calles amplias, recto)
+      fast = allRoutes[allRoutes.length - 1]; // most turns = Standard (atajos, callejuelas)
+      console.log('Route turns:', allRoutes.map(r => ({
+        turns: countSignificantTurns(r.coordinates),
+        distance: Math.round(r.distance),
+      })));
     } else {
-      // Only one route — use it as fast, create detour for safe
       fast = allRoutes[0];
     }
   }

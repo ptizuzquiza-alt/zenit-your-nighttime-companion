@@ -25,6 +25,7 @@ const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
+  const [focusJuan, setFocusJuan] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);

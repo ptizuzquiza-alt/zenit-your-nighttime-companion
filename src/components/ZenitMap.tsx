@@ -3,7 +3,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Dark map style tiles (CartoDB Dark Matter)
-const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
+const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
 
 interface FriendRoute {
   name: string;
@@ -61,7 +62,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       attributionControl: false,
     });
 
-    L.tileLayer(DARK_TILE_URL).addTo(mapRef.current);
+    L.tileLayer(DARK_TILE_URL, { opacity: 1 }).addTo(mapRef.current);
+    L.tileLayer(LABELS_TILE_URL, { opacity: 0.7 }).addTo(mapRef.current);
 
     return () => {
       if (mapRef.current) {
@@ -298,7 +300,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       <div 
         ref={containerRef} 
         className="w-full h-full"
-        style={{ background: 'hsl(240 25% 8%)' }}
+        style={{ background: 'hsl(240 15% 12%)' }}
       />
     </div>
   );

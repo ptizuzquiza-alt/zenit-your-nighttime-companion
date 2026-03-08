@@ -28,6 +28,7 @@ const Navigation: FC = () => {
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [sharedContacts, setSharedContacts] = useState<string[]>([]);
@@ -331,7 +332,7 @@ const Navigation: FC = () => {
           
           <div className="flex gap-3 mt-4">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => setShowCancelConfirm(true)}
               className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold text-center transition-colors hover:bg-secondary/80"
             >
               Cancelar
@@ -361,6 +362,32 @@ const Navigation: FC = () => {
           { id: '5', name: 'Laura' },
         ]}
       />
+
+      {/* Cancel confirmation overlay */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-foreground mb-2">¿Cancelar esta ruta?</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Se le notificará a tus amigos de que tu ruta ha sido cancelada antes de llegar a su destino.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold transition-colors hover:bg-secondary/80"
+              >
+                Volver
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 py-3 rounded-2xl bg-destructive text-destructive-foreground font-semibold transition-colors"
+              >
+                Cancelar ruta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

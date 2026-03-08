@@ -225,15 +225,15 @@ const Navigation: FC = () => {
             </h3>
             <div className="flex items-center gap-2">
               {/* Viewers count */}
-              {sharedContacts.length > 0 && (
-                <button
-                  onClick={() => setShowViewers(prev => !prev)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="text-xs font-medium">{sharedContacts.length}</span>
-                </button>
-              )}
+              <button
+                onClick={() => sharedContacts.length > 0 && setShowViewers(prev => !prev)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 transition-colors ${
+                  sharedContacts.length > 0 ? 'text-muted-foreground hover:text-foreground cursor-pointer' : 'text-muted-foreground/50 cursor-default'
+                }`}
+              >
+                <Eye className="w-4 h-4" />
+                <span className="text-xs font-medium">{sharedContacts.length}</span>
+              </button>
               {/* Share button */}
               <button
                 onClick={() => {

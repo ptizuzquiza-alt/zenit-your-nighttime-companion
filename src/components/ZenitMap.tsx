@@ -6,6 +6,10 @@ import 'leaflet/dist/leaflet.css';
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
 const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
 
+const MAP_CSS = `
+  .leaflet-tile-pane { filter: sepia(0.15) hue-rotate(20deg) saturate(1.3) brightness(0.95); }
+`;
+
 interface FriendRoute {
   name: string;
   coordinates: [number, number][];

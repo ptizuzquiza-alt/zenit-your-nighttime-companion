@@ -353,13 +353,7 @@ const Navigation: FC = () => {
         onClose={() => setShowShareModal(false)}
         onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); setSheetOffset(0); }}
         initialSelected={sharedContacts}
-        contacts={[
-          { id: '1', name: 'Maria' },
-          { id: '2', name: 'Carlos' },
-          { id: '3', name: 'Ana' },
-          { id: '4', name: 'Juan' },
-          { id: '5', name: 'Laura' },
-        ]}
+        contacts={CONTACTS}
       />
 
       {/* Cancel confirmation overlay */}

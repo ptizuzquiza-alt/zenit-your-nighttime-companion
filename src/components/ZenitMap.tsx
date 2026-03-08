@@ -65,7 +65,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       const bounds = L.latLngBounds(route);
       if (origin) bounds.extend(origin);
       if (destination) bounds.extend(destination);
-      mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 16, animate: true });
+      mapRef.current.fitBounds(bounds, { paddingTopLeft: [50, 50], paddingBottomRight: [50, 350], maxZoom: 16, animate: true });
     } else {
       mapRef.current.setView(center, zoom);
     }

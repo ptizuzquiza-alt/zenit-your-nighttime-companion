@@ -153,7 +153,7 @@ const MapRoutes: FC = () => {
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />
-            {routes.length > 1 && (
+            {fastRoute && (
               <RouteCard
                 type="fast"
                 distance={formatDistance(fastRoute.distance)}

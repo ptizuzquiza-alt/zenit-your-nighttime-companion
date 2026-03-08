@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
-import { fetchWalkingRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination } from '@/lib/geocoding';
 
 const MapRoutes: FC = () => {

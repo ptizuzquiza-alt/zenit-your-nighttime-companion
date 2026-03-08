@@ -36,7 +36,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-[2000] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-card rounded-t-3xl p-6 animate-slide-up">
         <div className="flex items-center gap-4 mb-4">

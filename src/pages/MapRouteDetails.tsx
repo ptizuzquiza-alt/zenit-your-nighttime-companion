@@ -14,7 +14,7 @@ const contacts = [
 
 const MapRouteDetails: FC = () => {
   const navigate = useNavigate();
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
 
   const storedRoute = getStoredRoute();

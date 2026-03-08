@@ -127,20 +127,6 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* FAB */}
-      <div className="absolute bottom-48 right-4 z-[1100]">
-        <button
-          onClick={() => setFitAll(prev => !prev)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-            fitAll 
-              ? 'bg-primary text-primary-foreground' 
-              : 'bg-card/80 backdrop-blur-sm text-foreground'
-          }`}
-        >
-          <Users className="w-5 h-5" />
-        </button>
-      </div>
-
       {/* Bottom sheet */}
       <div 
         className="zenit-bottom-sheet p-6 pb-8 z-[1000] transition-transform duration-300 ease-in-out"
@@ -150,6 +136,20 @@ const Navigation: FC = () => {
           className="zenit-sheet-handle mb-4 cursor-pointer mx-auto" 
           onClick={() => setSheetExpanded(prev => !prev)}
         />
+        
+        {/* FAB above title */}
+        <div className="flex justify-end mb-2 -mt-2">
+          <button
+            onClick={() => setFitAll(prev => !prev)}
+            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+              fitAll 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-card/80 backdrop-blur-sm text-foreground'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+          </button>
+        </div>
         
         <h3 
           className="text-foreground font-semibold mb-4 cursor-pointer"

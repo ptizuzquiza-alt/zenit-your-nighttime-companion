@@ -6,7 +6,7 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { getStoredRoute } from '@/lib/routing';
 
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+
 
 const JUAN_ORIGIN: [number, number] = [41.4055, 2.1770];
 const JUAN_DEST: [number, number] = [41.4100, 2.1850];

@@ -16,10 +16,11 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
   activity,
   destination,
   address,
-  time
+  time,
+  onClick
 }) => {
   return (
-    <div className="zenit-friend-activity">
+    <div className="zenit-friend-activity cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
       <p className="text-xs text-muted-foreground mb-2">{time}</p>
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">

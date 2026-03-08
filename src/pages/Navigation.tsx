@@ -68,6 +68,7 @@ const Navigation: FC = () => {
         zoom={17}
         destination={destination}
         route={routeCoords.slice(routeIndex)}
+        friendRoutes={friendRoutes}
         friendLocations={friendLocations}
         showUserArrow
         userPosition={userPosition}

@@ -12,41 +12,41 @@
      *     Cambia ahí los colores para que se actualicen en el mapa y componentes JS.
      *     Cambia aquí los mismos valores para que se actualicen en CSS/Tailwind.
      */
-    --background: 249 42% 17%;
+    --background: 249 42% 12%;
     --foreground: 0 0% 98%;
 
-    --card: 249 40% 20%;
+    --card: 249 40% 15%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 249 38% 22%;
+    --popover: 249 38% 17%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 265 90% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 249 35% 26%;
+    --secondary: 249 35% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 249 35% 24%;
-    --muted-foreground: 249 20% 60%;
+    --muted: 249 35% 18%;
+    --muted-foreground: 249 20% 55%;
 
     --accent: 45 100% 50%;
-    --accent-foreground: 249 42% 17%;
+    --accent-foreground: 249 42% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 249 30% 26%;
-    --input: 249 35% 24%;
+    --border: 249 30% 22%;
+    --input: 249 35% 18%;
     --ring: 265 90% 60%;
 
     --radius: 1rem;
 
     /* Zenit Custom Colors */
-    --zenit-dark: 249 42% 17%;
-    --zenit-darker: 249 45% 12%;
-    --zenit-surface: 249 40% 20%;
-    --zenit-surface-light: 249 35% 26%;
+    --zenit-dark: 249 42% 12%;
+    --zenit-darker: 249 45% 8%;
+    --zenit-surface: 249 40% 15%;
+    --zenit-surface-light: 249 35% 20%;
     --zenit-purple: 265 90% 60%;
     --zenit-purple-light: 265 80% 70%;
     --zenit-yellow: 45 100% 50%;

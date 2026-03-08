@@ -69,20 +69,19 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     };
   }, []);
 
-  // Update view: fit to route bounds once when fitToRoute is toggled on, then allow free zoom
+  // Update view: fit to route bounds when fitToRoute is active and routes change
   useEffect(() => {
     if (!mapRef.current) return;
-    const justActivated = fitToRoute && !prevFitToRouteRef.current;
-    prevFitToRouteRef.current = fitToRoute;
 
-    if (justActivated && route && route.length > 1) {
+    if (fitToRoute && route && route.length > 1) {
       const bounds = L.latLngBounds(route);
       if (alternativeRoute && alternativeRoute.length > 1) {
         alternativeRoute.forEach(pt => bounds.extend(pt));
       }
       if (origin) bounds.extend(origin);
       if (destination) bounds.extend(destination);
-      mapRef.current.fitBounds(bounds, { paddingTopLeft: [50, 50], paddingBottomRight: [50, 350], maxZoom: 16, animate: true });
+      // Large bottom padding to keep routes visible above the bottom sheet
+      mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 450], maxZoom: 15, animate: true });
     } else if (!fitToRoute) {
       mapRef.current.setView(center, zoom);
     }

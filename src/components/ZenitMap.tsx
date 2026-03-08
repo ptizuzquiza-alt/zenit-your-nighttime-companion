@@ -29,6 +29,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   friendLocations = [],
   showUserArrow = false,
   userPosition,
+  fitToRoute = false,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);

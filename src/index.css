@@ -6,7 +6,12 @@
 
 @layer base {
   :root {
-    /* Zenit Night Mobility - Dark Theme */
+    /*
+     * ⚙️  TEMA ZENIT — Los valores de estos tokens se definen también en:
+     *     src/config/theme.ts
+     *     Cambia ahí los colores para que se actualicen en el mapa y componentes JS.
+     *     Cambia aquí los mismos valores para que se actualicen en CSS/Tailwind.
+     */
     --background: 249 42% 17%;
     --foreground: 0 0% 98%;
 

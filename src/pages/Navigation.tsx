@@ -150,6 +150,7 @@ const Navigation: FC = () => {
         
         {showFriendActivity && (
           <FriendActivityCard
+            onClick={() => setFitAll(prev => !prev)}
             name="Juan"
             activity="ha completado el 50% de su ruta."
             destination="L'Auditori"

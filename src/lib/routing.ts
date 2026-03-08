@@ -143,9 +143,14 @@ export async function fetchSafeAndFastRoutes(
   const byDistance = [...allRoutes].sort((a, b) => a.distance - b.distance);
   const fast = byDistance[0];
 
-  // Zenit (safe) = straightest route per km (least °/km of angular change)
-  // that is different from the standard route
-  const scored = allRoutes
+  // Filter: only consider routes up to 1.8x the shortest distance
+  // Prevents absurd detours that accumulate too many turns
+  const maxDistance = fast.distance * 1.8;
+  const reasonable = allRoutes.filter(r => r.distance <= maxDistance);
+
+  // Zenit (safe) = straightest route per km among reasonable-length routes
+  // that is different from standard
+  const scored = reasonable
     .map(route => ({ route, score: straightnessScore(route) }))
     .sort((a, b) => a.score - b.score); // lowest score = straightest
 
@@ -155,10 +160,16 @@ export async function fetchSafeAndFastRoutes(
     scorePerKm: Math.round(s.score) + '°/km',
   })));
 
-  // Pick the straightest route that's meaningfully different from standard
+  // Pick the straightest route that's different from standard
   let safe = scored[0].route;
-  if (safe.distance === fast.distance && safe.coordinates.length === fast.coordinates.length && scored.length > 1) {
-    safe = scored[1].route;
+  // If the straightest IS the standard, pick the next one that's longer
+  if (safe.distance === fast.distance && safe.coordinates.length === fast.coordinates.length) {
+    const different = scored.find(s => s.route.distance > fast.distance * 1.05);
+    if (different) {
+      safe = different.route;
+    } else if (scored.length > 1) {
+      safe = scored[1].route;
+    }
   }
 
   // Apply 25% time penalty for safety/comfort priority

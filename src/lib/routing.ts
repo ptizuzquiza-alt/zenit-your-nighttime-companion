@@ -22,25 +22,34 @@ function parseOSRMRoute(route: any): RouteResult {
   };
 }
 /**
- * Count significant turns (direction changes > threshold degrees) in a route.
- * Fewer turns = straighter route = Zenit candidate.
+ * Calculate total cumulative angular change along a route (in degrees).
+ * Lower value = straighter route = Zenit candidate.
+ * We sample every N points to avoid noise from tiny coordinate jitter.
  */
-function countSignificantTurns(coords: [number, number][], thresholdDeg: number = 30): number {
+function totalAngularChange(coords: [number, number][]): number {
   if (coords.length < 3) return 0;
-  let turns = 0;
-  for (let i = 1; i < coords.length - 1; i++) {
-    const [lat1, lon1] = coords[i - 1];
-    const [lat2, lon2] = coords[i];
-    const [lat3, lon3] = coords[i + 1];
-    // Bearing from point i-1 to i
+  // Sample every ~50m worth of points to reduce noise
+  const step = Math.max(1, Math.floor(coords.length / 50));
+  const sampled: [number, number][] = [];
+  for (let i = 0; i < coords.length; i += step) {
+    sampled.push(coords[i]);
+  }
+  if (sampled[sampled.length - 1] !== coords[coords.length - 1]) {
+    sampled.push(coords[coords.length - 1]);
+  }
+  
+  let totalChange = 0;
+  for (let i = 1; i < sampled.length - 1; i++) {
+    const [lat1, lon1] = sampled[i - 1];
+    const [lat2, lon2] = sampled[i];
+    const [lat3, lon3] = sampled[i + 1];
     const b1 = Math.atan2(lon2 - lon1, lat2 - lat1);
-    // Bearing from point i to i+1
     const b2 = Math.atan2(lon3 - lon2, lat3 - lat2);
     let diff = Math.abs(b2 - b1) * (180 / Math.PI);
     if (diff > 180) diff = 360 - diff;
-    if (diff > thresholdDeg) turns++;
+    totalChange += diff;
   }
-  return turns;
+  return totalChange;
 }
 
 /**
@@ -104,14 +113,14 @@ export async function fetchSafeAndFastRoutes(
     const allRoutes = res.routes.map(parseOSRMRoute);
 
     if (allRoutes.length >= 2) {
-      // Sort by number of significant turns: fewest turns first = straightest
+      // Sort by total angular change: least change first = straightest
       allRoutes.sort((a: RouteResult, b: RouteResult) => 
-        countSignificantTurns(a.coordinates) - countSignificantTurns(b.coordinates)
+        totalAngularChange(a.coordinates) - totalAngularChange(b.coordinates)
       );
-      safe = allRoutes[0]; // fewest turns = Zenit (calles amplias, recto)
-      fast = allRoutes[allRoutes.length - 1]; // most turns = Standard (atajos, callejuelas)
-      console.log('Route turns:', allRoutes.map(r => ({
-        turns: countSignificantTurns(r.coordinates),
+      safe = allRoutes[0]; // least angular change = Zenit (calles amplias, recto)
+      fast = allRoutes[allRoutes.length - 1]; // most angular change = Standard (atajos, callejuelas)
+      console.log('Route angular change:', allRoutes.map(r => ({
+        angularChange: Math.round(totalAngularChange(r.coordinates)),
         distance: Math.round(r.distance),
       })));
     } else {

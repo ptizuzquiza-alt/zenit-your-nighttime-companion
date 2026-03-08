@@ -72,11 +72,6 @@ const MapRoutes: FC = () => {
 
     fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
       if (cancelled) return;
-      console.log('Routes loaded:', { 
-        safe: safe ? `${safe.coordinates.length} pts, ${safe.distance}m` : 'null',
-        fast: fast ? `${fast.coordinates.length} pts, ${fast.distance}m` : 'null',
-        sameCoords: safe && fast ? safe.coordinates[0]?.toString() === fast.coordinates[0]?.toString() : 'n/a'
-      });
       setSafeRoute(safe);
       setFastRoute(fast);
       setLoading(false);

@@ -43,6 +43,7 @@ const MapIdle: FC = () => {
     { name: string; coordinates: [number, number][]; position: [number, number] }[]
   >([]);
   const [showFriends, setShowFriends] = useState(false);
+  const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
   useEffect(() => {
     if ('geolocation' in navigator) {

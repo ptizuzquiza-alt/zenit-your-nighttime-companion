@@ -150,8 +150,19 @@ const Navigation: FC = () => {
   const toggleSheet = () => {
     if (sheetOffset > 0) {
       setSheetOffset(0);
+      sheetCollapsedByUser.current = false;
     } else {
       setSheetOffset(getSheetContentHeight());
+      sheetCollapsedByUser.current = true;
+    }
+  };
+
+  // Restore sheet to its user-intended state
+  const restoreSheetState = () => {
+    if (sheetCollapsedByUser.current) {
+      setSheetOffset(getSheetContentHeight());
+    } else {
+      setSheetOffset(0);
     }
   };
 

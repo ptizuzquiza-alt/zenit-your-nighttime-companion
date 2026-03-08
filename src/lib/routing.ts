@@ -58,8 +58,12 @@ function getOffsetWaypoint(
 
 /**
  * Fetch two contrasting walking routes:
- * - Zenit (safe): continue_straight=true → main avenues, straight roads, longer but safer
- * - Standard (fast): default OSRM → shortcuts, side streets, shorter
+ * - Zenit (safe): Wide streets, few turns, very straight, usually longer
+ * - Standard (fast): Shortcuts, side streets, fastest with more turns
+ *
+ * Strategy: Request alternatives=true to get multiple routes from OSRM.
+ * Pick the LONGEST for Zenit (straighter, main avenues) and SHORTEST for Standard (shortcuts).
+ * If only one route returned, use a waypoint detour to force a second distinct route.
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -67,44 +71,55 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  const [zenitRes, standardRes] = await Promise.all([
-    // Zenit (safe): force straight main avenues
-    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&continue_straight=true&alternatives=true`)
-      .then(r => r.json())
-      .catch(() => null),
-    // Standard (fast): default shortest path through side streets/shortcuts
-    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
-      .then(r => r.json())
-      .catch(() => null),
-  ]);
+  // Single request with alternatives — gives us 2+ different routes
+  const res = await fetch(
+    `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=true&continue_straight=true`
+  ).then(r => r.json()).catch(() => null);
 
   let safe: RouteResult | null = null;
   let fast: RouteResult | null = null;
 
-  // For Zenit: pick the longest alternative (main avenues, more straight)
-  if (zenitRes?.code === 'Ok' && zenitRes.routes?.length) {
-    const routes = zenitRes.routes.map(parseOSRMRoute);
-    safe = routes.reduce((a: RouteResult, b: RouteResult) => a.distance >= b.distance ? a : b);
-    safe.duration = safe.duration * 1.25; // +25% safety penalty
+  if (res?.code === 'Ok' && res.routes?.length) {
+    const allRoutes = res.routes.map(parseOSRMRoute);
+
+    if (allRoutes.length >= 2) {
+      // Sort by distance: shortest first
+      allRoutes.sort((a: RouteResult, b: RouteResult) => a.distance - b.distance);
+      fast = allRoutes[0]; // shortest = Standard (atajos, callejuelas)
+      safe = allRoutes[allRoutes.length - 1]; // longest = Zenit (calles amplias, recto)
+    } else {
+      // Only one route — use it as fast, create detour for safe
+      fast = allRoutes[0];
+    }
   }
 
-  // For Standard: pick the shortest route (shortcuts, side streets)
-  if (standardRes?.code === 'Ok' && standardRes.routes?.length) {
-    fast = parseOSRMRoute(standardRes.routes[0]); // First is always shortest
+  // If we don't have two distinct routes, force a detour for the safe route
+  if (fast && !safe) {
+    const waypoint = getOffsetWaypoint(origin, destination, 0.3);
+    const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
+    try {
+      const detourRes = await fetch(
+        `${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`
+      ).then(r => r.json());
+      if (detourRes?.code === 'Ok' && detourRes.routes?.length) {
+        safe = parseOSRMRoute(detourRes.routes[0]);
+      }
+    } catch {}
+  }
+
+  // Apply Zenit time penalty (+25% for prioritizing safety/comfort)
+  if (safe) {
+    safe.duration = safe.duration * 1.25;
   }
 
   // Ensure safe is always longer than fast
   if (safe && fast && safe.distance <= fast.distance) {
-    // Add offset waypoint to force a longer safe route
-    const waypoint = getOffsetWaypoint(origin, destination, 0.3);
-    const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
-    try {
-      const detourRes = await fetch(`${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`).then(r => r.json());
-      if (detourRes?.code === 'Ok' && detourRes.routes?.length) {
-        safe = parseOSRMRoute(detourRes.routes[0]);
-        safe.duration = safe.duration * 1.25;
-      }
-    } catch {}
+    // Swap them
+    const temp = safe;
+    safe = fast;
+    fast = temp;
+    safe.duration = safe.distance / WALKING_SPEED * 1.25;
+    fast.duration = fast.distance / WALKING_SPEED;
   }
 
   // Fallback

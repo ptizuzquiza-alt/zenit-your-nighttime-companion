@@ -8,6 +8,7 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
+import { CONTACTS } from '@/config/contacts';
 
 
 
@@ -261,13 +262,7 @@ const Navigation: FC = () => {
               <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
               <div className="space-y-2">
                 {sharedContacts.map(id => {
-                  const contact = [
-                    { id: '1', name: 'Maria' },
-                    { id: '2', name: 'Carlos' },
-                    { id: '3', name: 'Ana' },
-                    { id: '4', name: 'Juan' },
-                    { id: '5', name: 'Laura' },
-                  ].find(c => c.id === id);
+                  const contact = CONTACTS.find(c => c.id === id);
                   if (!contact) return null;
 
                   if (confirmRemoveId === id) {
@@ -358,13 +353,7 @@ const Navigation: FC = () => {
         onClose={() => setShowShareModal(false)}
         onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); setSheetOffset(0); }}
         initialSelected={sharedContacts}
-        contacts={[
-          { id: '1', name: 'Maria' },
-          { id: '2', name: 'Carlos' },
-          { id: '3', name: 'Ana' },
-          { id: '4', name: 'Juan' },
-          { id: '5', name: 'Laura' },
-        ]}
+        contacts={CONTACTS}
       />
 
       {/* Cancel confirmation overlay */}

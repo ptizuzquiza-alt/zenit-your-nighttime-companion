@@ -5,13 +5,9 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { BackButton } from '@/components/BackButton';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
+import { CONTACTS } from '@/config/contacts';
 
-const contacts = [
-  { id: '1', name: 'Juan' },
-  { id: '2', name: 'María' },
-  { id: '3', name: 'Carla' },
-  { id: '4', name: 'Javier' },
-];
+const contacts = CONTACTS;
 
 const MapRouteDetails: FC = () => {
   const navigate = useNavigate();

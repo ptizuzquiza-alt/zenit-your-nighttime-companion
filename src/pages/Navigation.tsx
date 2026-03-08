@@ -25,6 +25,7 @@ const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
+  const [focusJuan, setFocusJuan] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -155,7 +156,8 @@ const Navigation: FC = () => {
           friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
           showUserArrow
           userPosition={userPosition}
-          fitToRoute={fitAll}
+          fitToRoute={fitAll && !focusJuan}
+          focusBounds={focusJuan ? juanRoute : undefined}
           className="w-full h-full"
         />
       </div>
@@ -205,7 +207,15 @@ const Navigation: FC = () => {
           
           {showFriendActivity && (
             <FriendActivityCard
-              onClick={() => setFitAll(prev => !prev)}
+              onClick={() => {
+                setFocusJuan(prev => !prev);
+                setFitAll(false);
+                // Collapse sheet to see the map
+                if (!focusJuan) {
+                  const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
+                  setSheetOffset(h);
+                }
+              }}
               name="Juan"
               activity="ha completado el 50% de su ruta."
               destination="L'Auditori"

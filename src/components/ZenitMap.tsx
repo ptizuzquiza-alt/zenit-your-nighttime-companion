@@ -24,6 +24,7 @@ interface ZenitMapProps {
   showUserArrow?: boolean;
   userPosition?: [number, number];
   fitToRoute?: boolean;
+  focusBounds?: [number, number][];
   className?: string;
 }
 
@@ -40,6 +41,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   showUserArrow = false,
   userPosition,
   fitToRoute = false,
+  focusBounds,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -71,7 +73,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
   // Update view: fit to route bounds when fitToRoute is active and routes change
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || focusBounds) return;
 
     if (fitToRoute && route && route.length > 1) {
       const bounds = L.latLngBounds(route);
@@ -80,12 +82,18 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       }
       if (origin) bounds.extend(origin);
       if (destination) bounds.extend(destination);
-      // Large bottom padding to keep routes visible above the bottom sheet
       mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 450], maxZoom: 15, animate: true });
     } else if (!fitToRoute) {
       mapRef.current.setView(center, zoom);
     }
-  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination]);
+  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds]);
+
+  // Focus on specific bounds (e.g. friend's route)
+  useEffect(() => {
+    if (!mapRef.current || !focusBounds || focusBounds.length < 2) return;
+    const bounds = L.latLngBounds(focusBounds);
+    mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 350], maxZoom: 16, animate: true });
+  }, [focusBounds]);
 
   // Update markers and routes
   useEffect(() => {

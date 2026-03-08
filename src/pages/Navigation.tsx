@@ -1,11 +1,12 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Users, Navigation2 } from 'lucide-react';
+import { Users, Navigation2, Share2, Eye } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
+import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
 
 
@@ -26,6 +27,8 @@ const Navigation: FC = () => {
   const [showFriendActivity, setShowFriendActivity] = useState(true);
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharedContacts] = useState(['Maria', 'Carlos', 'Ana']);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -214,16 +217,32 @@ const Navigation: FC = () => {
             onClick={toggleSheet}
           />
           
-          <h3 className="text-foreground font-semibold mb-4">
-            Actividades de tus amigos
-          </h3>
+          {/* Header with title + action buttons */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-foreground font-semibold">
+              Actividades de tus amigos
+            </h3>
+            <div className="flex items-center gap-2">
+              {/* Viewers count */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 text-muted-foreground">
+                <Eye className="w-4 h-4" />
+                <span className="text-xs font-medium">{sharedContacts.length}</span>
+              </div>
+              {/* Share button */}
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="w-9 h-9 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           
           {showFriendActivity && (
             <FriendActivityCard
               onClick={() => {
                 setFocusJuan(prev => !prev);
                 setFitAll(false);
-                // Collapse sheet to see the map
                 if (!focusJuan) {
                   const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                   setSheetOffset(h);
@@ -246,6 +265,20 @@ const Navigation: FC = () => {
         </div>,
         document.body
       )}
+
+      {/* Share modal */}
+      <ShareRouteModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={(ids) => setShowShareModal(false)}
+        contacts={[
+          { id: '1', name: 'Maria' },
+          { id: '2', name: 'Carlos' },
+          { id: '3', name: 'Ana' },
+          { id: '4', name: 'Juan' },
+          { id: '5', name: 'Laura' },
+        ]}
+      />
     </>
   );
 };

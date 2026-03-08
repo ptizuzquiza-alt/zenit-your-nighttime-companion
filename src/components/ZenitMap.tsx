@@ -5,6 +5,12 @@ import 'leaflet/dist/leaflet.css';
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
+interface FriendRoute {
+  name: string;
+  coordinates: [number, number][];
+  position: [number, number];
+}
+
 interface ZenitMapProps {
   center?: [number, number];
   zoom?: number;
@@ -13,6 +19,7 @@ interface ZenitMapProps {
   route?: [number, number][];
   alternativeRoute?: [number, number][];
   friendLocations?: [number, number][];
+  friendRoutes?: FriendRoute[];
   showUserArrow?: boolean;
   userPosition?: [number, number];
   fitToRoute?: boolean;
@@ -27,6 +34,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   route,
   alternativeRoute,
   friendLocations = [],
+  friendRoutes = [],
   showUserArrow = false,
   userPosition,
   fitToRoute = false,
@@ -142,6 +150,19 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       markersRef.current.push(marker);
     }
 
+    // Friend routes (purple dashed)
+    friendRoutes.forEach(fr => {
+      if (fr.coordinates.length > 1) {
+        const friendPolyline = L.polyline(fr.coordinates, {
+          color: '#a78bfa',
+          weight: 4,
+          dashArray: '6, 6',
+          opacity: 0.7,
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(friendPolyline);
+      }
+    });
+
     // Friend markers (purple)
     friendLocations.forEach(loc => {
       const friendIcon = L.divIcon({
@@ -173,7 +194,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       const marker = L.marker(userPosition, { icon: arrowIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);
     }
-  }, [origin, destination, route, alternativeRoute, friendLocations, showUserArrow, userPosition]);
+  }, [origin, destination, route, alternativeRoute, friendLocations, friendRoutes, showUserArrow, userPosition]);
 
   return (
     <div className={`relative w-full h-full ${className}`}>

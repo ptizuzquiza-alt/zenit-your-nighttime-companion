@@ -6,6 +6,21 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { getStoredRoute } from '@/lib/routing';
 
+const friendRoutes = [
+  {
+    name: 'Juan',
+    coordinates: [
+      [41.4055, 2.1770],
+      [41.4060, 2.1760],
+      [41.4068, 2.1755],
+      [41.4075, 2.1765],
+      [41.4080, 2.1780],
+      [41.4085, 2.1800],
+    ] as [number, number][],
+    position: [41.4055, 2.1770] as [number, number],
+  },
+];
+
 const friendLocations: [number, number][] = [
   [41.4055, 2.1770],
   [41.4075, 2.1800],
@@ -53,6 +68,7 @@ const Navigation: FC = () => {
         zoom={17}
         destination={destination}
         route={routeCoords.slice(routeIndex)}
+        friendRoutes={friendRoutes}
         friendLocations={friendLocations}
         showUserArrow
         userPosition={userPosition}

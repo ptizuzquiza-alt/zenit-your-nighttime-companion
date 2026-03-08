@@ -18,9 +18,9 @@ export const COLOR_BACKGROUND = '249 42% 12%';
 export const COLOR_FOREGROUND = '0 0% 98%';
 
 // Tarjetas / superficies
-export const COLOR_CARD = '249 40% 20%';
-export const COLOR_SURFACE = '249 40% 20%';
-export const COLOR_SURFACE_LIGHT = '249 35% 26%';
+export const COLOR_CARD = '249 40% 15%';
+export const COLOR_SURFACE = '249 40% 15%';
+export const COLOR_SURFACE_LIGHT = '249 35% 20%';
 
 // Morado primario (botones, acentos, anillos)
 export const COLOR_PRIMARY = '265 90% 60%';

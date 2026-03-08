@@ -214,7 +214,7 @@ const Navigation: FC = () => {
                 // Re-center on user
                 setFitAll(false);
                 setFocusJuan(false);
-                setSheetOffset(0);
+                restoreSheetState();
               } else {
                 setFitAll(prev => !prev);
               }

@@ -88,66 +88,69 @@ function getOffsetWaypoint(
 
 /**
  * Fetch two contrasting walking routes:
- * - Zenit (safe): Wide streets, few turns, very straight, usually longer
- * - Standard (fast): Shortcuts, side streets, fastest with more turns
+ * - Standard (fast): Direct OSRM shortest path → uses shortcuts, side streets, more turns
+ * - Zenit (safe): Forced through a perpendicular waypoint on main avenues → straighter, wider streets, longer
  *
- * Strategy: Request alternatives=true to get multiple routes from OSRM.
- * Pick the LONGEST for Zenit (straighter, main avenues) and SHORTEST for Standard (shortcuts).
- * If only one route returned, use a waypoint detour to force a second distinct route.
+ * Strategy: The shortest OSRM path naturally uses shortcuts/callejuelas.
+ * By adding a waypoint offset from the direct line, we force Zenit through different (wider) streets.
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+  
+  // Zenit waypoint: offset perpendicular to force through different/wider streets
+  const waypoint = getOffsetWaypoint(origin, destination, 0.25);
+  const zenitCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
 
-  // Single request with alternatives — gives us 2+ different routes
-  const res = await fetch(
-    `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=true&continue_straight=true`
-  ).then(r => r.json()).catch(() => null);
+  const [standardRes, zenitRes] = await Promise.all([
+    // Standard: direct shortest path (shortcuts, callejuelas, more turns)
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson`)
+      .then(r => r.json()).catch(() => null),
+    // Zenit: waypoint forces through wider/different streets (straighter overall, longer)
+    fetch(`${OSRM_BASE}/foot/${zenitCoords}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+  ]);
 
-  let safe: RouteResult | null = null;
   let fast: RouteResult | null = null;
+  let safe: RouteResult | null = null;
 
-  if (res?.code === 'Ok' && res.routes?.length) {
-    const allRoutes = res.routes.map(parseOSRMRoute);
-
-    if (allRoutes.length >= 2) {
-      // Sort by total angular change: least change first = straightest
-      allRoutes.sort((a: RouteResult, b: RouteResult) => 
-        totalAngularChange(a.coordinates) - totalAngularChange(b.coordinates)
-      );
-      safe = allRoutes[0]; // least angular change = Zenit (calles amplias, recto)
-      fast = allRoutes[allRoutes.length - 1]; // most angular change = Standard (atajos, callejuelas)
-      console.log('Route angular change:', allRoutes.map(r => ({
-        angularChange: Math.round(totalAngularChange(r.coordinates)),
-        distance: Math.round(r.distance),
-      })));
-    } else {
-      fast = allRoutes[0];
-    }
+  if (standardRes?.code === 'Ok' && standardRes.routes?.length) {
+    fast = parseOSRMRoute(standardRes.routes[0]);
   }
 
-  // If we don't have two distinct routes, force a detour for the safe route
-  if (fast && !safe) {
-    const waypoint = getOffsetWaypoint(origin, destination, 0.3);
-    const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
+  if (zenitRes?.code === 'Ok' && zenitRes.routes?.length) {
+    safe = parseOSRMRoute(zenitRes.routes[0]);
+    // +25% time penalty for safety/comfort priority
+    safe.duration = safe.duration * 1.25;
+  }
+
+  // If both routes are identical or Zenit is shorter, try opposite offset
+  if (safe && fast && safe.distance <= fast.distance * 1.05) {
+    const waypoint2 = getOffsetWaypoint(origin, destination, -0.25);
+    const zenitCoords2 = `${origin[1]},${origin[0]};${waypoint2[1]},${waypoint2[0]};${destination[1]},${destination[0]}`;
     try {
-      const detourRes = await fetch(
-        `${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`
-      ).then(r => r.json());
-      if (detourRes?.code === 'Ok' && detourRes.routes?.length) {
-        safe = parseOSRMRoute(detourRes.routes[0]);
+      const res2 = await fetch(`${OSRM_BASE}/foot/${zenitCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+        .then(r => r.json());
+      if (res2?.code === 'Ok' && res2.routes?.length) {
+        const alt = parseOSRMRoute(res2.routes[0]);
+        if (alt.distance > fast.distance * 1.05) {
+          safe = alt;
+          safe.duration = safe.duration * 1.25;
+        }
       }
     } catch {}
   }
 
-  // Apply Zenit time penalty (+25% for prioritizing safety/comfort)
-  if (safe) {
-    safe.duration = safe.duration * 1.25;
-  }
+  console.log('Routes:', {
+    standard: fast ? Math.round(fast.distance) + 'm' : null,
+    zenit: safe ? Math.round(safe.distance) + 'm' : null,
+  });
 
-  // No longer swap based on distance — Zenit is chosen by fewest turns, not longest distance
+  // Fallback
+  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };
+  if (!fast && safe) fast = safe;
 
   // Fallback
   if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };

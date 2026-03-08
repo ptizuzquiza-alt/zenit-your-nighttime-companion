@@ -10,6 +10,15 @@ import { getStoredRoute } from '@/lib/routing';
 
 const JUAN_ORIGIN: [number, number] = [41.4055, 2.1770];
 const JUAN_DEST: [number, number] = [41.4100, 2.1850];
+const JUAN_FALLBACK: [number, number][] = [
+  JUAN_ORIGIN,
+  [41.4060, 2.1775],
+  [41.4068, 2.1790],
+  [41.4075, 2.1805],
+  [41.4082, 2.1820],
+  [41.4090, 2.1835],
+  JUAN_DEST,
+];
 
 const Navigation: FC = () => {
   const navigate = useNavigate();

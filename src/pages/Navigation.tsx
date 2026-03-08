@@ -129,7 +129,7 @@ const Navigation: FC = () => {
 
       {/* Bottom sheet */}
       <div 
-        className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[1000]"
+        className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[1000]"
         style={{ boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)' }}
       >
         {/* FAB floating above the sheet */}

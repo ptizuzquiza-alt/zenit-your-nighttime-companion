@@ -269,12 +269,46 @@ const Navigation: FC = () => {
                     { id: '5', name: 'Laura' },
                   ].find(c => c.id === id);
                   if (!contact) return null;
+
+                  if (confirmRemoveId === id) {
+                    return (
+                      <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                        <p className="text-sm text-foreground mb-3">
+                          ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSharedContacts(prev => prev.filter(x => x !== id));
+                              setConfirmRemoveId(null);
+                            }}
+                            className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
+                          >
+                            Sí, dejar de compartir
+                          </button>
+                          <button
+                            onClick={() => setConfirmRemoveId(null)}
+                            className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={id} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                         <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
                       </div>
-                      <span className="text-sm text-foreground">{contact.name}</span>
+                      <span className="text-sm text-foreground flex-1">{contact.name}</span>
+                      <button
+                        onClick={() => setConfirmRemoveId(id)}
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   );
                 })}

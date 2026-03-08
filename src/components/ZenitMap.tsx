@@ -18,6 +18,7 @@ interface ZenitMapProps {
   destination?: [number, number];
   route?: [number, number][];
   alternativeRoute?: [number, number][];
+  selectedRoute?: 'safe' | 'fast';
   friendLocations?: [number, number][];
   friendRoutes?: FriendRoute[];
   showUserArrow?: boolean;
@@ -33,6 +34,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   destination,
   route,
   alternativeRoute,
+  selectedRoute = 'safe',
   friendLocations = [],
   friendRoutes = [],
   showUserArrow = false,

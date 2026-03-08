@@ -10,7 +10,8 @@ const MapRoutes: FC = () => {
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [routes, setRoutes] = useState<RouteResult[]>([]);
+  const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
+  const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Bottom sheet drag state

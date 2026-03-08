@@ -163,8 +163,41 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       }
     });
 
-    // Friend markers (purple)
+    // Friend markers (purple) with name labels
+    friendRoutes.forEach(fr => {
+      const friendIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);">
+          <span style="
+            background: rgba(167,139,250,0.85);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            margin-bottom: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">${fr.name}</span>
+          <div style="
+            width: 14px;
+            height: 14px;
+            background: #a78bfa;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
+          "></div>
+        </div>`,
+        iconSize: [60, 40],
+        iconAnchor: [30, 40],
+      });
+      const marker = L.marker(fr.position, { icon: friendIcon }).addTo(mapRef.current!);
+      markersRef.current.push(marker);
+    });
+
+    // Additional friend location markers (without labels)
     friendLocations.forEach(loc => {
+      // Skip if already covered by a friendRoute
+      if (friendRoutes.some(fr => fr.position[0] === loc[0] && fr.position[1] === loc[1])) return;
       const friendIcon = L.divIcon({
         className: 'zenit-marker',
         html: `<div style="
@@ -178,6 +211,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         iconAnchor: [7, 7],
       });
       const marker = L.marker(loc, { icon: friendIcon }).addTo(mapRef.current!);
+      markersRef.current.push(marker);
       markersRef.current.push(marker);
     });
 

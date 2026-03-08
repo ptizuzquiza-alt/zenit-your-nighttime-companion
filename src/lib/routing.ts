@@ -58,8 +58,8 @@ function getOffsetWaypoint(
 
 /**
  * Fetch two contrasting walking routes:
- * - Zenit (safe): Foot profile with continue_straight=true → prefers straight main streets
- * - Standard (fast): Foot profile with offset waypoint → forces detour through side streets
+ * - Standard (fast): Direct foot route → shortest path, may use side streets
+ * - Zenit (safe): Offset waypoint → forces route through wider main streets, always longer
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -67,16 +67,16 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
   
-  // Standard: offset waypoint to force a detour
+  // Safe/Zenit: offset waypoint to force a longer route through main avenues
   const waypoint = getOffsetWaypoint(origin, destination, 0.3);
   const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
 
-  const [safeRes, fastRes] = await Promise.all([
-    // Zenit: straight as possible, foot profile ignores one-way streets
+  const [fastRes, safeRes] = await Promise.all([
+    // Standard (fast): direct shortest path
     fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json())
       .catch(() => null),
-    // Standard: detour through side streets
+    // Zenit (safe): detour through wider streets, always longer
     fetch(`${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
@@ -85,14 +85,27 @@ export async function fetchSafeAndFastRoutes(
   let fast: RouteResult | null = null;
   let safe: RouteResult | null = null;
 
+  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
+    fast = parseOSRMRoute(fastRes.routes[0]);
+  }
+
   if (safeRes?.code === 'Ok' && safeRes.routes?.length) {
     safe = parseOSRMRoute(safeRes.routes[0]);
     // Zenit route: +25% time penalty (prioritizes safer, wider streets)
     safe.duration = safe.duration * 1.25;
   }
 
-  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
-    fast = parseOSRMRoute(fastRes.routes[0]);
+  // Ensure safe route is always longer than fast
+  if (safe && fast && safe.distance < fast.distance) {
+    // Swap coordinates if somehow the safe route came out shorter
+    const tempCoords = safe.coordinates;
+    safe.coordinates = fast.coordinates;
+    fast.coordinates = tempCoords;
+    const tempDist = safe.distance;
+    safe.distance = fast.distance;
+    fast.distance = tempDist;
+    safe.duration = safe.distance / WALKING_SPEED * 1.25;
+    fast.duration = fast.distance / WALKING_SPEED;
   }
 
   // Fallback

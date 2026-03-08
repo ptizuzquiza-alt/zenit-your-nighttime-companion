@@ -129,8 +129,7 @@ const Navigation: FC = () => {
 
       {/* Bottom sheet */}
       <div 
-        className="zenit-bottom-sheet p-6 pb-8 z-[1000] transition-transform duration-300 ease-in-out relative"
-        style={{ transform: sheetExpanded ? 'translateY(0)' : 'translateY(calc(100% - 72px))' }}
+        className="zenit-bottom-sheet p-6 pb-8 z-[1000] relative"
       >
         {/* FAB floating above the sheet */}
         <button
@@ -144,10 +143,7 @@ const Navigation: FC = () => {
           <Users className="w-5 h-5" />
         </button>
 
-        <div 
-          className="zenit-sheet-handle mb-4 cursor-pointer mx-auto" 
-          onClick={() => setSheetExpanded(prev => !prev)}
-        />
+        <div className="zenit-sheet-handle mb-4 mx-auto" />
         
         <h3 
           className="text-foreground font-semibold mb-4 cursor-pointer"

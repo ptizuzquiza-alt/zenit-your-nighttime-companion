@@ -7,7 +7,7 @@ const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{
 const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
 
 const MAP_CSS = `
-  .leaflet-tile-pane { filter: sepia(0.15) hue-rotate(20deg) saturate(1.3) brightness(0.95); }
+  .leaflet-tile-pane { filter: sepia(0.3) hue-rotate(45deg) saturate(1.8) brightness(0.85); }
 `;
 
 interface FriendRoute {

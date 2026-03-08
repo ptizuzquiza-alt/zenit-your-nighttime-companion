@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Users, Navigation2, Share2, Eye } from 'lucide-react';
+import { Users, Navigation2, Share2, Eye, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -28,6 +28,7 @@ const Navigation: FC = () => {
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
   const [sharedContacts, setSharedContacts] = useState<string[]>([]);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -224,14 +225,20 @@ const Navigation: FC = () => {
             </h3>
             <div className="flex items-center gap-2">
               {/* Viewers count */}
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 text-muted-foreground">
-                <Eye className="w-4 h-4" />
-                <span className="text-xs font-medium">{sharedContacts.length}</span>
-              </div>
+              {sharedContacts.length > 0 && (
+                <button
+                  onClick={() => setShowViewers(prev => !prev)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="text-xs font-medium">{sharedContacts.length}</span>
+                </button>
+              )}
               {/* Share button */}
               <button
                 onClick={() => {
                   setShowShareModal(true);
+                  setShowViewers(false);
                   const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                   setSheetOffset(h);
                 }}
@@ -241,6 +248,38 @@ const Navigation: FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Viewers list */}
+          {showViewers && sharedContacts.length > 0 && (
+            <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-foreground">Viendo tu ruta</p>
+                <button onClick={() => setShowViewers(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {sharedContacts.map(id => {
+                  const contact = [
+                    { id: '1', name: 'Maria' },
+                    { id: '2', name: 'Carlos' },
+                    { id: '3', name: 'Ana' },
+                    { id: '4', name: 'Juan' },
+                    { id: '5', name: 'Laura' },
+                  ].find(c => c.id === id);
+                  if (!contact) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                        <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
+                      </div>
+                      <span className="text-sm text-foreground">{contact.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           {showFriendActivity && (
             <FriendActivityCard

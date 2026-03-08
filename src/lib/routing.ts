@@ -58,58 +58,57 @@ function getOffsetWaypoint(
 
 /**
  * Fetch two contrasting walking routes:
- * - Standard (fast): Direct foot route → shortest path, may use side streets
- * - Zenit (safe): Offset waypoint → forces route through wider main streets, always longer
+ * - Zenit (safe): continue_straight=true → main avenues, straight roads, longer but safer
+ * - Standard (fast): default OSRM → shortcuts, side streets, shorter
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
-  
-  // Safe/Zenit: offset waypoint to force a longer route through main avenues
-  const waypoint = getOffsetWaypoint(origin, destination, 0.3);
-  const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
+  const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  const [fastRes, safeRes] = await Promise.all([
-    // Standard (fast): direct shortest path
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&continue_straight=true`)
+  const [zenitRes, standardRes] = await Promise.all([
+    // Zenit (safe): force straight main avenues
+    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&continue_straight=true&alternatives=true`)
       .then(r => r.json())
       .catch(() => null),
-    // Zenit (safe): detour through wider streets, always longer
-    fetch(`${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`)
+    // Standard (fast): default shortest path through side streets/shortcuts
+    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .catch(() => null),
   ]);
 
-  let fast: RouteResult | null = null;
   let safe: RouteResult | null = null;
+  let fast: RouteResult | null = null;
 
-  if (fastRes?.code === 'Ok' && fastRes.routes?.length) {
-    fast = parseOSRMRoute(fastRes.routes[0]);
+  // For Zenit: pick the longest alternative (main avenues, more straight)
+  if (zenitRes?.code === 'Ok' && zenitRes.routes?.length) {
+    const routes = zenitRes.routes.map(parseOSRMRoute);
+    safe = routes.reduce((a: RouteResult, b: RouteResult) => a.distance >= b.distance ? a : b);
+    safe.duration = safe.duration * 1.25; // +25% safety penalty
   }
 
-  if (safeRes?.code === 'Ok' && safeRes.routes?.length) {
-    safe = parseOSRMRoute(safeRes.routes[0]);
-    // Zenit route: +25% time penalty (prioritizes safer, wider streets)
-    safe.duration = safe.duration * 1.25;
+  // For Standard: pick the shortest route (shortcuts, side streets)
+  if (standardRes?.code === 'Ok' && standardRes.routes?.length) {
+    fast = parseOSRMRoute(standardRes.routes[0]); // First is always shortest
   }
 
-  // Ensure safe route is always longer than fast
-  if (safe && fast && safe.distance < fast.distance) {
-    // Swap coordinates if somehow the safe route came out shorter
-    const tempCoords = safe.coordinates;
-    safe.coordinates = fast.coordinates;
-    fast.coordinates = tempCoords;
-    const tempDist = safe.distance;
-    safe.distance = fast.distance;
-    fast.distance = tempDist;
-    safe.duration = safe.distance / WALKING_SPEED * 1.25;
-    fast.duration = fast.distance / WALKING_SPEED;
+  // Ensure safe is always longer than fast
+  if (safe && fast && safe.distance <= fast.distance) {
+    // Add offset waypoint to force a longer safe route
+    const waypoint = getOffsetWaypoint(origin, destination, 0.3);
+    const detourCoords = `${origin[1]},${origin[0]};${waypoint[1]},${waypoint[0]};${destination[1]},${destination[0]}`;
+    try {
+      const detourRes = await fetch(`${OSRM_BASE}/foot/${detourCoords}?overview=full&geometries=geojson`).then(r => r.json());
+      if (detourRes?.code === 'Ok' && detourRes.routes?.length) {
+        safe = parseOSRMRoute(detourRes.routes[0]);
+        safe.duration = safe.duration * 1.25;
+      }
+    } catch {}
   }
 
   // Fallback
-  if (!safe && fast) safe = fast;
+  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.25 };
   if (!fast && safe) fast = safe;
 
   return { safe, fast };

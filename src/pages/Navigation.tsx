@@ -329,12 +329,20 @@ const Navigation: FC = () => {
             />
           )}
           
-          <button 
-            onClick={() => navigate('/navigation-end')}
-            className="zenit-btn-primary mt-4"
-          >
-            Finalizar trayecto
-          </button>
+          <div className="flex gap-3 mt-4">
+            <button 
+              onClick={() => navigate('/')}
+              className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold text-center transition-colors hover:bg-secondary/80"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={() => navigate('/navigation-end')}
+              className="flex-1 zenit-btn-primary"
+            >
+              Finalizar
+            </button>
+          </div>
         </div>,
         document.body
       )}

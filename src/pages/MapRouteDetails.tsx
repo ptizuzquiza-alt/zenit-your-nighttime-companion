@@ -85,7 +85,6 @@ const MapRouteDetails: FC = () => {
         onClose={() => setShowShareModal(false)}
         onShare={(selected) => {
           setShowShareModal(false);
-          navigate('/navigation');
         }}
         contacts={contacts}
       />

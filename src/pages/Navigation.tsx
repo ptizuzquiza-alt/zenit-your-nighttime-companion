@@ -265,6 +265,20 @@ const Navigation: FC = () => {
         </div>,
         document.body
       )}
+
+      {/* Share modal */}
+      <ShareRouteModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={(ids) => setShowShareModal(false)}
+        contacts={[
+          { id: '1', name: 'Maria' },
+          { id: '2', name: 'Carlos' },
+          { id: '3', name: 'Ana' },
+          { id: '4', name: 'Juan' },
+          { id: '5', name: 'Laura' },
+        ]}
+      />
     </>
   );
 };

@@ -72,7 +72,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     } else {
       mapRef.current.setView(center, zoom);
     }
-  }, [center, zoom, route, fitToRoute, origin, destination]);
+  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination]);
 
   // Update markers and routes
   useEffect(() => {

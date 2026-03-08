@@ -11,14 +11,14 @@ import { getStoredRoute } from '@/lib/routing';
 
 
 
-const JUAN_ORIGIN: [number, number] = [41.4020, 2.1780];
+const JUAN_ORIGIN: [number, number] = [41.3950, 2.1650];
 const JUAN_DEST: [number, number] = [41.4080, 2.1820];
 const JUAN_FALLBACK: [number, number][] = [
   JUAN_ORIGIN,
-  [41.4030, 2.1785],
-  [41.4045, 2.1795],
-  [41.4060, 2.1805],
-  [41.4070, 2.1812],
+  [41.3970, 2.1680],
+  [41.4000, 2.1720],
+  [41.4030, 2.1760],
+  [41.4060, 2.1800],
   JUAN_DEST,
 ];
 

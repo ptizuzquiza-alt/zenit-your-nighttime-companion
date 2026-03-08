@@ -94,11 +94,11 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
-  const friendRoutes = juanRoute.length > 0 ? [{
+  const friendRoutes = [{
     name: 'Juan',
     coordinates: juanRoute,
     position: juanPosition,
-  }] : [];
+  }];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">

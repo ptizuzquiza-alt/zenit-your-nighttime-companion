@@ -13,7 +13,7 @@ export const FONT_FAMILY_BODY = "'Inter', system-ui, sans-serif";
 
 // ─── COLORES PRINCIPALES (formato HSL sin "hsl()") ─────────
 // Fondo oscuro principal — actualmente #1F193D
-export const COLOR_BACKGROUND = '249 42% 17%';
+export const COLOR_BACKGROUND = '249 42% 12%';
 // Texto principal
 export const COLOR_FOREGROUND = '0 0% 98%';
 

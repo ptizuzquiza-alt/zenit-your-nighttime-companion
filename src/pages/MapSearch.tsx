@@ -5,10 +5,10 @@ import { LocationInput } from '@/components/LocationInput';
 import { SearchSuggestion } from '@/components/SearchSuggestion';
 
 const suggestions = [
-  { id: '1', name: 'BAU · College of Arts & Design Barcelona', address: 'Carrer de Pujades, 118, Sant Martí, Barcelona', distance: '2,3 km' },
+  { id: '1', name: 'BAU · College of Arts & Design ', address: 'Carrer de Pujades, 118, Sant Martí, Barcelona', distance: '2,3 km' },
   { id: '2', name: 'La Sagrada Familia, Eixample, Barcelona', address: 'Carrer de Mallorca, 401, Eixample, 80013, Barcelona', distance: '2,2 km' },
   { id: '3', name: 'Plaza de Catalunya', address: 'Plaza de Catalunya, Eixample, 08002 Barcelona', distance: '3,3 km' },
-  { id: '4', name: 'Museo del Disseny de Barcelona - DHub', address: 'Plaça de les Glòries Catalanes, 38, c, Sant Martí, 08018 Barcelona', distance: '1,4 km' },
+  { id: '4', name: 'Museo del Disseny de Barcelona', address: 'Plaça de les Glòries Catalanes, 38, c, Sant Martí, 08018 Barcelona', distance: '1,4 km' },
   { id: '5', name: 'La Pedrera - Casa Milà', address: 'Pg. de Gràcia, 92, Eixample, 08008 Barcelona', distance: '2,8 km' },
   { id: '6', name: 'Jardines del Baix Guinardó', address: 'Carrer de Lepant, 410, Horta-Guinardó, 08025', distance: '3,1 km' },
 ];

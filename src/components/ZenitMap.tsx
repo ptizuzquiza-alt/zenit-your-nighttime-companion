@@ -288,6 +288,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
           background: transparent !important;
           border: none !important;
         }
+        ${MAP_CSS}
       `}</style>
       <div 
         ref={containerRef} 

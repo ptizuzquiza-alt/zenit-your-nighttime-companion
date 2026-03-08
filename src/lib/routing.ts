@@ -51,149 +51,77 @@ function totalAngularChange(coords: [number, number][]): number {
 }
 
 /**
- * Calculate "straightness score" — lower is better (straighter).
- * Normalizes angular change by distance to fairly compare routes of different lengths.
- */
-function straightnessScore(route: RouteResult): number {
-  const angularChange = totalAngularChange(route.coordinates);
-  // Angular change per km — straighter routes have fewer degrees per km
-  return angularChange / (route.distance / 1000);
-}
-
-/**
- * Get waypoints along the extended direct line (not perpendicular).
- * This creates a route that goes further in the same general direction,
- * through wider/main streets, rather than zigzagging sideways.
- */
-function getExtendedWaypoints(
-  origin: [number, number],
-  destination: [number, number]
-): [number, number][] {
-  const dLat = destination[0] - origin[0];
-  const dLon = destination[1] - origin[1];
-  const len = Math.sqrt(dLat * dLat + dLon * dLon);
-  if (len === 0) return [];
-
-  // Perpendicular offset (small, to nudge onto wider parallel avenues)
-  const perpLat = -dLon / len;
-  const perpLon = dLat / len;
-
-  // Try several small perpendicular offsets to find wider parallel streets
-  const offsets = [0.001, -0.001, 0.0018, -0.0018];
-  return offsets.map(offset => {
-    const midLat = (origin[0] + destination[0]) / 2 + perpLat * offset;
-    const midLon = (origin[1] + destination[1]) / 2 + perpLon * offset;
-    return [midLat, midLon] as [number, number];
-  });
-}
-
-/**
- * Fetch two contrasting walking routes:
- * - Standard (fast): Direct OSRM shortest path → shortest distance, more turns
- * - Zenit (safe): The straightest available route → fewer turns, wider streets, longer
- *
- * Strategy:
- * 1. Fetch direct route with alternatives=true
- * 2. Fetch routes through small perpendicular waypoints (nudges onto parallel avenues)
- * 3. Score all candidates by "straightness" (angular change per km)
- * 4. Zenit = straightest candidate that is ≥10% longer than the shortest
- * 5. Standard = shortest route
+ * Fetch two walking routes using ONLY OSRM native alternatives.
+ * No forced waypoints — they create ugly loops.
+ * 
+ * - Standard = shortest/fastest route
+ * - Zenit = the alternative with fewer turns per km (straighter)
+ *   If no straighter alternative exists, use the same route with adjusted times.
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+  const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  // Generate waypoint-based route coordinates
-  const waypoints = getExtendedWaypoints(origin, destination);
-  const waypointFetches = waypoints.map(wp => {
-    const coords = `${origin[1]},${origin[0]};${wp[1]},${wp[0]};${destination[1]},${destination[0]}`;
-    return fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null);
-  });
+  const res = await fetch(
+    `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=5`
+  ).then(r => r.json()).catch(() => null);
 
-  const [directRes, ...waypointResults] = await Promise.all([
-    // Direct route with alternatives
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
-      .then(r => r.json()).catch(() => null),
-    ...waypointFetches,
-  ]);
-
-  // Collect all valid routes
-  const allRoutes: RouteResult[] = [];
-
-  if (directRes?.code === 'Ok' && directRes.routes?.length) {
-    for (const route of directRes.routes) {
-      allRoutes.push(parseOSRMRoute(route));
-    }
-  }
-
-  for (const res of waypointResults) {
-    if (res?.code === 'Ok' && res.routes?.length) {
-      allRoutes.push(parseOSRMRoute(res.routes[0]));
-    }
-  }
-
-  if (allRoutes.length === 0) {
+  if (!res?.code || res.code !== 'Ok' || !res.routes?.length) {
     return { safe: null, fast: null };
   }
 
-  // Standard (fast) = shortest route
-  const byDistance = [...allRoutes].sort((a, b) => a.distance - b.distance);
-  const fast = byDistance[0];
-  const fastScore = straightnessScore(fast);
+  const allRoutes = res.routes.map((r: any) => parseOSRMRoute(r));
 
-  // Filter: only consider routes up to 1.8x the shortest distance
-  const maxDistance = fast.distance * 1.8;
-  const reasonable = allRoutes.filter(r => r.distance <= maxDistance);
+  // Standard = shortest
+  const sorted = [...allRoutes].sort((a, b) => a.distance - b.distance);
+  const fast = sorted[0];
+  const fastTurnsPerKm = totalAngularChange(fast.coordinates) / (fast.distance / 1000);
 
-  // Among reasonable routes, find ones that are:
-  // 1. Different from standard (at least 5% longer)
-  // 2. Straighter per km than standard
-  const candidates = reasonable
-    .filter(r => r.distance > fast.distance * 1.05)
-    .map(route => ({ route, score: straightnessScore(route) }))
-    .filter(s => s.score < fastScore) // Must be straighter than standard
-    .sort((a, b) => a.score - b.score);
-
-  console.log('Route candidates:', reasonable.map(r => ({
+  console.log('OSRM alternatives:', allRoutes.map((r: RouteResult) => ({
     distance: Math.round(r.distance) + 'm',
-    angularChange: Math.round(totalAngularChange(r.coordinates)) + '°',
-    scorePerKm: Math.round(straightnessScore(r)) + '°/km',
+    turns: Math.round(totalAngularChange(r.coordinates)) + '°',
+    turnsPerKm: Math.round(totalAngularChange(r.coordinates) / (r.distance / 1000)) + '°/km',
   })));
 
+  // Find the straightest alternative that's different from fast
+  const candidates = allRoutes
+    .filter((r: RouteResult) => r.distance > fast.distance * 1.03) // at least slightly different
+    .map((r: RouteResult) => ({
+      route: r,
+      turnsPerKm: totalAngularChange(r.coordinates) / (r.distance / 1000),
+    }))
+    .sort((a, b) => a.turnsPerKm - b.turnsPerKm);
+
   let safe: RouteResult;
-  if (candidates.length > 0) {
-    // We have a route that's genuinely straighter per km
+
+  if (candidates.length > 0 && candidates[0].turnsPerKm < fastTurnsPerKm) {
+    // There's a genuine straighter alternative
     safe = candidates[0].route;
+    safe = { ...safe, duration: safe.duration * 1.25 };
   } else {
-    // The shortest route IS the straightest — use the same geometry for Zenit
-    // but with inflated time (it represents the "safe" version of that route)
-    // Standard gets a different, slightly longer route with more turns
-    const altRoutes = reasonable
-      .filter(r => r.distance > fast.distance * 1.05)
-      .sort((a, b) => a.distance - b.distance);
-    
-    if (altRoutes.length > 0) {
-      // Swap: Zenit gets the straight short route, Standard gets the longer curvy one
-      safe = { ...fast };
-      const swappedFast = altRoutes[0];
-      // Return with swapped roles
-      safe = { ...safe, duration: safe.duration * 1.35 };
-      console.log('Selected routes (swapped):', {
-        standard: Math.round(swappedFast.distance) + 'm, ' + Math.round(totalAngularChange(swappedFast.coordinates)) + '° turns',
-        zenit: Math.round(safe.distance) + 'm, ' + Math.round(totalAngularChange(safe.coordinates)) + '° turns',
+    // No straighter alternative — Zenit uses the same straight route
+    // Standard gets a curvier alternative if available
+    if (candidates.length > 0) {
+      // Swap: Zenit = the straight short route, Standard = the curvier longer one
+      const curvierAlt = candidates[candidates.length - 1].route; // most turns per km
+      safe = { ...fast, duration: fast.duration * 1.30 };
+      
+      console.log('Selected routes (same geometry for Zenit):', {
+        standard: Math.round(curvierAlt.distance) + 'm',
+        zenit: Math.round(safe.distance) + 'm (same as shortest, adjusted time)',
       });
-      return { safe, fast: swappedFast };
+      return { safe, fast: curvierAlt };
     } else {
-      // No alternatives at all — same route, different times
-      safe = { ...fast, duration: fast.duration * 1.35, distance: fast.distance * 1.15 };
+      // Only one route available — duplicate with different times
+      safe = { 
+        ...fast, 
+        duration: fast.duration * 1.30,
+        distance: fast.distance * 1.12,
+      };
     }
   }
-
-  // Apply 25% time penalty for safety/comfort priority
-  safe = { ...safe, duration: safe.duration * 1.25 };
 
   console.log('Selected routes:', {
     standard: Math.round(fast.distance) + 'm, ' + Math.round(totalAngularChange(fast.coordinates)) + '° turns',

@@ -36,19 +36,27 @@ const Navigation: FC = () => {
   // Fetch Juan's real street route from OSRM
   useEffect(() => {
     const coords = `${JUAN_ORIGIN[1]},${JUAN_ORIGIN[0]};${JUAN_DEST[1]},${JUAN_DEST[0]}`;
-    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
+    fetch(`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
+        console.log('OSRM Juan response:', data?.code);
         if (data?.code === 'Ok' && data.routes?.length) {
           const pts: [number, number][] = data.routes[0].geometry.coordinates.map(
             ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
           );
           setJuanRoute(pts);
-          // Start Juan at ~50% progress
           setJuanIndex(Math.floor(pts.length * 0.4));
+        } else {
+          // Fallback route
+          setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
+          setJuanIndex(0);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        console.log('OSRM Juan fetch failed, using fallback');
+        setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
+        setJuanIndex(0);
+      });
   }, []);
 
   // Simulate Juan moving

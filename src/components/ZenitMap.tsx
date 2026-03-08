@@ -62,7 +62,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       attributionControl: false,
     });
 
-    L.tileLayer(DARK_TILE_URL).addTo(mapRef.current);
+    L.tileLayer(DARK_TILE_URL, { opacity: 1 }).addTo(mapRef.current);
+    L.tileLayer(LABELS_TILE_URL, { opacity: 0.7 }).addTo(mapRef.current);
 
     return () => {
       if (mapRef.current) {

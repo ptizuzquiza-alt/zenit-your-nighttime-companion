@@ -94,12 +94,6 @@ export async function fetchSafeAndFastRoutes(
   if (!safe && fast) safe = fast;
   if (!fast && safe) fast = safe;
 
-  console.log('Routes loaded:', {
-    safe: safe ? `${safe.coordinates.length} pts, ${safe.distance}m` : 'null',
-    fast: fast ? `${fast.coordinates.length} pts, ${fast.distance}m` : 'null',
-    different: safe && fast ? (safe.distance !== fast.distance) : 'n/a'
-  });
-
   return { safe, fast };
 }
 

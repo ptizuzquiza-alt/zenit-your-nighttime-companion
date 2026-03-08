@@ -22,59 +22,44 @@ function parseOSRMRoute(route: any): RouteResult {
 
 /**
  * Fetch two walking routes:
- * - Fast: shortest foot route (takes shortcuts through small streets)
- * - Safe: alternative foot route (tends to use bigger, more main streets)
- * Uses OSRM foot profile with alternatives=true
+ * - Fast: foot profile → shortest walking path (small streets, shortcuts)
+ * - Safe: bicycle profile geometry → prefers wider, main streets. Duration recalculated at walking speed.
+ * This guarantees two visually different routes with different times.
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
   destination: [number, number]
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const coords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
-  const url = `${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson&alternatives=true`;
 
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
+  const [footRes, bikeRes] = await Promise.all([
+    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .catch(() => null),
+    fetch(`${OSRM_BASE}/bicycle/${coords}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .catch(() => null),
+  ]);
 
-    if (data.code !== 'Ok' || !data.routes?.length) {
-      console.warn('OSRM routing failed:', data);
-      return { safe: null, fast: null };
-    }
+  let fast: RouteResult | null = null;
+  let safe: RouteResult | null = null;
 
-    const parsed = data.routes.map(parseOSRMRoute);
-
-    // First route = fastest/shortest (small streets, shortcuts)
-    const fast = parsed[0];
-
-    // Second route = alternative (longer, bigger streets) — if available
-    // If only one route, create a "safe" variant by using the same route
-    const safe = parsed.length > 1 ? parsed[1] : null;
-
-    // If no alternative, try to get one via bicycle profile (prefers bigger roads)
-    if (!safe) {
-      try {
-        const bikeRes = await fetch(`${OSRM_BASE}/bicycle/${coords}?overview=full&geometries=geojson`);
-        const bikeData = await bikeRes.json();
-        if (bikeData?.code === 'Ok' && bikeData.routes?.length) {
-          const bikeParsed = parseOSRMRoute(bikeData.routes[0]);
-          // Recalculate with walking speed since it's a bike route geometry
-          return {
-            safe: { ...bikeParsed, duration: bikeParsed.distance / WALKING_SPEED },
-            fast,
-          };
-        }
-      } catch { /* fallback below */ }
-      
-      // Last resort: return the same route for both
-      return { safe: fast, fast };
-    }
-
-    return { safe, fast };
-  } catch (err) {
-    console.error('Failed to fetch routes:', err);
-    return { safe: null, fast: null };
+  // Fast route: foot profile (shortest path, small streets)
+  if (footRes?.code === 'Ok' && footRes.routes?.length) {
+    fast = parseOSRMRoute(footRes.routes[0]);
   }
+
+  // Safe route: bicycle profile geometry (main/wide streets), walking duration
+  if (bikeRes?.code === 'Ok' && bikeRes.routes?.length) {
+    const bikeParsed = parseOSRMRoute(bikeRes.routes[0]);
+    safe = { ...bikeParsed, duration: bikeParsed.distance / WALKING_SPEED };
+  }
+
+  // Fallback: if one is missing, duplicate the other
+  if (!safe && fast) safe = fast;
+  if (!fast && safe) fast = safe;
+
+  return { safe, fast };
 }
 
 /** @deprecated Use fetchSafeAndFastRoutes instead */

@@ -159,7 +159,7 @@ const MapRoutes: FC = () => {
               distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
               duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
               safetyPercentage={95}
-              tags={['Calles bien iluminadas', 'Áreas activas', 'Comercios amigos']}
+              tags={['Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />

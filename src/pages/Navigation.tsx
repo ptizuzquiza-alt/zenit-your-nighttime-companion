@@ -24,6 +24,7 @@ const JUAN_FALLBACK: [number, number][] = [
 const Navigation: FC = () => {
   const navigate = useNavigate();
   const [showFriendActivity, setShowFriendActivity] = useState(true);
+  const [fitAll, setFitAll] = useState(false);
 
   const storedRoute = getStoredRoute();
   const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [

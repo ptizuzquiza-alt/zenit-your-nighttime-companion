@@ -170,21 +170,20 @@ export async function fetchSafeAndFastRoutes(
   let safe: RouteResult;
 
   if (zenitCandidates.length > 0 && zenitCandidates[0].tpk < fastTpk) {
-    // Genuine straighter alternative
+    // Genuine straighter alternative exists → use it for Zenit
     safe = zenitCandidates[0].route;
-    safe = { ...safe, duration: safe.duration * 1.25 };
-  } else if (zenitCandidates.length > 0) {
-    // No straighter option → swap: Zenit = short straight, Standard = longer curvy
-    const curviest = zenitCandidates[zenitCandidates.length - 1].route;
-    safe = { ...fast, duration: fast.duration * 1.30 };
-    console.log('Selected (swapped):', {
-      standard: Math.round(curviest.distance) + 'm, ' + Math.round(turnsPerKm(curviest)) + '°/km',
-      zenit: Math.round(safe.distance) + 'm, ' + Math.round(turnsPerKm(safe)) + '°/km',
-    });
-    return { safe, fast: curviest };
+    // Ensure Zenit is always slower than Standard
+    safe = { ...safe, duration: Math.max(safe.duration, fast.duration * 1.25) };
   } else {
-    // Only one route — fake the difference
-    safe = { ...fast, duration: fast.duration * 1.30, distance: fast.distance * 1.12 };
+    // The shortest route is already the straightest.
+    // Zenit = same geometry as shortest, but slower time
+    // Standard = stays as shortest (fastest)
+    safe = { ...fast, duration: fast.duration * 1.30, distance: fast.distance * 1.15 };
+  }
+
+  // GUARANTEE: Standard is always faster than Zenit
+  if (fast.duration >= safe.duration) {
+    safe = { ...safe, duration: fast.duration * 1.30 };
   }
 
   console.log('Selected:', {

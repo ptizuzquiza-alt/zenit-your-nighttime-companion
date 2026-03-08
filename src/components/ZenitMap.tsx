@@ -67,10 +67,13 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     };
   }, []);
 
-  // Update view: fit to route bounds or set center/zoom
+  // Update view: fit to route bounds once when fitToRoute is toggled on, then allow free zoom
   useEffect(() => {
     if (!mapRef.current) return;
-    if (fitToRoute && route && route.length > 1) {
+    const justActivated = fitToRoute && !prevFitToRouteRef.current;
+    prevFitToRouteRef.current = fitToRoute;
+
+    if (justActivated && route && route.length > 1) {
       const bounds = L.latLngBounds(route);
       if (alternativeRoute && alternativeRoute.length > 1) {
         alternativeRoute.forEach(pt => bounds.extend(pt));
@@ -78,7 +81,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (origin) bounds.extend(origin);
       if (destination) bounds.extend(destination);
       mapRef.current.fitBounds(bounds, { paddingTopLeft: [50, 50], paddingBottomRight: [50, 350], maxZoom: 16, animate: true });
-    } else {
+    } else if (!fitToRoute) {
       mapRef.current.setView(center, zoom);
     }
   }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination]);

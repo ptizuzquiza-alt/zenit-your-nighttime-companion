@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Users, Navigation2 } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -184,16 +184,29 @@ const Navigation: FC = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* FAB floating above the sheet */}
+      {/* FAB floating above the sheet */}
           <button
-            onClick={() => setFitAll(prev => !prev)}
+            onClick={() => {
+              if (fitAll || focusJuan) {
+                // Re-center on user
+                setFitAll(false);
+                setFocusJuan(false);
+                setSheetOffset(0);
+              } else {
+                setFitAll(prev => !prev);
+              }
+            }}
             className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-              fitAll 
+              fitAll || focusJuan
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-card/80 backdrop-blur-sm text-foreground'
             }`}
           >
-            <Users className="w-5 h-5" />
+            {fitAll || focusJuan ? (
+              <Navigation2 className="w-5 h-5" />
+            ) : (
+              <Users className="w-5 h-5" />
+            )}
           </button>
 
           <div 

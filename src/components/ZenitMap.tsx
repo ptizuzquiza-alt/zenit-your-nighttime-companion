@@ -44,6 +44,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const polylinesRef = useRef<L.Polyline[]>([]);
+  const prevFitToRouteRef = useRef(false);
 
   // Initialize map
   useEffect(() => {

@@ -11,12 +11,14 @@ export interface RouteResult {
 }
 
 function parseOSRMRoute(route: any): RouteResult {
+  const distance = route.distance;
   return {
     coordinates: route.geometry.coordinates.map(
       ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
     ),
-    distance: route.distance,
-    duration: route.duration,
+    distance,
+    // Recalculate duration based on walking speed for consistency
+    duration: distance / WALKING_SPEED,
   };
 }
 

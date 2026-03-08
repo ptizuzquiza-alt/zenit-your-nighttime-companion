@@ -90,6 +90,7 @@ const MapIdle: FC = () => {
         zoom={15}
         origin={userLocation}
         friendRoutes={showFriends ? friendRoutes : []}
+        focusBounds={focusBounds}
         className="absolute inset-0"
       />
 

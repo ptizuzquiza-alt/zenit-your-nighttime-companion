@@ -129,7 +129,7 @@ const Navigation: FC = () => {
       </div>
 
       {/* FABs */}
-      <div className="absolute bottom-48 right-4 z-[1000] flex flex-col gap-3">
+      <div className="absolute bottom-48 right-4 z-[1100] flex flex-col gap-3">
         <button
           onClick={() => setFitAll(prev => !prev)}
           className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${

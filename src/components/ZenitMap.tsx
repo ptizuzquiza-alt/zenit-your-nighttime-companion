@@ -41,6 +41,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   showUserArrow = false,
   userPosition,
   fitToRoute = false,
+  focusBounds,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);

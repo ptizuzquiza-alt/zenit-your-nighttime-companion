@@ -70,18 +70,15 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchWalkingRoute(userLocation, destination, true).then((results) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
       if (cancelled) return;
-      setRoutes(results);
+      setSafeRoute(safe);
+      setFastRoute(fast);
       setLoading(false);
     });
 
     return () => { cancelled = true; };
-  }, [userLocation[0], userLocation[1]]);
-
-  // OSRM returns fastest route first; second is the alternative (longer but potentially safer)
-  const fastRoute = routes[0];
-  const safeRoute = routes[1] || routes[0];
+  }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
   const currentRouteData = selectedRoute === 'safe' ? safeRoute : fastRoute;
   const alternativeRouteData = selectedRoute === 'safe' ? fastRoute : safeRoute;

@@ -6,10 +6,19 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { getStoredRoute } from '@/lib/routing';
 
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+
 
 const JUAN_ORIGIN: [number, number] = [41.4055, 2.1770];
 const JUAN_DEST: [number, number] = [41.4100, 2.1850];
+const JUAN_FALLBACK: [number, number][] = [
+  JUAN_ORIGIN,
+  [41.4060, 2.1775],
+  [41.4068, 2.1790],
+  [41.4075, 2.1805],
+  [41.4082, 2.1820],
+  [41.4090, 2.1835],
+  JUAN_DEST,
+];
 
 const Navigation: FC = () => {
   const navigate = useNavigate();
@@ -29,31 +38,39 @@ const Navigation: FC = () => {
   const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
 
   // Juan's real route + animated position
-  const [juanRoute, setJuanRoute] = useState<[number, number][]>([]);
-  const [juanIndex, setJuanIndex] = useState(0);
-  const juanPosition = juanRoute.length > 0 ? juanRoute[juanIndex] : JUAN_ORIGIN;
+  const [juanRoute, setJuanRoute] = useState<[number, number][]>(JUAN_FALLBACK);
+  const [juanIndex, setJuanIndex] = useState(Math.floor(JUAN_FALLBACK.length * 0.4));
+  const juanPosition = juanRoute[juanIndex] ?? JUAN_ORIGIN;
 
   // Fetch Juan's real street route from OSRM
   useEffect(() => {
     const coords = `${JUAN_ORIGIN[1]},${JUAN_ORIGIN[0]};${JUAN_DEST[1]},${JUAN_DEST[0]}`;
-    fetch(`${OSRM_BASE}/foot/${coords}?overview=full&geometries=geojson`)
+    fetch(`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
+        console.log('OSRM Juan response:', data?.code);
         if (data?.code === 'Ok' && data.routes?.length) {
           const pts: [number, number][] = data.routes[0].geometry.coordinates.map(
             ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
           );
           setJuanRoute(pts);
-          // Start Juan at ~50% progress
           setJuanIndex(Math.floor(pts.length * 0.4));
+        } else {
+          // Fallback route
+          setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
+          setJuanIndex(0);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        console.log('OSRM Juan fetch failed, using fallback');
+        setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
+        setJuanIndex(0);
+      });
   }, []);
 
   // Simulate Juan moving
   useEffect(() => {
-    if (juanRoute.length === 0) return;
+    if (juanRoute.length < 2) return;
     const interval = setInterval(() => {
       setJuanIndex(prev => (prev + 1 < juanRoute.length ? prev + 1 : prev));
     }, 2000);
@@ -77,11 +94,11 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
-  const friendRoutes = juanRoute.length > 0 ? [{
+  const friendRoutes = [{
     name: 'Juan',
     coordinates: juanRoute,
     position: juanPosition,
-  }] : [];
+  }];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">

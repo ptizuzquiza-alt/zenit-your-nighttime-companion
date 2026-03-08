@@ -171,10 +171,10 @@ const MapRoutes: FC = () => {
         
         <button 
           onClick={handleContinue}
-          className="zenit-btn-primary mt-4"
+          className={loading ? 'zenit-btn-primary mt-4 opacity-50 bg-muted text-muted-foreground cursor-not-allowed' : 'zenit-btn-primary mt-4'}
           disabled={loading}
         >
-          Continuar
+          {loading ? 'Cargando…' : 'Continuar'}
         </button>
       </div>
     </div>

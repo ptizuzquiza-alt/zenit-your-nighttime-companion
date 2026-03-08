@@ -139,23 +139,26 @@ export async function fetchSafeAndFastRoutes(
     return { safe: null, fast: null };
   }
 
-  // Standard (fast) = shortest route → naturally more turns, side streets
+  // Standard (fast) = shortest route
   const byDistance = [...allRoutes].sort((a, b) => a.distance - b.distance);
   const fast = byDistance[0];
 
-  // Zenit (safe) = longest route → goes through main avenues, straighter per km
-  const byDistanceDesc = [...allRoutes].sort((a, b) => b.distance - a.distance);
-  let safe = byDistanceDesc[0];
+  // Zenit (safe) = straightest route per km (least °/km of angular change)
+  // that is different from the standard route
+  const scored = allRoutes
+    .map(route => ({ route, score: straightnessScore(route) }))
+    .sort((a, b) => a.score - b.score); // lowest score = straightest
 
-  console.log('Route candidates:', allRoutes.map(r => ({
-    distance: Math.round(r.distance) + 'm',
-    angularChange: Math.round(totalAngularChange(r.coordinates)) + '°',
-    scorePerKm: Math.round(straightnessScore(r)) + '°/km',
+  console.log('Route candidates:', scored.map(s => ({
+    distance: Math.round(s.route.distance) + 'm',
+    angularChange: Math.round(totalAngularChange(s.route.coordinates)) + '°',
+    scorePerKm: Math.round(s.score) + '°/km',
   })));
 
-  // If they're the same route, try the second longest
-  if (safe.distance === fast.distance && byDistanceDesc.length > 1) {
-    safe = byDistanceDesc[1];
+  // Pick the straightest route that's meaningfully different from standard
+  let safe = scored[0].route;
+  if (safe.distance === fast.distance && safe.coordinates.length === fast.coordinates.length && scored.length > 1) {
+    safe = scored[1].route;
   }
 
   // Apply 25% time penalty for safety/comfort priority

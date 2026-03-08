@@ -199,12 +199,30 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       }
     });
 
-    // Friend markers (purple) with name labels
+    // Friend position markers (purple dot at current position)
     friendRoutes.forEach(fr => {
-      const friendIcon = L.divIcon({
+      const dotIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);">
-          <span style="
+        html: `<div style="
+          width: 14px;
+          height: 14px;
+          background: #a78bfa;
+          border-radius: 50%;
+          box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
+        "></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const dotMarker = L.marker(fr.position, { icon: dotIcon }).addTo(mapRef.current!);
+      markersRef.current.push(dotMarker);
+
+      // Name label at the midpoint of the route line
+      if (fr.coordinates.length >= 2) {
+        const midIdx = Math.floor(fr.coordinates.length / 2);
+        const labelPos = fr.coordinates[midIdx];
+        const labelIcon = L.divIcon({
+          className: 'zenit-marker',
+          html: `<span style="
             background: rgba(167,139,250,0.85);
             color: white;
             font-size: 11px;
@@ -212,22 +230,16 @@ export const ZenitMap: FC<ZenitMapProps> = ({
             padding: 2px 8px;
             border-radius: 10px;
             white-space: nowrap;
-            margin-bottom: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          ">${fr.name}</span>
-          <div style="
-            width: 14px;
-            height: 14px;
-            background: #a78bfa;
-            border-radius: 50%;
-            box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
-          "></div>
-        </div>`,
-        iconSize: [60, 40],
-        iconAnchor: [30, 40],
-      });
-      const marker = L.marker(fr.position, { icon: friendIcon }).addTo(mapRef.current!);
-      markersRef.current.push(marker);
+            transform: translateY(-20px);
+            display: block;
+          ">${fr.name}</span>`,
+          iconSize: [60, 20],
+          iconAnchor: [30, 20],
+        });
+        const labelMarker = L.marker(labelPos, { icon: labelIcon }).addTo(mapRef.current!);
+        markersRef.current.push(labelMarker);
+      }
     });
 
     // Additional friend location markers (without labels)

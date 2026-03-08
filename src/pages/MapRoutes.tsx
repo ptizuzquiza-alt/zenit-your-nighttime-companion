@@ -12,6 +12,41 @@ const MapRoutes: FC = () => {
   const [routes, setRoutes] = useState<RouteResult[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Bottom sheet drag state
+  const [sheetCollapsed, setSheetCollapsed] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    startY.current = e.touches[0].clientY;
+    setDragOffset(0);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const dy = e.touches[0].clientY - startY.current;
+    // Only allow dragging down when expanded, or up when collapsed
+    if (!sheetCollapsed && dy > 0) {
+      setDragOffset(dy);
+    } else if (sheetCollapsed && dy < 0) {
+      setDragOffset(dy);
+    }
+  }, [sheetCollapsed]);
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false;
+    const threshold = 60;
+    if (!sheetCollapsed && dragOffset > threshold) {
+      setSheetCollapsed(true);
+    } else if (sheetCollapsed && dragOffset < -threshold) {
+      setSheetCollapsed(false);
+    }
+    setDragOffset(0);
+  }, [sheetCollapsed, dragOffset]);
+
   const destination: [number, number] = [41.4110, 2.1850];
 
   useEffect(() => {

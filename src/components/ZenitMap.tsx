@@ -1,13 +1,21 @@
 import { FC, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import {
+  MAP_TILE_FILTER,
+  MAP_BACKGROUND,
+  MAP_ROUTE_SAFE_COLOR,
+  MAP_ROUTE_FAST_COLOR,
+  MAP_MARKER_ORIGIN_COLOR,
+  MAP_MARKER_FRIEND_COLOR,
+} from '@/config/theme';
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
 const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
 
 const MAP_CSS = `
-  .leaflet-tile-pane { filter: sepia(0.3) hue-rotate(45deg) saturate(1.8) brightness(0.85); }
+  .leaflet-tile-pane { filter: ${MAP_TILE_FILTER}; }
 `;
 
 interface FriendRoute {

@@ -8,6 +8,7 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
+import { CONTACTS } from '@/config/contacts';
 
 
 

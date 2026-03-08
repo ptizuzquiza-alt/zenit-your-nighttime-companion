@@ -217,16 +217,32 @@ const Navigation: FC = () => {
             onClick={toggleSheet}
           />
           
-          <h3 className="text-foreground font-semibold mb-4">
-            Actividades de tus amigos
-          </h3>
+          {/* Header with title + action buttons */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-foreground font-semibold">
+              Actividades de tus amigos
+            </h3>
+            <div className="flex items-center gap-2">
+              {/* Viewers count */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 text-muted-foreground">
+                <Eye className="w-4 h-4" />
+                <span className="text-xs font-medium">{sharedContacts.length}</span>
+              </div>
+              {/* Share button */}
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="w-9 h-9 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           
           {showFriendActivity && (
             <FriendActivityCard
               onClick={() => {
                 setFocusJuan(prev => !prev);
                 setFitAll(false);
-                // Collapse sheet to see the map
                 if (!focusJuan) {
                   const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                   setSheetOffset(h);

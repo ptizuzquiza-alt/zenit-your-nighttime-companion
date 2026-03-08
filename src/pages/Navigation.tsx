@@ -139,11 +139,11 @@ const Navigation: FC = () => {
     setIsDragging(false);
     const threshold = getSheetContentHeight() * 0.3;
     if (sheetOffset > threshold) {
-      // Snap to collapsed (show only handle + title)
       setSheetOffset(getSheetContentHeight());
+      sheetCollapsedByUser.current = true;
     } else {
-      // Snap back to expanded
       setSheetOffset(0);
+      sheetCollapsedByUser.current = false;
     }
   };
 

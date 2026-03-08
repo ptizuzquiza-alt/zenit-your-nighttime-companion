@@ -5,6 +5,12 @@ import 'leaflet/dist/leaflet.css';
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
+interface FriendRoute {
+  name: string;
+  coordinates: [number, number][];
+  position: [number, number];
+}
+
 interface ZenitMapProps {
   center?: [number, number];
   zoom?: number;
@@ -13,6 +19,7 @@ interface ZenitMapProps {
   route?: [number, number][];
   alternativeRoute?: [number, number][];
   friendLocations?: [number, number][];
+  friendRoutes?: FriendRoute[];
   showUserArrow?: boolean;
   userPosition?: [number, number];
   fitToRoute?: boolean;

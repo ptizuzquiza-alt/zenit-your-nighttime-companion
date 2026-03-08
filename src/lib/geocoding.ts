@@ -29,7 +29,8 @@ export async function searchPlaces(
       format: 'json',
       addressdetails: '1',
       limit: '8',
-      countrycodes: 'es', // Focus on Spain for Barcelona
+      viewbox: '2.0524,41.4620,2.2280,41.3200',
+      bounded: '1',
     });
 
     const res = await fetch(`${NOMINATIM_URL}/search?${params}`, {

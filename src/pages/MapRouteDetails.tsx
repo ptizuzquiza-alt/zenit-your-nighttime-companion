@@ -14,7 +14,7 @@ const contacts = [
 
 const MapRouteDetails: FC = () => {
   const navigate = useNavigate();
-  const [showShareModal, setShowShareModal] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
 
   const storedRoute = getStoredRoute();
@@ -61,8 +61,8 @@ const MapRouteDetails: FC = () => {
         
         <h3 className="text-foreground font-semibold mb-6">
           {sessionStorage.getItem('zenit_selected_route_type') === 'fast'
-            ? 'Has elegido la ruta rápida'
-            : 'Has elegido la ruta segura'}
+            ? 'Has elegido la Ruta Estándar'
+            : 'Has elegido la Ruta Zenit'}
         </h3>
         
         <button 

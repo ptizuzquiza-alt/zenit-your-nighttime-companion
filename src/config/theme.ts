@@ -42,7 +42,7 @@ export const COLOR_BLUE = '220 80% 60%';
 
 // ─── COLORES DEL MAPA ──────────────────────────────────────
 // Color de fondo del contenedor del mapa (mientras cargan los tiles)
-export const MAP_BACKGROUND = '249 42% 17%';
+export const MAP_BACKGROUND = '249 42% 12%';
 
 // Filtro CSS para dar tinte a los tiles del mapa
 // Ajusta sepia, hue-rotate, saturate y brightness para cambiar el tono

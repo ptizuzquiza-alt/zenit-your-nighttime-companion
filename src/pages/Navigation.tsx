@@ -28,6 +28,7 @@ const Navigation: FC = () => {
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [sharedContacts, setSharedContacts] = useState<string[]>([]);

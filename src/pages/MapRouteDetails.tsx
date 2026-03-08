@@ -111,7 +111,10 @@ const MapRouteDetails: FC = () => {
         </button>
         
         <button 
-          onClick={() => navigate('/navigation')}
+          onClick={() => {
+            sessionStorage.setItem('zenit_shared_contacts', JSON.stringify(sharedContacts));
+            navigate('/navigation');
+          }}
           className="zenit-btn-primary"
         >
           Iniciar el trayecto

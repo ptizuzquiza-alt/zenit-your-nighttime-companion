@@ -31,7 +31,11 @@ const Navigation: FC = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-  const [sharedContacts, setSharedContacts] = useState<string[]>([]);
+  const [sharedContacts, setSharedContacts] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('zenit_shared_contacts') || '[]');
+    } catch { return []; }
+  });
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);

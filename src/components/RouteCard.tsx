@@ -20,33 +20,35 @@ export const RouteCard: FC<RouteCardProps> = ({
   selected = false,
   onClick
 }) => {
-  const isSafe = type === 'safe';
-  const Icon = isSafe ? Shield : Zap;
+  const isZenit = type === 'safe';
+  const Icon = isZenit ? Shield : Zap;
   
   return (
     <button
       onClick={onClick}
       className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ${
         selected 
-          ? 'bg-secondary/80 border-primary/50 ring-1 ring-primary/30' 
+          ? isZenit
+            ? 'bg-accent/10 border-accent/50 ring-1 ring-accent/30'
+            : 'bg-secondary/80 border-muted-foreground/30 ring-1 ring-muted-foreground/20'
           : 'bg-secondary/40 border-border/30 hover:bg-secondary/60'
       }`}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            isSafe ? 'bg-zenit-green/20' : 'bg-zenit-yellow/20'
+            isZenit ? 'bg-accent/20' : 'bg-muted'
           }`}>
-            <Icon className={`w-4 h-4 ${isSafe ? 'text-zenit-green' : 'text-zenit-yellow'}`} />
+            <Icon className={`w-4 h-4 ${isZenit ? 'text-accent' : 'text-muted-foreground'}`} />
           </div>
           <span className="font-semibold text-foreground">
-            {isSafe ? 'Ruta Segura' : 'Ruta Rápida'}
+            {isZenit ? 'Ruta Zenit' : 'Ruta Estándar'}
           </span>
         </div>
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-          isSafe 
-            ? 'bg-zenit-green/20 text-zenit-green' 
-            : 'bg-zenit-yellow/20 text-zenit-yellow'
+          isZenit 
+            ? 'bg-accent/20 text-accent' 
+            : 'bg-muted text-muted-foreground'
         }`}>
           {safetyPercentage}% segura
         </span>

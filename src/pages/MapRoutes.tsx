@@ -150,7 +150,7 @@ const MapRoutes: FC = () => {
               distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
               duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
               safetyPercentage={95}
-              tags={['Calles bien iluminadas', 'Áreas activas']}
+              tags={['Calles bien iluminadas', 'Áreas activas', 'Comercios amigos']}
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />
@@ -160,7 +160,7 @@ const MapRoutes: FC = () => {
                 distance={formatDistance(fastRoute.distance)}
                 duration={formatDuration(fastRoute.duration)}
                 safetyPercentage={73}
-                tags={['Menor distancia', 'Menos peatones']}
+                tags={['Menor distancia', 'Menos iluminada', 'Menos peatones']}
                 selected={selectedRoute === 'fast'}
                 onClick={() => setSelectedRoute('fast')}
               />

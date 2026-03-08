@@ -61,8 +61,8 @@ const MapRouteDetails: FC = () => {
         
         <h3 className="text-foreground font-semibold mb-6">
           {sessionStorage.getItem('zenit_selected_route_type') === 'fast'
-            ? 'Has elegido la ruta rápida'
-            : 'Has elegido la ruta segura'}
+            ? 'Has elegido la Ruta Estándar'
+            : 'Has elegido la Ruta Zenit'}
         </h3>
         
         <button 

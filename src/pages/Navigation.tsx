@@ -1,11 +1,12 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Users, Navigation2 } from 'lucide-react';
+import { Users, Navigation2, Share2, Eye } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
+import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
 
 

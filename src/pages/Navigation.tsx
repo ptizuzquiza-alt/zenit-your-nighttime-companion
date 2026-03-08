@@ -1,5 +1,6 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';

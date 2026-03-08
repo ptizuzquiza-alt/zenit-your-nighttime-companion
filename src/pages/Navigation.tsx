@@ -174,6 +174,7 @@ const Navigation: FC = () => {
         </div>,
         document.body
       )}
+    </>
   );
 };
 

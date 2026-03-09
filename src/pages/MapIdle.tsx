@@ -88,6 +88,25 @@ const MapIdle: FC = () => {
     ).then(setFriendData);
   }, []);
 
+  const friendRoutes = friendData.map(({ name, coordinates, position }) => ({ name, coordinates, position }));
+
+  // Compute real departure/arrival times
+  const friendTimes = useMemo(() => {
+    const now = new Date();
+    return FRIEND_ROUTES.map((fr) => {
+      const match = friendData.find((d) => d.name === fr.name);
+      const departureDate = new Date(now.getTime() - fr.minutesAgo * 60_000);
+      const totalSec = match?.durationSec ?? fr.totalDurationMin * 60;
+      const arrivalDate = new Date(departureDate.getTime() + totalSec * 1000);
+      return {
+        name: fr.name,
+        time: `Hace ${fr.minutesAgo} min`,
+        departureTime: formatTime(departureDate),
+        estimatedArrival: formatTime(arrivalDate),
+      };
+    });
+  }, [friendData]);
+
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
@@ -150,6 +169,7 @@ const MapIdle: FC = () => {
           </p>
           {FRIEND_ROUTES.map((fr) => {
             const match = friendRoutes.find((r) => r.name === fr.name);
+            const times = friendTimes.find((t) => t.name === fr.name);
             return (
               <FriendActivityCard
                 key={fr.name}
@@ -157,8 +177,9 @@ const MapIdle: FC = () => {
                 activity={fr.activity}
                 destination={fr.destination}
                 address={fr.address}
-                time={fr.time}
-                departureTime={fr.departureTime}
+                time={times?.time ?? `Hace ${fr.minutesAgo} min`}
+                departureTime={times?.departureTime}
+                estimatedArrival={times?.estimatedArrival}
                 onClick={() => {
                   if (match) {
                     setFocusBounds(match.coordinates);

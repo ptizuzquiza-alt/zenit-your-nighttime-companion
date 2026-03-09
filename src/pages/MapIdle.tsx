@@ -18,6 +18,7 @@ const FRIEND_ROUTES = [
     destination: 'Casa',
     address: 'Eixample',
     time: 'Hace 5 min',
+    departureTime: '21:15',
     progress: 0.4,
   },
   {
@@ -32,6 +33,7 @@ const FRIEND_ROUTES = [
     destination: 'Trabajo',
     address: 'Gràcia',
     time: 'Hace 2 min',
+    departureTime: '21:28',
     progress: 0.6,
   },
 ];

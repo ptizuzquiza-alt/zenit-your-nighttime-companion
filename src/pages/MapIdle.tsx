@@ -79,13 +79,13 @@ const MapIdle: FC = () => {
               ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
             );
             const idx = Math.floor(pts.length * fr.progress);
-            return { name: fr.name, coordinates: pts, position: pts[idx] };
+            return { name: fr.name, coordinates: pts, position: pts[idx], durationSec: data.routes[0].duration };
           }
         } catch { /* fallback */ }
         const idx = Math.floor(fr.fallback.length * fr.progress);
-        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx] };
+        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx], durationSec: fr.totalDurationMin * 60 };
       })
-    ).then(setFriendRoutes);
+    ).then(setFriendData);
   }, []);
 
   return (

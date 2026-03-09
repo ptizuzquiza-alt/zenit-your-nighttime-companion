@@ -338,6 +338,7 @@ const Navigation: FC = () => {
               destination="L'Auditori"
               address="Carrer de Lepant, 150, Eixample"
               time="Hace 2 min"
+              departureTime="21:32"
             />
           )}
           

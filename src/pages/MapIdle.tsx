@@ -155,6 +155,7 @@ const MapIdle: FC = () => {
                 destination={fr.destination}
                 address={fr.address}
                 time={fr.time}
+                departureTime={fr.departureTime}
                 onClick={() => {
                   if (match) {
                     setFocusBounds(match.coordinates);

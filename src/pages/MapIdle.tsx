@@ -44,8 +44,8 @@ const FRIEND_ROUTES = [
 const MapIdle: FC = () => {
   const navigate = useNavigate();
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [friendRoutes, setFriendRoutes] = useState<
-    { name: string; coordinates: [number, number][]; position: [number, number] }[]
+  const [friendData, setFriendData] = useState<
+    { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number }[]
   >([]);
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);

@@ -323,24 +323,31 @@ const Navigation: FC = () => {
             </div>
           )}
           
-          {showFriendActivity && (
-            <FriendActivityCard
-              onClick={() => {
-                setFocusJuan(prev => !prev);
-                setFitAll(false);
-                if (!focusJuan) {
-                  const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
-                  setSheetOffset(h);
-                }
-              }}
-              name="Juan"
-              activity="ha completado el 50% de su ruta."
-              destination="L'Auditori"
-              address="Carrer de Lepant, 150, Eixample"
-              time="Hace 2 min"
-              departureTime="21:32"
-            />
-          )}
+          {showFriendActivity && (() => {
+            const now = new Date();
+            const departure = new Date(now.getTime() - 2 * 60_000);
+            const arrival = new Date(departure.getTime() + 25 * 60_000);
+            const fmt = (d: Date) => d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            return (
+              <FriendActivityCard
+                onClick={() => {
+                  setFocusJuan(prev => !prev);
+                  setFitAll(false);
+                  if (!focusJuan) {
+                    const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
+                    setSheetOffset(h);
+                  }
+                }}
+                name="Juan"
+                activity="ha completado el 50% de su ruta."
+                destination="L'Auditori"
+                address="Carrer de Lepant, 150, Eixample"
+                time="Hace 2 min"
+                departureTime={fmt(departure)}
+                estimatedArrival={fmt(arrival)}
+              />
+            );
+          })()}
           
           <div className="flex gap-3 mt-4">
             <button 

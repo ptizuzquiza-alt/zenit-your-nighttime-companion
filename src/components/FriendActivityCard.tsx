@@ -20,6 +20,7 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
   address,
   time,
   departureTime,
+  estimatedArrival,
   onClick
 }) => {
   return (

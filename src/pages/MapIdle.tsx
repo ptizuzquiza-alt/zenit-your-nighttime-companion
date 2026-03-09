@@ -1,9 +1,12 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
+
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
 const FRIEND_ROUTES = [
   {
@@ -17,8 +20,8 @@ const FRIEND_ROUTES = [
     activity: 'está caminando',
     destination: 'Casa',
     address: 'Eixample',
-    time: 'Hace 5 min',
-    departureTime: '21:15',
+    minutesAgo: 5,
+    totalDurationMin: 20,
     progress: 0.4,
   },
   {
@@ -32,8 +35,8 @@ const FRIEND_ROUTES = [
     activity: 'está caminando',
     destination: 'Trabajo',
     address: 'Gràcia',
-    time: 'Hace 2 min',
-    departureTime: '21:28',
+    minutesAgo: 2,
+    totalDurationMin: 15,
     progress: 0.6,
   },
 ];
@@ -41,8 +44,8 @@ const FRIEND_ROUTES = [
 const MapIdle: FC = () => {
   const navigate = useNavigate();
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [friendRoutes, setFriendRoutes] = useState<
-    { name: string; coordinates: [number, number][]; position: [number, number] }[]
+  const [friendData, setFriendData] = useState<
+    { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number }[]
   >([]);
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
@@ -76,14 +79,33 @@ const MapIdle: FC = () => {
               ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
             );
             const idx = Math.floor(pts.length * fr.progress);
-            return { name: fr.name, coordinates: pts, position: pts[idx] };
+            return { name: fr.name, coordinates: pts, position: pts[idx], durationSec: data.routes[0].duration };
           }
         } catch { /* fallback */ }
         const idx = Math.floor(fr.fallback.length * fr.progress);
-        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx] };
+        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx], durationSec: fr.totalDurationMin * 60 };
       })
-    ).then(setFriendRoutes);
+    ).then(setFriendData);
   }, []);
+
+  const friendRoutes = friendData.map(({ name, coordinates, position }) => ({ name, coordinates, position }));
+
+  // Compute real departure/arrival times
+  const friendTimes = useMemo(() => {
+    const now = new Date();
+    return FRIEND_ROUTES.map((fr) => {
+      const match = friendData.find((d) => d.name === fr.name);
+      const departureDate = new Date(now.getTime() - fr.minutesAgo * 60_000);
+      const totalSec = match?.durationSec ?? fr.totalDurationMin * 60;
+      const arrivalDate = new Date(departureDate.getTime() + totalSec * 1000);
+      return {
+        name: fr.name,
+        time: `Hace ${fr.minutesAgo} min`,
+        departureTime: formatTime(departureDate),
+        estimatedArrival: formatTime(arrivalDate),
+      };
+    });
+  }, [friendData]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -147,6 +169,7 @@ const MapIdle: FC = () => {
           </p>
           {FRIEND_ROUTES.map((fr) => {
             const match = friendRoutes.find((r) => r.name === fr.name);
+            const times = friendTimes.find((t) => t.name === fr.name);
             return (
               <FriendActivityCard
                 key={fr.name}
@@ -154,8 +177,9 @@ const MapIdle: FC = () => {
                 activity={fr.activity}
                 destination={fr.destination}
                 address={fr.address}
-                time={fr.time}
-                departureTime={fr.departureTime}
+                time={times?.time ?? `Hace ${fr.minutesAgo} min`}
+                departureTime={times?.departureTime}
+                estimatedArrival={times?.estimatedArrival}
                 onClick={() => {
                   if (match) {
                     setFocusBounds(match.coordinates);

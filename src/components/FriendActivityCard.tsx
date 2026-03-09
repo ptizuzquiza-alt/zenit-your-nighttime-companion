@@ -8,6 +8,7 @@ interface FriendActivityCardProps {
   address: string;
   time: string;
   departureTime?: string;
+  estimatedArrival?: string;
   onClick?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
   address,
   time,
   departureTime,
+  estimatedArrival,
   onClick
 }) => {
   return (
@@ -40,10 +42,16 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
           <p className="text-sm text-muted-foreground mt-0.5">
             Hacia <span className="text-foreground font-medium">{destination}</span>, en {address}
           </p>
-          {departureTime && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Salió a las <span className="text-foreground font-medium">{departureTime}</span>
-            </p>
+          {(departureTime || estimatedArrival) && (
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
+              {departureTime && (
+                <span>Salió a las <span className="text-foreground font-medium">{departureTime}</span></span>
+              )}
+              {departureTime && estimatedArrival && <span className="text-border">•</span>}
+              {estimatedArrival && (
+                <span>Llega ~<span className="text-foreground font-medium">{estimatedArrival}</span></span>
+              )}
+            </div>
           )}
         </div>
       </div>

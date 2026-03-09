@@ -8,6 +8,7 @@ interface FriendActivityCardProps {
   address: string;
   time: string;
   departureTime?: string;
+  estimatedArrival?: string;
   onClick?: () => void;
 }
 

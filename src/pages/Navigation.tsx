@@ -117,11 +117,11 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
-  const friendRoutes = [{
+  const friendRoutes = juanAccepted ? [{
     name: 'Juan',
     coordinates: juanRoute,
     position: juanPosition,
-  }];
+  }] : [];
   // Get the full height of the sheet content (minus handle area)
   const getSheetContentHeight = () => {
     if (!sheetRef.current) return 300;

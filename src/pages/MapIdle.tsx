@@ -5,6 +5,9 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
 const FRIEND_ROUTES = [
   {
     name: 'Juan',
@@ -17,8 +20,8 @@ const FRIEND_ROUTES = [
     activity: 'está caminando',
     destination: 'Casa',
     address: 'Eixample',
-    time: 'Hace 5 min',
-    departureTime: '21:15',
+    minutesAgo: 5,
+    totalDurationMin: 20,
     progress: 0.4,
   },
   {
@@ -32,8 +35,8 @@ const FRIEND_ROUTES = [
     activity: 'está caminando',
     destination: 'Trabajo',
     address: 'Gràcia',
-    time: 'Hace 2 min',
-    departureTime: '21:28',
+    minutesAgo: 2,
+    totalDurationMin: 15,
     progress: 0.6,
   },
 ];

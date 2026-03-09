@@ -1,15 +1,17 @@
-import { FC, useState, useEffect, useMemo } from 'react';
+import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
+import { FriendRequestModal } from '@/components/FriendRequestModal';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
 const FRIEND_ROUTES = [
   {
+    id: 'juan',
     name: 'Juan',
     origin: [41.3950, 2.1650] as [number, number],
     dest: [41.4080, 2.1820] as [number, number],
@@ -25,6 +27,7 @@ const FRIEND_ROUTES = [
     progress: 0.4,
   },
   {
+    id: 'marta',
     name: 'Marta',
     origin: [41.3890, 2.1590] as [number, number],
     dest: [41.3980, 2.1780] as [number, number],
@@ -49,6 +52,53 @@ const MapIdle: FC = () => {
   >([]);
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
+
+  // Friend request system
+  const [pendingRequests, setPendingRequests] = useState<{ id: string; name: string }[]>([]);
+  const [currentRequest, setCurrentRequest] = useState<{ id: string; name: string } | null>(null);
+  const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]');
+    } catch { return []; }
+  });
+
+  // Simulate incoming friend requests after a delay
+  useEffect(() => {
+    const alreadyAccepted = acceptedFriends;
+    const pending = FRIEND_ROUTES
+      .filter(fr => !alreadyAccepted.includes(fr.id))
+      .map(fr => ({ id: fr.id, name: fr.name }));
+
+    if (pending.length > 0) {
+      const timer = setTimeout(() => {
+        setPendingRequests(pending);
+        setCurrentRequest(pending[0]);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleAcceptRequest = useCallback((id: string) => {
+    setAcceptedFriends(prev => {
+      const next = [...prev, id];
+      sessionStorage.setItem('zenit_accepted_friends', JSON.stringify(next));
+      return next;
+    });
+    // Show next pending request or close
+    setPendingRequests(prev => {
+      const remaining = prev.filter(r => r.id !== id);
+      setCurrentRequest(remaining[0] ?? null);
+      return remaining;
+    });
+  }, []);
+
+  const handleRejectRequest = useCallback((id: string) => {
+    setPendingRequests(prev => {
+      const remaining = prev.filter(r => r.id !== id);
+      setCurrentRequest(remaining[0] ?? null);
+      return remaining;
+    });
+  }, []);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -88,7 +138,12 @@ const MapIdle: FC = () => {
     ).then(setFriendData);
   }, []);
 
-  const friendRoutes = friendData.map(({ name, coordinates, position }) => ({ name, coordinates, position }));
+  // Only show accepted friends
+  const acceptedFriendRoutes = friendData
+    .filter(fd => acceptedFriends.includes(FRIEND_ROUTES.find(fr => fr.name === fd.name)?.id ?? ''))
+    .map(({ name, coordinates, position }) => ({ name, coordinates, position }));
+
+  const acceptedCount = acceptedFriends.length;
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
@@ -107,13 +162,16 @@ const MapIdle: FC = () => {
     });
   }, [friendData]);
 
+  // Only show accepted friends in cards
+  const acceptedFriendData = FRIEND_ROUTES.filter(fr => acceptedFriends.includes(fr.id));
+
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
         center={userLocation}
         zoom={15}
         origin={userLocation}
-        friendRoutes={showFriends ? friendRoutes : []}
+        friendRoutes={showFriends ? acceptedFriendRoutes : []}
         focusBounds={focusBounds}
         className="absolute inset-0"
       />
@@ -127,17 +185,22 @@ const MapIdle: FC = () => {
         />
       </div>
 
-      {/* Friends FAB */}
+      {/* Friends FAB with badge */}
       <div className="absolute bottom-6 left-4 z-[1000]">
         <button
           onClick={() => setShowFriends((p) => !p)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+          className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
             showFriends
               ? 'bg-primary text-primary-foreground'
               : 'bg-card/90 text-muted-foreground border border-border'
           }`}
         >
           <Users className="w-5 h-5" />
+          {acceptedCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
+              {acceptedCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -162,13 +225,13 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Friends activity cards */}
-      {showFriends && friendRoutes.length > 0 && (
+      {showFriends && acceptedFriendRoutes.length > 0 && (
         <div className="absolute bottom-20 left-4 right-4 z-[1000] space-y-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Amigos activos
           </p>
-          {FRIEND_ROUTES.map((fr) => {
-            const match = friendRoutes.find((r) => r.name === fr.name);
+          {acceptedFriendData.map((fr) => {
+            const match = acceptedFriendRoutes.find((r) => r.name === fr.name);
             const times = friendTimes.find((t) => t.name === fr.name);
             return (
               <FriendActivityCard
@@ -190,6 +253,13 @@ const MapIdle: FC = () => {
           })}
         </div>
       )}
+
+      {/* Friend request modal */}
+      <FriendRequestModal
+        request={currentRequest}
+        onAccept={handleAcceptRequest}
+        onReject={handleRejectRequest}
+      />
     </div>
   );
 };

@@ -25,7 +25,11 @@ const JUAN_FALLBACK: [number, number][] = [
 
 const Navigation: FC = () => {
   const navigate = useNavigate();
-  const [showFriendActivity, setShowFriendActivity] = useState(true);
+  const acceptedFriends: string[] = (() => {
+    try { return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]'); } catch { return []; }
+  })();
+  const juanAccepted = acceptedFriends.includes('juan');
+  const [showFriendActivity, setShowFriendActivity] = useState(juanAccepted);
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -113,11 +117,11 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
-  const friendRoutes = [{
+  const friendRoutes = juanAccepted ? [{
     name: 'Juan',
     coordinates: juanRoute,
     position: juanPosition,
-  }];
+  }] : [];
   // Get the full height of the sheet content (minus handle area)
   const getSheetContentHeight = () => {
     if (!sheetRef.current) return 300;

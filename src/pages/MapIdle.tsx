@@ -1,10 +1,11 @@
-import { FC, useState, useEffect, useMemo, useCallback } from 'react';
+import { FC, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendRequestModal } from '@/components/FriendRequestModal';
+import { PendingRequestsList } from '@/components/PendingRequestsList';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });

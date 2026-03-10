@@ -310,6 +310,8 @@ const MapIdle: FC = () => {
                     time={times?.time ?? `Hace ${fr.minutesAgo} min`}
                     departureTime={times?.departureTime}
                     estimatedArrival={times?.estimatedArrival}
+                    tracking={!hiddenFriends.includes(fr.id)}
+                    onToggleTracking={() => toggleFriendVisibility(fr.id)}
                     onClick={() => {
                       if (match) {
                         setFocusBounds(match.coordinates);

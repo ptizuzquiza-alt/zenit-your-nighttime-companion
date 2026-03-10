@@ -237,9 +237,9 @@ const MapIdle: FC = () => {
           }`}
         >
           <Users className="w-5 h-5" />
-          {acceptedCount > 0 && (
+          {badgeCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
-              {acceptedCount}
+              {badgeCount}
             </span>
           )}
         </button>

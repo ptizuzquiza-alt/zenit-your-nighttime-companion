@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { EyeOff, Eye } from 'lucide-react';
 
 interface FriendActivityCardProps {
   name: string;
@@ -9,6 +10,8 @@ interface FriendActivityCardProps {
   time: string;
   departureTime?: string;
   estimatedArrival?: string;
+  tracking?: boolean;
+  onToggleTracking?: () => void;
   onClick?: () => void;
 }
 
@@ -21,12 +24,29 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
   time,
   departureTime,
   estimatedArrival,
+  tracking = true,
+  onToggleTracking,
   onClick
 }) => {
   return (
-    <div className="zenit-friend-activity cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
-      <p className="text-xs text-muted-foreground mb-2">{time}</p>
-      <div className="flex items-start gap-3">
+    <div className={`zenit-friend-activity transition-all ${!tracking ? 'opacity-60' : ''}`}>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-muted-foreground">{time}</p>
+        {onToggleTracking && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleTracking(); }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+              tracking
+                ? 'bg-primary/15 text-primary border border-primary/30'
+                : 'bg-secondary text-muted-foreground border border-border'
+            }`}
+          >
+            {tracking ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+            {tracking ? 'Siguiendo' : 'Detenido'}
+          </button>
+        )}
+      </div>
+      <div className="flex items-start gap-3 cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
           {avatar ? (
             <img src={avatar} alt={name} className="w-full h-full object-cover" />

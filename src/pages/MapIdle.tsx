@@ -55,28 +55,51 @@ const MapIdle: FC = () => {
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
   // Friend request system
-  const [pendingRequests, setPendingRequests] = useState<{ id: string; name: string }[]>([]);
+  const [notificationQueue, setNotificationQueue] = useState<{ id: string; name: string }[]>([]);
   const [currentRequest, setCurrentRequest] = useState<{ id: string; name: string } | null>(null);
+  const [pendingRequests, setPendingRequests] = useState<{ id: string; name: string }[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('zenit_pending_requests') || '[]');
+    } catch { return []; }
+  });
   const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
     try {
       return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]');
     } catch { return []; }
   });
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Show next request from queue with delay
+  const showNextFromQueue = useCallback((queue: { id: string; name: string }[]) => {
+    if (queue.length === 0) {
+      setCurrentRequest(null);
+      return;
+    }
+    queueTimerRef.current = setTimeout(() => {
+      setCurrentRequest(queue[0]);
+      setNotificationQueue(queue.slice(1));
+    }, 2500);
+  }, []);
 
   // Simulate incoming friend requests after a delay
   useEffect(() => {
-    const alreadyAccepted = acceptedFriends;
-    const pending = FRIEND_ROUTES
-      .filter(fr => !alreadyAccepted.includes(fr.id))
+    const alreadyHandled = [...acceptedFriends, ...pendingRequests.map(r => r.id)];
+    const incoming = FRIEND_ROUTES
+      .filter(fr => !alreadyHandled.includes(fr.id))
       .map(fr => ({ id: fr.id, name: fr.name }));
 
-    if (pending.length > 0) {
+    if (incoming.length > 0) {
       const timer = setTimeout(() => {
-        setPendingRequests(pending);
-        setCurrentRequest(pending[0]);
+        setCurrentRequest(incoming[0]);
+        setNotificationQueue(incoming.slice(1));
       }, 2000);
       return () => clearTimeout(timer);
     }
+  }, []);
+
+  // Cleanup timer
+  useEffect(() => {
+    return () => { if (queueTimerRef.current) clearTimeout(queueTimerRef.current); };
   }, []);
 
   const handleAcceptRequest = useCallback((id: string) => {
@@ -85,19 +108,36 @@ const MapIdle: FC = () => {
       sessionStorage.setItem('zenit_accepted_friends', JSON.stringify(next));
       return next;
     });
-    // Show next pending request or close
+    // Remove from pending if it was there
     setPendingRequests(prev => {
-      const remaining = prev.filter(r => r.id !== id);
-      setCurrentRequest(remaining[0] ?? null);
-      return remaining;
+      const next = prev.filter(r => r.id !== id);
+      sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
+      return next;
     });
-  }, []);
+    setCurrentRequest(null);
+    showNextFromQueue(notificationQueue);
+  }, [notificationQueue, showNextFromQueue]);
 
   const handleRejectRequest = useCallback((id: string) => {
+    const request = currentRequest || pendingRequests.find(r => r.id === id);
+    if (request) {
+      // Move to pending (dismissed) state
+      setPendingRequests(prev => {
+        if (prev.some(r => r.id === id)) return prev;
+        const next = [...prev, { id: request.id, name: request.name }];
+        sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
+        return next;
+      });
+    }
+    setCurrentRequest(null);
+    showNextFromQueue(notificationQueue);
+  }, [currentRequest, notificationQueue, pendingRequests, showNextFromQueue]);
+
+  const handlePendingReject = useCallback((id: string) => {
     setPendingRequests(prev => {
-      const remaining = prev.filter(r => r.id !== id);
-      setCurrentRequest(remaining[0] ?? null);
-      return remaining;
+      const next = prev.filter(r => r.id !== id);
+      sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
+      return next;
     });
   }, []);
 

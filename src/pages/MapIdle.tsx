@@ -184,7 +184,7 @@ const MapIdle: FC = () => {
     .filter(fd => acceptedFriends.includes(FRIEND_ROUTES.find(fr => fr.name === fd.name)?.id ?? ''))
     .map(({ name, coordinates, position }) => ({ name, coordinates, position }));
 
-  const acceptedCount = acceptedFriends.length;
+  const badgeCount = acceptedFriends.length + pendingRequests.length;
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {

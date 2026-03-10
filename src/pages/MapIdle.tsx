@@ -267,31 +267,43 @@ const MapIdle: FC = () => {
 
       {/* Friends activity cards */}
       {showFriends && acceptedFriendRoutes.length > 0 && (
-        <div className="absolute bottom-20 left-4 right-4 z-[1000] space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Amigos activos
-          </p>
-          {acceptedFriendData.map((fr) => {
-            const match = acceptedFriendRoutes.find((r) => r.name === fr.name);
-            const times = friendTimes.find((t) => t.name === fr.name);
-            return (
-              <FriendActivityCard
-                key={fr.name}
-                name={fr.name}
-                activity={fr.activity}
-                destination={fr.destination}
-                address={fr.address}
-                time={times?.time ?? `Hace ${fr.minutesAgo} min`}
-                departureTime={times?.departureTime}
-                estimatedArrival={times?.estimatedArrival}
-                onClick={() => {
-                  if (match) {
-                    setFocusBounds(match.coordinates);
-                  }
-                }}
-              />
-            );
-          })}
+        <div className="absolute bottom-20 left-4 right-4 z-[1000] space-y-2 max-h-[60vh] overflow-y-auto pb-2">
+          {/* Pending requests */}
+          <PendingRequestsList
+            requests={pendingRequests}
+            onAccept={handleAcceptRequest}
+            onReject={handlePendingReject}
+          />
+
+          {/* Active friends */}
+          {acceptedFriendRoutes.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                Amigos activos
+              </p>
+              {acceptedFriendData.map((fr) => {
+                const match = acceptedFriendRoutes.find((r) => r.name === fr.name);
+                const times = friendTimes.find((t) => t.name === fr.name);
+                return (
+                  <FriendActivityCard
+                    key={fr.name}
+                    name={fr.name}
+                    activity={fr.activity}
+                    destination={fr.destination}
+                    address={fr.address}
+                    time={times?.time ?? `Hace ${fr.minutesAgo} min`}
+                    departureTime={times?.departureTime}
+                    estimatedArrival={times?.estimatedArrival}
+                    onClick={() => {
+                      if (match) {
+                        setFocusBounds(match.coordinates);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </>
+          )}
         </div>
       )}
 

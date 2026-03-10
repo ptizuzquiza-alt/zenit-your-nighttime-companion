@@ -67,6 +67,11 @@ const MapIdle: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]');
     } catch { return []; }
   });
+  const [hiddenFriends, setHiddenFriends] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('zenit_hidden_friends') || '[]');
+    } catch { return []; }
+  });
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show next request from queue with delay
@@ -180,8 +185,19 @@ const MapIdle: FC = () => {
   }, []);
 
   // Only show accepted friends
+  const toggleFriendVisibility = useCallback((id: string) => {
+    setHiddenFriends(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      sessionStorage.setItem('zenit_hidden_friends', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const acceptedFriendRoutes = friendData
-    .filter(fd => acceptedFriends.includes(FRIEND_ROUTES.find(fr => fr.name === fd.name)?.id ?? ''))
+    .filter(fd => {
+      const fr = FRIEND_ROUTES.find(r => r.name === fd.name);
+      return fr && acceptedFriends.includes(fr.id) && !hiddenFriends.includes(fr.id);
+    })
     .map(({ name, coordinates, position }) => ({ name, coordinates, position }));
 
   const badgeCount = acceptedFriends.length + pendingRequests.length;
@@ -294,6 +310,8 @@ const MapIdle: FC = () => {
                     time={times?.time ?? `Hace ${fr.minutesAgo} min`}
                     departureTime={times?.departureTime}
                     estimatedArrival={times?.estimatedArrival}
+                    tracking={!hiddenFriends.includes(fr.id)}
+                    onToggleTracking={() => toggleFriendVisibility(fr.id)}
                     onClick={() => {
                       if (match) {
                         setFocusBounds(match.coordinates);

@@ -266,7 +266,7 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Friends activity cards */}
-      {showFriends && acceptedFriendRoutes.length > 0 && (
+      {showFriends && (acceptedFriendRoutes.length > 0 || pendingRequests.length > 0) && (
         <div className="absolute bottom-20 left-4 right-4 z-[1000] space-y-2 max-h-[60vh] overflow-y-auto pb-2">
           {/* Pending requests */}
           <PendingRequestsList

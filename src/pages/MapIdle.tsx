@@ -67,6 +67,11 @@ const MapIdle: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]');
     } catch { return []; }
   });
+  const [hiddenFriends, setHiddenFriends] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('zenit_hidden_friends') || '[]');
+    } catch { return []; }
+  });
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show next request from queue with delay

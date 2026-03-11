@@ -8,6 +8,8 @@ interface LocationInputProps {
   onDestinationChange?: (value: string) => void;
   onSwap?: () => void;
   onBack?: () => void;
+  activeField?: 'origin' | 'destination';
+  onFieldFocus?: (field: 'origin' | 'destination') => void;
 }
 
 export const LocationInput: FC<LocationInputProps> = ({
@@ -16,7 +18,9 @@ export const LocationInput: FC<LocationInputProps> = ({
   onOriginChange,
   onDestinationChange,
   onSwap,
-  onBack
+  onBack,
+  activeField,
+  onFieldFocus,
 }) => {
   return (
     <div className="w-full bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/50">

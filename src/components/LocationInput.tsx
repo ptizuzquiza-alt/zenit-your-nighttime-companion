@@ -8,6 +8,8 @@ interface LocationInputProps {
   onDestinationChange?: (value: string) => void;
   onSwap?: () => void;
   onBack?: () => void;
+  activeField?: 'origin' | 'destination';
+  onFieldFocus?: (field: 'origin' | 'destination') => void;
 }
 
 export const LocationInput: FC<LocationInputProps> = ({
@@ -16,7 +18,9 @@ export const LocationInput: FC<LocationInputProps> = ({
   onOriginChange,
   onDestinationChange,
   onSwap,
-  onBack
+  onBack,
+  activeField,
+  onFieldFocus,
 }) => {
   return (
     <div className="w-full bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/50">
@@ -37,7 +41,8 @@ export const LocationInput: FC<LocationInputProps> = ({
             placeholder="Tu ubicación"
             value={origin}
             onChange={(e) => onOriginChange?.(e.target.value)}
-            className="w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2"
+            onFocus={() => onFieldFocus?.('origin')}
+            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'origin' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
           />
           <div className="h-px bg-border/50" />
           <input
@@ -45,7 +50,8 @@ export const LocationInput: FC<LocationInputProps> = ({
             placeholder="Destino"
             value={destination}
             onChange={(e) => onDestinationChange?.(e.target.value)}
-            className="w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2"
+            onFocus={() => onFieldFocus?.('destination')}
+            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'destination' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
           />
         </div>
         

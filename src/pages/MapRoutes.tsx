@@ -4,7 +4,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
-import { getStoredDestination } from '@/lib/geocoding';
+import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -55,8 +55,13 @@ const MapRoutes: FC = () => {
     ? [storedDest.lat, storedDest.lon]
     : [41.4110, 2.1850];
 
+  // Get custom origin or use geolocation
+  const storedOrigin = getStoredOrigin();
+
   useEffect(() => {
-    if ('geolocation' in navigator) {
+    if (storedOrigin) {
+      setUserLocation([storedOrigin.lat, storedOrigin.lon]);
+    } else if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation([position.coords.latitude, position.coords.longitude]);

@@ -95,3 +95,19 @@ export function getStoredDestination(): { name: string; lat: number; lon: number
   const data = sessionStorage.getItem('zenit_destination');
   return data ? JSON.parse(data) : null;
 }
+
+/** Store custom origin in sessionStorage */
+export function storeOrigin(origin: { name: string; lat: number; lon: number }) {
+  sessionStorage.setItem('zenit_origin', JSON.stringify(origin));
+}
+
+/** Clear custom origin (revert to geolocation) */
+export function clearOrigin() {
+  sessionStorage.removeItem('zenit_origin');
+}
+
+/** Retrieve custom origin from sessionStorage */
+export function getStoredOrigin(): { name: string; lat: number; lon: number } | null {
+  const data = sessionStorage.getItem('zenit_origin');
+  return data ? JSON.parse(data) : null;
+}

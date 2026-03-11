@@ -41,7 +41,8 @@ export const LocationInput: FC<LocationInputProps> = ({
             placeholder="Tu ubicación"
             value={origin}
             onChange={(e) => onOriginChange?.(e.target.value)}
-            className="w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2"
+            onFocus={() => onFieldFocus?.('origin')}
+            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'origin' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
           />
           <div className="h-px bg-border/50" />
           <input
@@ -49,7 +50,8 @@ export const LocationInput: FC<LocationInputProps> = ({
             placeholder="Destino"
             value={destination}
             onChange={(e) => onDestinationChange?.(e.target.value)}
-            className="w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2"
+            onFocus={() => onFieldFocus?.('destination')}
+            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'destination' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
           />
         </div>
         

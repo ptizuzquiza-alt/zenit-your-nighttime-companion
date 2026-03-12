@@ -125,12 +125,16 @@ export async function fetchSafeAndFastRoutes(
   const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
   const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
 
-  const [directRes, wp1Res, wp2Res] = await Promise.all([
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+  // Zenit uses 'car' profile to prefer main avenues/wide streets
+  // Standard uses 'foot' for shortest walking path
+  const [zenitDirectRes, footDirectRes, wp1Res, wp2Res] = await Promise.all([
+    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
   ]);
 

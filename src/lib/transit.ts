@@ -73,11 +73,13 @@ function getModeName(mode: string): string {
 
 /**
  * Fetch transit route from TMB Planner API via edge function.
- * Returns the fastest itinerary combining walk + public transport.
+ * @param modeFilter - OTP mode string, e.g. 'TRANSIT,WALK', 'SUBWAY,WALK', 'BUS,WALK'
+ * Returns the fastest itinerary for the requested modes.
  */
 export async function fetchTransitRoute(
   origin: [number, number],
-  destination: [number, number]
+  destination: [number, number],
+  modeFilter = 'TRANSIT,WALK'
 ): Promise<TransitRouteResult | null> {
   try {
     const { data, error } = await supabase.functions.invoke('tmb-planner', {
@@ -86,6 +88,7 @@ export async function fetchTransitRoute(
         fromLon: origin[1],
         toLat: destination[0],
         toLon: destination[1],
+        modeFilter,
       },
     });
 

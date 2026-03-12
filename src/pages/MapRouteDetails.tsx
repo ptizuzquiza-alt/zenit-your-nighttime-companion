@@ -4,7 +4,7 @@ import { Eye, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { BackButton } from '@/components/BackButton';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
-import { getStoredRoute } from '@/lib/routing';
+import { getStoredRoute, getStoredMode } from '@/lib/routing';
 import { CONTACTS } from '@/config/contacts';
 
 const contacts = CONTACTS;
@@ -17,6 +17,10 @@ const MapRouteDetails: FC = () => {
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
 
   const storedRoute = getStoredRoute();
+  const storedMode = getStoredMode();
+  const modeLabelMap: Record<string, string> = {
+    foot: 'A pie', metro: 'Metro', bus: 'Autobús', car: 'Coche',
+  };
   const routeCoords = storedRoute?.coordinates ?? [
     [41.4036, 2.1744],
     [41.4110, 2.1850],
@@ -63,8 +67,8 @@ const MapRouteDetails: FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-foreground font-semibold">
             {sessionStorage.getItem('zenit_selected_route_type') === 'fast'
-              ? 'Has elegido la Ruta Estándar'
-              : 'Has elegido la Ruta Zenit'}
+              ? `Ruta Estándar · ${modeLabelMap[storedMode] ?? 'A pie'}`
+              : `Ruta Zenit · ${modeLabelMap[storedMode] ?? 'A pie'}`}
           </h3>
           {sharedContacts.length > 0 && (
             <button

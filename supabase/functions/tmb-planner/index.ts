@@ -19,7 +19,7 @@ serve(async (req) => {
     if (!TMB_APP_ID) throw new Error('TMB_APP_ID is not configured');
     if (!TMB_APP_KEY) throw new Error('TMB_APP_KEY is not configured');
 
-    const { fromLat, fromLon, toLat, toLon } = await req.json();
+    const { fromLat, fromLon, toLat, toLon, modeFilter } = await req.json();
 
     if (!fromLat || !fromLon || !toLat || !toLon) {
       return new Response(JSON.stringify({ error: 'Missing coordinates' }), {
@@ -45,7 +45,7 @@ serve(async (req) => {
       date,
       time,
       arriveBy: 'false',
-      mode: 'TRANSIT,WALK',
+      mode: modeFilter || 'TRANSIT,WALK',
       maxWalkDistance: '1000',
       showIntermediateStops: 'true',
     });

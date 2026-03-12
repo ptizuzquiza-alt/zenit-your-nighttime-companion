@@ -8,6 +8,10 @@ export interface RouteResult {
   coordinates: [number, number][];
   distance: number; // meters
   duration: number; // seconds
+  isTransit?: boolean;
+  transitLegs?: import('./transit').TransitLeg[];
+  transfers?: number;
+  walkDistance?: number;
 }
 
 function parseOSRMRoute(route: any): RouteResult {

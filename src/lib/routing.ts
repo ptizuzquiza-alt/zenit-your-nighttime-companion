@@ -125,69 +125,75 @@ export async function fetchSafeAndFastRoutes(
   const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
   const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
 
-  const [directRes, wp1Res, wp2Res] = await Promise.all([
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+  // Zenit uses 'car' profile to prefer main avenues/wide streets
+  // Standard uses 'foot' for shortest walking path
+  const [zenitDirectRes, footDirectRes, wp1Res, wp2Res] = await Promise.all([
+    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
   ]);
 
-  const allRoutes: RouteResult[] = [];
-
-  if (directRes?.code === 'Ok' && directRes.routes?.length) {
-    for (const route of directRes.routes) allRoutes.push(parseOSRMRoute(route));
+  // Collect car-profile routes for Zenit (main avenues)
+  const zenitCandidates: RouteResult[] = [];
+  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
+    for (const route of zenitDirectRes.routes) zenitCandidates.push(parseOSRMRoute(route));
   }
   if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
-    allRoutes.push(parseOSRMRoute(wp1Res.routes[0]));
+    zenitCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
   }
   if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
-    allRoutes.push(parseOSRMRoute(wp2Res.routes[0]));
+    zenitCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
   }
 
-  if (allRoutes.length === 0) return { safe: null, fast: null };
+  // Collect foot-profile routes for Standard (fastest walking)
+  const footCandidates: RouteResult[] = [];
+  if (footDirectRes?.code === 'Ok' && footDirectRes.routes?.length) {
+    for (const route of footDirectRes.routes) footCandidates.push(parseOSRMRoute(route));
+  }
 
-  // Sort by distance → shortest becomes Zenit (safe, main avenues)
-  const byDist = [...allRoutes].sort((a, b) => a.distance - b.distance);
-  const shortest = byDist[0];
-  const maxDist = shortest.distance * 1.6;
+  // Filter out backtracking routes
+  const cleanZenit = zenitCandidates.filter(r => !hasBacktracking(r.coordinates));
+  const cleanFoot = footCandidates.filter(r => !hasBacktracking(r.coordinates));
 
-  // Filter: reasonable length + no backtracking
-  const clean = allRoutes.filter(r => 
-    r.distance <= maxDist && !hasBacktracking(r.coordinates)
-  );
-
-  console.log('All routes:', allRoutes.map(r => ({
+  console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
     distance: Math.round(r.distance) + 'm',
     turnsPerKm: Math.round(turnsPerKm(r)) + '°/km',
-    backtrack: hasBacktracking(r.coordinates),
+  })));
+  console.log('Standard candidates (foot profile):', cleanFoot.map(r => ({
+    distance: Math.round(r.distance) + 'm',
   })));
 
-  // Zenit = shortest (direct, main streets)
-  // Standard = alternative different route (faster label but actually longer path)
-  let safe: RouteResult = { ...shortest, duration: shortest.duration * 1.15 }; // Zenit slightly longer time
+  // Zenit = straightest car-profile route (fewest turns = main avenues)
+  let safe: RouteResult | null = null;
+  if (cleanZenit.length > 0) {
+    const sorted = [...cleanZenit].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
+    safe = sorted[0];
+  }
 
-  const differentRoutes = clean
-    .filter(r => r.distance > shortest.distance * 1.03)
-    .sort((a, b) => a.distance - b.distance); // shortest alternative first
+  // Standard = shortest foot route (most direct walking path)
+  let fast: RouteResult | null = null;
+  if (cleanFoot.length > 0) {
+    const sorted = [...cleanFoot].sort((a, b) => a.distance - b.distance);
+    fast = sorted[0];
+  }
 
-  let fast: RouteResult;
+  // Fallbacks
+  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.15 };
+  if (!fast && safe) fast = { ...safe, duration: safe.duration * 0.85 };
 
-  if (differentRoutes.length > 0) {
-    fast = differentRoutes[0];
-    // Standard must be faster than Zenit
-    if (fast.duration >= safe.duration) {
-      fast = { ...fast, duration: safe.duration * 0.85 };
-    }
-  } else {
-    // No different route — fake it
-    fast = { ...shortest, duration: shortest.duration * 0.90, distance: shortest.distance * 1.1 };
+  // Ensure Zenit always shows slightly longer time (safer but slower)
+  if (safe && fast && safe.duration <= fast.duration) {
+    safe = { ...safe, duration: fast.duration * 1.15 };
   }
 
   console.log('Selected:', {
-    zenit: Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's',
-    standard: Math.round(fast.distance) + 'm, ' + Math.round(fast.duration) + 's',
+    zenit: safe ? Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's' : 'none',
+    standard: fast ? Math.round(fast.distance) + 'm, ' + Math.round(fast.duration) + 's' : 'none',
   });
 
   return { safe, fast };

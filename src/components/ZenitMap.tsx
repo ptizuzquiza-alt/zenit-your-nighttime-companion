@@ -63,6 +63,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   userPosition,
   fitToRoute = false,
   focusBounds,
+  lightPoints = [],
+  showLightPoints = false,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);

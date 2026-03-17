@@ -5,6 +5,7 @@ import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
+import { scoreLightingForRoute, fetchLightPointsNearRoute, LightPoint } from '@/lib/lightPoints';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,9 @@ const MapRoutes: FC = () => {
   const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
   const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
+  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
+  const [lightPoints, setLightPoints] = useState<LightPoint[]>([]);
 
   // Bottom sheet drag state
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
@@ -75,11 +79,20 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
       if (cancelled) return;
       setSafeRoute(safe);
       setFastRoute(fast);
       setLoading(false);
+
+      // Score lighting for both routes
+      if (safe?.coordinates) {
+        scoreLightingForRoute(safe.coordinates).then(s => !cancelled && setSafeLightScore(s.score));
+        fetchLightPointsNearRoute(safe.coordinates).then(lp => !cancelled && setLightPoints(lp));
+      }
+      if (fast?.coordinates) {
+        scoreLightingForRoute(fast.coordinates).then(s => !cancelled && setFastLightScore(s.score));
+      }
     });
 
     return () => { cancelled = true; };
@@ -125,6 +138,8 @@ const MapRoutes: FC = () => {
         route={safeRoute?.coordinates}
         alternativeRoute={fastRoute?.coordinates}
         selectedRoute={selectedRoute}
+        lightPoints={lightPoints}
+        showLightPoints={selectedRoute === 'safe'}
         fitToRoute
         className="absolute inset-0"
       />
@@ -163,8 +178,8 @@ const MapRoutes: FC = () => {
               type="safe"
               distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
               duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
-              safetyPercentage={95}
-              tags={['Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
+              safetyPercentage={safeLightScore ?? 95}
+              tags={[safeLightScore !== null ? `💡 Iluminación: ${safeLightScore}%` : 'Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />

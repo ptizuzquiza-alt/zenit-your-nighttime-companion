@@ -14,6 +14,8 @@ const MapRoutes: FC = () => {
   const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
   const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
+  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
 
   // Bottom sheet drag state
   const [sheetCollapsed, setSheetCollapsed] = useState(false);

@@ -88,6 +88,7 @@ const MapRoutes: FC = () => {
       // Score lighting for both routes
       if (safe?.coordinates) {
         scoreLightingForRoute(safe.coordinates).then(s => !cancelled && setSafeLightScore(s.score));
+        fetchLightPointsNearRoute(safe.coordinates).then(lp => !cancelled && setLightPoints(lp));
       }
       if (fast?.coordinates) {
         scoreLightingForRoute(fast.coordinates).then(s => !cancelled && setFastLightScore(s.score));

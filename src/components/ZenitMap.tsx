@@ -24,6 +24,12 @@ interface FriendRoute {
   position: [number, number];
 }
 
+interface LightPointData {
+  latitude: number;
+  longitude: number;
+  power_watts: number | null;
+}
+
 interface ZenitMapProps {
   center?: [number, number];
   zoom?: number;
@@ -38,6 +44,8 @@ interface ZenitMapProps {
   userPosition?: [number, number];
   fitToRoute?: boolean;
   focusBounds?: [number, number][];
+  lightPoints?: LightPointData[];
+  showLightPoints?: boolean;
   className?: string;
 }
 

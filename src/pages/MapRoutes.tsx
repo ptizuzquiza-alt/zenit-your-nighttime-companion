@@ -78,11 +78,19 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
       if (cancelled) return;
       setSafeRoute(safe);
       setFastRoute(fast);
       setLoading(false);
+
+      // Score lighting for both routes
+      if (safe?.coordinates) {
+        scoreLightingForRoute(safe.coordinates).then(s => !cancelled && setSafeLightScore(s.score));
+      }
+      if (fast?.coordinates) {
+        scoreLightingForRoute(fast.coordinates).then(s => !cancelled && setFastLightScore(s.score));
+      }
     });
 
     return () => { cancelled = true; };

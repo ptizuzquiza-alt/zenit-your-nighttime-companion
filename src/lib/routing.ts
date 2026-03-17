@@ -1,5 +1,15 @@
-// OSRM public API for real street routing
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+// OSRM routing via edge function proxy (avoids CORS)
+import { supabase } from '@/integrations/supabase/client';
+
+const OSRM_FUNCTION = 'osrm-proxy';
+
+async function fetchOSRM(profile: string, coordinates: string, params: Record<string, string>) {
+  const { data, error } = await supabase.functions.invoke(OSRM_FUNCTION, {
+    body: { profile, coordinates, params },
+  });
+  if (error) throw error;
+  return data;
+}
 
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;

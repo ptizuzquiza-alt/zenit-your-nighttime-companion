@@ -138,15 +138,11 @@ export async function fetchSafeAndFastRoutes(
 
   // Fetch Zenit (car profile for main avenues) + Standard (TMB transit) in parallel
   const [zenitDirectRes, wp1Res, wp2Res, transitResult, footFallbackRes] = await Promise.all([
-    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
-      .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null),
+    fetchOSRM('car', directCoords, { overview: 'full', geometries: 'geojson', alternatives: '3' }).catch(() => null),
+    fetchOSRM('car', wpCoords1, { overview: 'full', geometries: 'geojson', continue_straight: 'true' }).catch(() => null),
+    fetchOSRM('car', wpCoords2, { overview: 'full', geometries: 'geojson', continue_straight: 'true' }).catch(() => null),
     fetchTransitRoute(origin, destination).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
-      .then(r => r.json()).catch(() => null),
+    fetchOSRM('foot', directCoords, { overview: 'full', geometries: 'geojson', alternatives: '2' }).catch(() => null),
   ]);
 
   // --- ZENIT (safe): car-profile routes for main avenues ---

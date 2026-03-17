@@ -3,22 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { fetchSafeAndFastRoutes, storeSelectedRoute, storeSelectedMode, RouteResult, TransportMode } from '@/lib/routing';
+import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { scoreLightingForRoute, fetchLightPointsNearRoute, LightPoint } from '@/lib/lightPoints';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
-  const [transportMode, setTransportMode] = useState<TransportMode>('foot');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
   const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
   const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
-  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
-  const [lightPoints, setLightPoints] = useState<LightPoint[]>([]);
 
   // Bottom sheet drag state
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
@@ -81,24 +75,15 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination, transportMode).then(({ safe, fast }) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
       if (cancelled) return;
       setSafeRoute(safe);
       setFastRoute(fast);
       setLoading(false);
-
-      // Score lighting for both routes
-      if (safe?.coordinates) {
-        scoreLightingForRoute(safe.coordinates).then(s => !cancelled && setSafeLightScore(s.score));
-        fetchLightPointsNearRoute(safe.coordinates).then(lp => !cancelled && setLightPoints(lp));
-      }
-      if (fast?.coordinates) {
-        scoreLightingForRoute(fast.coordinates).then(s => !cancelled && setFastLightScore(s.score));
-      }
     });
 
     return () => { cancelled = true; };
-  }, [userLocation[0], userLocation[1], destination[0], destination[1], transportMode]);
+  }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
   const currentRouteData = selectedRoute === 'safe' ? (safeRoute || fastRoute) : (fastRoute || safeRoute);
   const alternativeRouteData = selectedRoute === 'safe' ? (fastRoute || safeRoute) : (safeRoute || fastRoute);
@@ -119,30 +104,7 @@ const MapRoutes: FC = () => {
       storeSelectedRoute(currentRouteData);
     }
     sessionStorage.setItem('zenit_selected_route_type', selectedRoute);
-    storeSelectedMode(transportMode);
     navigate('/route-details');
-  };
-
-  const getSafeTags = (mode: TransportMode): string[] => {
-    switch (mode) {
-      case 'foot':  return ['Calles bien iluminadas', 'Áreas activas', 'Calles amplias'];
-      case 'car':   return ['Avenidas principales', 'Menos giros', 'Rutas directas'];
-      case 'metro': return ['Metro preferido', 'Paradas cercanas', 'Menos caminata'];
-      case 'bus':   return ['Bus preferido', 'Paradas cercanas', 'Menos caminata'];
-    }
-  };
-
-  const getFastTags = (mode: TransportMode): string[] => {
-    switch (mode) {
-      case 'foot':  return ['Ruta más corta', 'Camino directo', 'Menor tiempo'];
-      case 'car':   return ['Ruta más rápida', 'Conducción directa', 'Menor tiempo'];
-      case 'metro':
-      case 'bus': {
-        const base = ['Tránsito más rápido', 'Menor duración'];
-        if (fastRoute?.walkDistance) base.push(`${Math.round(fastRoute.walkDistance)}m a pie`);
-        return base;
-      }
-    }
   };
 
   // Compute map center from route bounds
@@ -163,8 +125,6 @@ const MapRoutes: FC = () => {
         route={safeRoute?.coordinates}
         alternativeRoute={fastRoute?.coordinates}
         selectedRoute={selectedRoute}
-        lightPoints={lightPoints}
-        showLightPoints={selectedRoute === 'safe'}
         fitToRoute
         className="absolute inset-0"
       />
@@ -193,28 +153,8 @@ const MapRoutes: FC = () => {
           onClick={() => setSheetCollapsed((c) => !c)}
         />
         
-        <h3 className="text-foreground font-semibold mb-3">Elige tu ruta</h3>
-
-        <ToggleGroup
-          type="single"
-          value={transportMode}
-          onValueChange={(v) => { if (v) { setTransportMode(v as TransportMode); setSelectedRoute('safe'); } }}
-          className="w-full mb-4 bg-secondary/40 rounded-xl p-1 gap-0"
-        >
-          <ToggleGroupItem value="foot" className="flex-1 text-xs rounded-lg data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm h-9">
-            🚶 A pie
-          </ToggleGroupItem>
-          <ToggleGroupItem value="metro" className="flex-1 text-xs rounded-lg data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm h-9">
-            🚇 Metro
-          </ToggleGroupItem>
-          <ToggleGroupItem value="bus" className="flex-1 text-xs rounded-lg data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm h-9">
-            🚌 Bus
-          </ToggleGroupItem>
-          <ToggleGroupItem value="car" className="flex-1 text-xs rounded-lg data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm h-9">
-            🚗 Coche
-          </ToggleGroupItem>
-        </ToggleGroup>
-
+        <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>
+        
         {loading ? (
           <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>
         ) : (
@@ -223,26 +163,22 @@ const MapRoutes: FC = () => {
               type="safe"
               distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
               duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
-              safetyPercentage={safeRoute?.safetyScore ?? 92}
-              primaryMode={transportMode}
-              tags={getSafeTags(transportMode)}
-              safetyPercentage={safeLightScore ?? 95}
-              tags={[safeLightScore !== null ? `💡 Iluminación: ${safeLightScore}%` : 'Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
+              safetyPercentage={95}
+              tags={['Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
-              isTransit={safeRoute?.isTransit}
-              transitLegs={safeRoute?.transitLegs}
-              transfers={safeRoute?.transfers}
-              walkDistance={safeRoute?.walkDistance ? formatDistance(safeRoute.walkDistance) : undefined}
             />
             {fastRoute && (
               <RouteCard
                 type="fast"
                 distance={formatDistance(fastRoute.distance)}
                 duration={formatDuration(fastRoute.duration)}
-                safetyPercentage={fastRoute.safetyScore ?? 73}
-                primaryMode={transportMode}
-                tags={getFastTags(transportMode)}
+                safetyPercentage={73}
+                tags={fastRoute.isTransit 
+                  ? ['Transporte público', 'Más rápida', fastRoute.walkDistance ? `${Math.round(fastRoute.walkDistance)}m a pie` : '']
+                    .filter(Boolean)
+                  : ['Menor distancia', 'Menos iluminada', 'Menos peatones']
+                }
                 selected={selectedRoute === 'fast'}
                 onClick={() => setSelectedRoute('fast')}
                 isTransit={fastRoute.isTransit}

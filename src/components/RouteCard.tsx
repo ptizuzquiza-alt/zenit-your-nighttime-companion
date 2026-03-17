@@ -1,7 +1,6 @@
 import { FC } from 'react';
-import { Shield, Zap, Train, Bus, Car } from 'lucide-react';
+import { Shield, Zap, Train } from 'lucide-react';
 import type { TransitLeg } from '@/lib/transit';
-import type { TransportMode } from '@/lib/routing';
 
 interface RouteCardProps {
   type: 'safe' | 'fast';
@@ -15,7 +14,6 @@ interface RouteCardProps {
   transitLegs?: TransitLeg[];
   transfers?: number;
   walkDistance?: string;
-  primaryMode?: TransportMode;
 }
 
 const modeIcons: Record<string, string> = {
@@ -38,25 +36,9 @@ export const RouteCard: FC<RouteCardProps> = ({
   transitLegs,
   transfers,
   walkDistance,
-  primaryMode,
 }) => {
   const isZenit = type === 'safe';
-
-  const modeEmojiMap: Record<string, string> = { foot: '🚶', metro: '🚇', bus: '🚌', car: '🚗' };
-  const modeEmoji = modeEmojiMap[primaryMode ?? (isTransit ? 'metro' : 'foot')];
-
-  let Icon;
-  if (isZenit) {
-    Icon = Shield;
-  } else if (primaryMode === 'metro' || (!primaryMode && isTransit)) {
-    Icon = Train;
-  } else if (primaryMode === 'bus') {
-    Icon = Bus;
-  } else if (primaryMode === 'car') {
-    Icon = Car;
-  } else {
-    Icon = Zap;
-  }
+  const Icon = isZenit ? Shield : (isTransit ? Train : Zap);
   
   return (
     <button
@@ -99,7 +81,7 @@ export const RouteCard: FC<RouteCardProps> = ({
             <span>{transfers} transbordo{transfers !== 1 ? 's' : ''}</span>
           </>
         )}
-        <span className="ml-1">{modeEmoji}</span>
+        <span className="ml-1">{isTransit ? '🚇' : '🚶'}</span>
       </div>
 
       {/* Transit legs summary */}

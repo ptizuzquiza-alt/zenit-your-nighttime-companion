@@ -14,42 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      light_points: {
-        Row: {
-          created_at: string
-          district: string | null
-          id: string
-          latitude: number
-          light_type: string | null
-          longitude: number
-          neighborhood: string | null
-          power_watts: number | null
-          street_name: string | null
-        }
-        Insert: {
-          created_at?: string
-          district?: string | null
-          id?: string
-          latitude: number
-          light_type?: string | null
-          longitude: number
-          neighborhood?: string | null
-          power_watts?: number | null
-          street_name?: string | null
-        }
-        Update: {
-          created_at?: string
-          district?: string | null
-          id?: string
-          latitude?: number
-          light_type?: string | null
-          longitude?: number
-          neighborhood?: string | null
-          power_watts?: number | null
-          street_name?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

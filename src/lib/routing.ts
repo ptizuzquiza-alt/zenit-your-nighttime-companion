@@ -1,20 +1,8 @@
-// OSRM routing via edge function proxy (avoids CORS)
-import { supabase } from '@/integrations/supabase/client';
-
-const OSRM_FUNCTION = 'osrm-proxy';
-
-async function fetchOSRM(profile: string, coordinates: string, params: Record<string, string>) {
-  const { data, error } = await supabase.functions.invoke(OSRM_FUNCTION, {
-    body: { profile, coordinates, params },
-  });
-  if (error) throw error;
-  return data;
-}
+// OSRM public API for real street routing
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;
-
-export type TransportMode = 'foot' | 'metro' | 'bus' | 'car';
 
 export interface RouteResult {
   coordinates: [number, number][];
@@ -24,18 +12,16 @@ export interface RouteResult {
   transitLegs?: import('./transit').TransitLeg[];
   transfers?: number;
   walkDistance?: number;
-  primaryMode?: TransportMode;
-  variant?: 'safe' | 'fast';
-  safetyScore?: number; // 0–100 heuristic score
 }
 
-function parseOSRMRoute(route: any, useRealDuration = false): RouteResult {
+function parseOSRMRoute(route: any): RouteResult {
+  const distance = route.distance;
   return {
     coordinates: route.geometry.coordinates.map(
       ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
     ),
-    distance: route.distance,
-    duration: useRealDuration ? route.duration : route.distance / WALKING_SPEED,
+    distance,
+    duration: distance / WALKING_SPEED,
   };
 }
 
@@ -115,39 +101,19 @@ function getNudgeWaypoint(
   return [midLat + perpLat, midLon + perpLon];
 }
 
-/** Compute geometry-based safety score (0–100). Lower turnsPerKm → higher score. */
-function geometrySafetyScore(route: RouteResult, allCandidates: RouteResult[]): number {
-  if (allCandidates.length === 0) return 82;
-  const turns = allCandidates.map(turnsPerKm);
-  const maxT = Math.max(...turns);
-  const minT = Math.min(...turns);
-  const range = maxT - minT;
-  if (range === 0) return 82;
-  return Math.round(68 + 24 * (1 - (turnsPerKm(route) - minT) / range));
-}
-
-/** Compute transit safety score (0–100) based on preferred-mode leg ratio. */
-function transitSafetyScore(
-  legs: import('./transit').TransitLeg[],
-  preferredMode: 'SUBWAY' | 'BUS'
-): number {
-  const preferredTime = legs
-    .filter(l => l.mode === preferredMode)
-    .reduce((sum, l) => sum + l.duration, 0);
-  const totalTransitTime = legs
-    .filter(l => l.mode !== 'WALK')
-    .reduce((sum, l) => sum + l.duration, 0);
-  const ratio = totalTransitTime > 0 ? preferredTime / totalTransitTime : 0;
-  return Math.round(72 + 18 * ratio);
-}
-
-/** Fetch OSRM route candidates for a given profile (foot or car). */
-async function fetchOSRMCandidates(
+/**
+ * Fetch two routes:
+ * - Zenit (safe): OSRM car profile → main avenues, fewer turns, well-lit streets
+ * - Standard (fast): TMB transit (walk + public transport) for fastest travel
+ *   Falls back to OSRM foot if TMB unavailable
+ */
+export async function fetchSafeAndFastRoutes(
   origin: [number, number],
-  destination: [number, number],
-  profile: 'foot' | 'car'
-): Promise<RouteResult[]> {
+  destination: [number, number]
+): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+
+  // Larger nudges for route variety on Zenit
   const dist = Math.sqrt(
     Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
   );
@@ -156,170 +122,100 @@ async function fetchOSRMCandidates(
   const wp2 = getNudgeWaypoint(origin, destination, -nudge);
   const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
   const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
-  const useDuration = profile === 'car';
 
-  const [directRes, wp1Res, wp2Res] = await Promise.all([
-    fetch(`${OSRM_BASE}/${profile}/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+  // Import transit module dynamically
+  const { fetchTransitRoute } = await import('./transit');
+
+  // Fetch Zenit (car profile for main avenues) + Standard (TMB transit) in parallel
+  const [zenitDirectRes, wp1Res, wp2Res, transitResult, footFallbackRes] = await Promise.all([
+    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/${profile}/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/${profile}/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+    fetchTransitRoute(origin, destination).catch(() => null),
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
       .then(r => r.json()).catch(() => null),
   ]);
 
-  const candidates: RouteResult[] = [];
-  if (directRes?.code === 'Ok') {
-    for (const r of directRes.routes ?? []) candidates.push(parseOSRMRoute(r, useDuration));
+  // --- ZENIT (safe): car-profile routes for main avenues ---
+  const zenitCandidates: RouteResult[] = [];
+  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
+    for (const route of zenitDirectRes.routes) zenitCandidates.push(parseOSRMRoute(route));
   }
   if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
-    candidates.push(parseOSRMRoute(wp1Res.routes[0], useDuration));
+    zenitCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
   }
   if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
-    candidates.push(parseOSRMRoute(wp2Res.routes[0], useDuration));
+    zenitCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
   }
-  return candidates.filter(r => !hasBacktracking(r.coordinates));
-}
 
-/**
- * From a set of OSRM candidates build a safe/fast pair:
- * - Zenit (safe): straightest route (lowest turnsPerKm ≈ main streets)
- * - Standard (fast): shortest duration
- */
-function buildOSRMPair(
-  candidates: RouteResult[],
-  mode: TransportMode
-): { safe: RouteResult | null; fast: RouteResult | null } {
-  if (candidates.length === 0) return { safe: null, fast: null };
-  const bySafety = [...candidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
-  const bySpeed  = [...candidates].sort((a, b) => a.duration - b.duration);
-  const safe: RouteResult = {
-    ...bySafety[0],
-    primaryMode: mode,
-    variant: 'safe',
-    safetyScore: geometrySafetyScore(bySafety[0], candidates),
-  };
-  const fast: RouteResult = {
-    ...bySpeed[0],
-    primaryMode: mode,
-    variant: 'fast',
-    safetyScore: geometrySafetyScore(bySpeed[0], candidates),
-  };
-  return { safe, fast };
-}
+  const cleanZenit = zenitCandidates.filter(r => !hasBacktracking(r.coordinates));
 
-/**
- * Fetch a safe/fast pair for transit modes (metro or bus).
- * Zenit uses the preferred transit mode; Standard uses the fastest unrestricted route.
- */
-async function fetchTransitModePair(
-  origin: [number, number],
-  destination: [number, number],
-  preferredOTPMode: 'SUBWAY' | 'BUS'
-): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  const { fetchTransitRoute } = await import('./transit');
-  const primaryMode: TransportMode = preferredOTPMode === 'SUBWAY' ? 'metro' : 'bus';
+  console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
+    distance: Math.round(r.distance) + 'm',
+    turnsPerKm: Math.round(turnsPerKm(r)) + '°/km',
+  })));
 
-  // Zenit: preferred mode + walking; Standard: unrestricted fastest transit
-  const [preferredResult, standardResult] = await Promise.all([
-    fetchTransitRoute(origin, destination, `${preferredOTPMode},WALK`).catch(() => null),
-    fetchTransitRoute(origin, destination, 'TRANSIT,WALK').catch(() => null),
-  ]);
+  // Zenit = straightest car-profile route
+  let safe: RouteResult | null = null;
+  if (cleanZenit.length > 0) {
+    const sorted = [...cleanZenit].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
+    safe = sorted[0];
+  }
 
-  const zenitSource = preferredResult ?? standardResult;
-  const fastSource  = standardResult ?? preferredResult;
+  // --- STANDARD (fast): TMB transit or OSRM foot fallback ---
+  let fast: RouteResult | null = null;
 
-  const safe: RouteResult | null = zenitSource ? {
-    coordinates:  zenitSource.coordinates,
-    distance:     zenitSource.distance,
-    duration:     zenitSource.duration,
-    isTransit:    true,
-    transitLegs:  zenitSource.legs,
-    transfers:    zenitSource.transfers,
-    walkDistance: zenitSource.walkDistance,
-    primaryMode,
-    variant:      'safe',
-    safetyScore:  transitSafetyScore(zenitSource.legs, preferredOTPMode),
-  } : null;
-
-  const fast: RouteResult | null = fastSource ? {
-    coordinates:  fastSource.coordinates,
-    distance:     fastSource.distance,
-    duration:     fastSource.duration,
-    isTransit:    true,
-    transitLegs:  fastSource.legs,
-    transfers:    fastSource.transfers,
-    walkDistance: fastSource.walkDistance,
-    primaryMode,
-    variant:      'fast',
-    safetyScore:  transitSafetyScore(fastSource.legs, preferredOTPMode),
-  } : null;
-
-  return { safe, fast };
-}
-
-// ─── Public API ───────────────────────────────────────────────────────────────
-
-/**
- * Fetch two routes for the selected primary transport mode:
- * - Zenit (safe): safest available route for that mode (main streets / preferred transit)
- * - Standard (fast): fastest available route for that mode
- *
- *   foot  → OSRM walking; Zenit = straightest path,     Standard = shortest duration
- *   car   → OSRM driving; Zenit = main-avenue (low turns), Standard = fastest drive
- *   metro → Transit+walk; Zenit prefers SUBWAY legs,    Standard = fastest overall
- *   bus   → Transit+walk; Zenit prefers BUS legs,       Standard = fastest overall
- */
-export async function fetchSafeAndFastRoutes(
-  origin: [number, number],
-  destination: [number, number],
-  primaryMode: TransportMode = 'foot'
-): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
-  let result: { safe: RouteResult | null; fast: RouteResult | null };
-
-  if (primaryMode === 'foot') {
-    const candidates = await fetchOSRMCandidates(origin, destination, 'foot');
-    result = buildOSRMPair(candidates, 'foot');
-  } else if (primaryMode === 'car') {
-    const candidates = await fetchOSRMCandidates(origin, destination, 'car');
-    result = buildOSRMPair(candidates, 'car');
+  if (transitResult && transitResult.coordinates.length > 0) {
+    // Use TMB transit route
+    fast = {
+      coordinates: transitResult.coordinates,
+      distance: transitResult.distance,
+      duration: transitResult.duration,
+      isTransit: true,
+      transitLegs: transitResult.legs,
+      transfers: transitResult.transfers,
+      walkDistance: transitResult.walkDistance,
+    };
+    console.log('Standard: Using TMB transit route', {
+      duration: Math.round(transitResult.duration) + 's',
+      transfers: transitResult.transfers,
+      legs: transitResult.legs.map(l => `${l.mode} ${l.route}`).join(' → '),
+    });
   } else {
-    const otpMode = primaryMode === 'metro' ? 'SUBWAY' : 'BUS';
-    result = await fetchTransitModePair(origin, destination, otpMode);
+    // Fallback to OSRM foot
+    console.warn('TMB transit unavailable, falling back to OSRM foot');
+    const footCandidates: RouteResult[] = [];
+    if (footFallbackRes?.code === 'Ok' && footFallbackRes.routes?.length) {
+      for (const route of footFallbackRes.routes) footCandidates.push(parseOSRMRoute(route));
+    }
+    const cleanFoot = footCandidates.filter(r => !hasBacktracking(r.coordinates));
+    if (cleanFoot.length > 0) {
+      fast = [...cleanFoot].sort((a, b) => a.distance - b.distance)[0];
+    }
   }
 
-  // Mutual fallback if one variant is missing
-  if (!result.safe && result.fast) {
-    result.safe = { ...result.fast, variant: 'safe', duration: result.fast.duration * 1.1 };
-  }
-  if (!result.fast && result.safe) {
-    result.fast = { ...result.safe, variant: 'fast', duration: result.safe.duration * 0.9 };
-  }
+  // Fallbacks
+  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.15 };
+  if (!fast && safe) fast = { ...safe, duration: safe.duration * 0.85 };
 
-  console.log(`[Routes] mode=${primaryMode}`, {
-    zenit:    result.safe ? `${Math.round(result.safe.distance)}m ${Math.round(result.safe.duration)}s score=${result.safe.safetyScore}` : 'none',
-    standard: result.fast ? `${Math.round(result.fast.distance)}m ${Math.round(result.fast.duration)}s score=${result.fast.safetyScore}` : 'none',
+  console.log('Selected:', {
+    zenit: safe ? Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's' : 'none',
+    standard: fast ? `${Math.round(fast.distance)}m, ${Math.round(fast.duration)}s${fast.isTransit ? ' (transit)' : ''}` : 'none',
   });
 
-  return result;
+  return { safe, fast };
 }
 
-/** Store the selected route in sessionStorage for cross-page use. */
+/** Store the selected route in sessionStorage for cross-page use */
 export function storeSelectedRoute(route: RouteResult) {
   sessionStorage.setItem('zenit_selected_route', JSON.stringify(route));
 }
 
-/** Store the selected primary transport mode in sessionStorage. */
-export function storeSelectedMode(mode: TransportMode) {
-  sessionStorage.setItem('zenit_selected_transport_mode', mode);
-}
-
-/** Retrieve the selected route from sessionStorage. */
+/** Retrieve the selected route from sessionStorage */
 export function getStoredRoute(): RouteResult | null {
   const data = sessionStorage.getItem('zenit_selected_route');
   return data ? JSON.parse(data) : null;
-}
-
-/** Retrieve the selected primary transport mode from sessionStorage. */
-export function getStoredMode(): TransportMode {
-  return (sessionStorage.getItem('zenit_selected_transport_mode') as TransportMode) ?? 'foot';
 }

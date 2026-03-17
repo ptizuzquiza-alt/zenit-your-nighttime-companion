@@ -138,6 +138,8 @@ const MapRoutes: FC = () => {
         route={safeRoute?.coordinates}
         alternativeRoute={fastRoute?.coordinates}
         selectedRoute={selectedRoute}
+        lightPoints={lightPoints}
+        showLightPoints={selectedRoute === 'safe'}
         fitToRoute
         className="absolute inset-0"
       />

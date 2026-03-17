@@ -174,17 +174,9 @@ const MapRoutes: FC = () => {
                 distance={formatDistance(fastRoute.distance)}
                 duration={formatDuration(fastRoute.duration)}
                 safetyPercentage={73}
-                tags={fastRoute.isTransit 
-                  ? ['Transporte público', 'Más rápida', fastRoute.walkDistance ? `${Math.round(fastRoute.walkDistance)}m a pie` : '']
-                    .filter(Boolean)
-                  : ['Menor distancia', 'Menos iluminada', 'Menos peatones']
-                }
+                tags={['Menor distancia', 'Menos iluminada', 'Menos peatones']}
                 selected={selectedRoute === 'fast'}
                 onClick={() => setSelectedRoute('fast')}
-                isTransit={fastRoute.isTransit}
-                transitLegs={fastRoute.transitLegs}
-                transfers={fastRoute.transfers}
-                walkDistance={fastRoute.walkDistance ? formatDistance(fastRoute.walkDistance) : undefined}
               />
             )}
           </div>

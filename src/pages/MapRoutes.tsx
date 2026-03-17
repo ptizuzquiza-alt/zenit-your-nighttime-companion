@@ -5,7 +5,7 @@ import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { scoreLightingForRoute } from '@/lib/lightPoints';
+import { scoreLightingForRoute, fetchLightPointsNearRoute, LightPoint } from '@/lib/lightPoints';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();

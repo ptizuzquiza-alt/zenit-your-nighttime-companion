@@ -4,7 +4,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
 import ReportDarkStreet from '@/components/ReportDarkStreet';
-import { fetchSafeAndFastRoutes, storeSelectedRoute } from '@/lib/routing';
+import { fetchSafeAndFastRoutes, storeSelectedRoute, type RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 import { scoreLightingForRoute, fetchDarkStreetsInBounds, type DarkStreet } from '@/lib/lightPoints';
 

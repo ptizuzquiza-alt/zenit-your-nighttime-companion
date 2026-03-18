@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      dark_streets: {
+        Row: {
+          id: string
+          latitude: number
+          longitude: number
+          street_name: string | null
+          description: string | null
+          reported_at: string
+          upvotes: number
+        }
+        Insert: {
+          id?: string
+          latitude: number
+          longitude: number
+          street_name?: string | null
+          description?: string | null
+          reported_at?: string
+          upvotes?: number
+        }
+        Update: {
+          id?: string
+          latitude?: number
+          longitude?: number
+          street_name?: string | null
+          description?: string | null
+          reported_at?: string
+          upvotes?: number
+        }
+        Relationships: []
+      }
       light_points: {
         Row: {
           created_at: string

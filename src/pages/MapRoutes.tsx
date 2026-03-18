@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
 import { BackButton } from '@/components/BackButton';
-import ReportDarkStreet from '@/components/ReportDarkStreet';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, type RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { scoreLightingForRoute, fetchDarkStreetsInBounds, type DarkStreet } from '@/lib/lightPoints';
+import { scoreLightingForRoute } from '@/lib/lightPoints';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -17,8 +16,6 @@ const MapRoutes: FC = () => {
   const [loading, setLoading] = useState(true);
   const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
   const [fastLightScore, setFastLightScore] = useState<number | null>(null);
-  const [darkStreets, setDarkStreets] = useState<DarkStreet[]>([]);
-
   // Bottom sheet drag state
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
@@ -75,20 +72,10 @@ const MapRoutes: FC = () => {
     }
   }, []);
 
-  // Fetch dark streets in the route area
-  const loadDarkStreets = useCallback(() => {
-    const minLat = Math.min(userLocation[0], destination[0]) - 0.01;
-    const maxLat = Math.max(userLocation[0], destination[0]) + 0.01;
-    const minLng = Math.min(userLocation[1], destination[1]) - 0.01;
-    const maxLng = Math.max(userLocation[1], destination[1]) + 0.01;
-    fetchDarkStreetsInBounds(minLat, maxLat, minLng, maxLng).then(setDarkStreets);
-  }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
-
   // Fetch real routes when origin changes
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    loadDarkStreets();
 
     fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
       if (cancelled) return;
@@ -148,7 +135,6 @@ const MapRoutes: FC = () => {
         route={safeRoute?.coordinates}
         alternativeRoute={fastRoute?.coordinates}
         selectedRoute={selectedRoute}
-        darkStreets={darkStreets}
         fitToRoute
         className="absolute inset-0"
       />
@@ -156,15 +142,6 @@ const MapRoutes: FC = () => {
       {/* Back button */}
       <div className="absolute top-12 left-4 z-[1000]">
         <BackButton onClick={() => navigate('/search')} />
-      </div>
-
-      {/* Report dark street button (top right) */}
-      <div className="absolute top-12 right-4 z-[1000]">
-        <ReportDarkStreet
-          latitude={mapCenter[0]}
-          longitude={mapCenter[1]}
-          onReported={loadDarkStreets}
-        />
       </div>
 
       {/* Bottom sheet */}

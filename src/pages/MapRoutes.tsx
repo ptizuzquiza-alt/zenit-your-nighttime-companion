@@ -72,9 +72,29 @@ const MapRoutes: FC = () => {
     }
   }, []);
 
-  // Fetch real routes when origin changes
+  // Cache key for this origin+destination pair (rounded to ~11m precision)
+  const cacheKey = `zenit_routes_${userLocation[0].toFixed(4)}_${userLocation[1].toFixed(4)}_${destination[0].toFixed(4)}_${destination[1].toFixed(4)}`;
+
+  // Fetch real routes when origin changes — restores from cache instantly if same trip
   useEffect(() => {
     let cancelled = false;
+
+    // Restore cached routes immediately (no spinner)
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { safe, fast, safeScore, fastScore } = JSON.parse(cached);
+        setSafeRoute(safe);
+        setFastRoute(fast);
+        setSafeLightScore(safeScore);
+        setFastLightScore(fastScore);
+        setLoading(false);
+        return;
+      } catch {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+
     setLoading(true);
 
     fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
@@ -84,12 +104,17 @@ const MapRoutes: FC = () => {
       setLoading(false);
 
       // Score lighting using the light points database (not rendered on map)
-      if (safe?.coordinates) {
-        scoreLightingForRoute(safe.coordinates).then(s => !cancelled && setSafeLightScore(s.score));
-      }
-      if (fast?.coordinates) {
-        scoreLightingForRoute(fast.coordinates).then(s => !cancelled && setFastLightScore(s.score));
-      }
+      const [safeScore, fastScore] = await Promise.all([
+        safe?.coordinates ? scoreLightingForRoute(safe.coordinates).then(s => s.score) : Promise.resolve(null),
+        fast?.coordinates ? scoreLightingForRoute(fast.coordinates).then(s => s.score) : Promise.resolve(null),
+      ]);
+
+      if (cancelled) return;
+      if (safeScore !== null) setSafeLightScore(safeScore);
+      if (fastScore !== null) setFastLightScore(fastScore);
+
+      // Cache result for instant restore on back-navigation
+      sessionStorage.setItem(cacheKey, JSON.stringify({ safe, fast, safeScore, fastScore }));
     });
 
     return () => { cancelled = true; };

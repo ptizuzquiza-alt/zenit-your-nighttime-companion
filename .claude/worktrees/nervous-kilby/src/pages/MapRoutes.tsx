@@ -1,10 +1,8 @@
 import { FC, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
-import { LocationInput } from '@/components/LocationInput';
-
+import { BackButton } from '@/components/BackButton';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 
@@ -117,9 +115,6 @@ const MapRoutes: FC = () => {
       ]
     : [41.4070, 2.1790];
 
-  const storedOriginName = getStoredOrigin()?.name ?? 'Tu ubicación';
-  const storedDestName = getStoredDestination()?.name ?? '';
-
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
@@ -134,20 +129,9 @@ const MapRoutes: FC = () => {
         className="absolute inset-0"
       />
 
-      {/* Search bar overlay */}
-      <div className="absolute top-10 left-4 right-4 z-[1000] flex items-start gap-3">
-        <button
-          onClick={() => navigate('/search')}
-          className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center mt-2 flex-shrink-0"
-        >
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </button>
-        <div className="flex-1" onClick={() => navigate('/search')}>
-          <LocationInput
-            origin={storedOriginName}
-            destination={storedDestName}
-          />
-        </div>
+      {/* Back button */}
+      <div className="absolute top-12 left-4 z-[1000]">
+        <BackButton onClick={() => navigate('/search')} />
       </div>
 
       {/* Bottom sheet */}
@@ -190,9 +174,17 @@ const MapRoutes: FC = () => {
                 distance={formatDistance(fastRoute.distance)}
                 duration={formatDuration(fastRoute.duration)}
                 safetyPercentage={73}
-                tags={['Menor distancia', 'Menos iluminada', 'Menos peatones']}
+                tags={fastRoute.isTransit 
+                  ? ['Transporte público', 'Más rápida', fastRoute.walkDistance ? `${Math.round(fastRoute.walkDistance)}m a pie` : '']
+                    .filter(Boolean)
+                  : ['Menor distancia', 'Menos iluminada', 'Menos peatones']
+                }
                 selected={selectedRoute === 'fast'}
                 onClick={() => setSelectedRoute('fast')}
+                isTransit={fastRoute.isTransit}
+                transitLegs={fastRoute.transitLegs}
+                transfers={fastRoute.transfers}
+                walkDistance={fastRoute.walkDistance ? formatDistance(fastRoute.walkDistance) : undefined}
               />
             )}
           </div>

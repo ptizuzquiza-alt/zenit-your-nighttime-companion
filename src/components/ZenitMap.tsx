@@ -9,6 +9,7 @@ import {
   MAP_MARKER_ORIGIN_COLOR,
   MAP_MARKER_FRIEND_COLOR,
 } from '@/config/theme';
+import type { DarkStreet } from '@/lib/lightPoints';
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
@@ -22,12 +23,6 @@ interface FriendRoute {
   name: string;
   coordinates: [number, number][];
   position: [number, number];
-}
-
-interface LightPointData {
-  latitude: number;
-  longitude: number;
-  power_watts: number | null;
 }
 
 interface ZenitMapProps {
@@ -44,8 +39,7 @@ interface ZenitMapProps {
   userPosition?: [number, number];
   fitToRoute?: boolean;
   focusBounds?: [number, number][];
-  lightPoints?: LightPointData[];
-  showLightPoints?: boolean;
+  darkStreets?: DarkStreet[];
   className?: string;
 }
 
@@ -63,8 +57,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   userPosition,
   fitToRoute = false,
   focusBounds,
-  lightPoints = [],
-  showLightPoints = false,
+  darkStreets = [],
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -284,27 +277,32 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       markersRef.current.push(marker);
     });
 
-    // Light points (small yellow dots)
-    if (showLightPoints && lightPoints.length > 0) {
-      lightPoints.forEach(lp => {
-        const size = lp.power_watts && lp.power_watts >= 200 ? 6 : 4;
-        const opacity = lp.power_watts && lp.power_watts >= 200 ? 0.7 : 0.4;
-        const lpIcon = L.divIcon({
-          className: 'zenit-marker',
-          html: `<div style="
-            width: ${size}px;
-            height: ${size}px;
-            background: #FFD700;
-            border-radius: 50%;
-            box-shadow: 0 0 ${size + 2}px ${Math.floor(size/2)}px rgba(255, 215, 0, ${opacity});
-          "></div>`,
-          iconSize: [size, size],
-          iconAnchor: [size/2, size/2],
-        });
-        const marker = L.marker([lp.latitude, lp.longitude], { icon: lpIcon, interactive: false }).addTo(mapRef.current!);
-        markersRef.current.push(marker);
+    // Dark street markers (orange warning circles)
+    darkStreets.forEach(ds => {
+      const size = Math.min(28, 14 + ds.upvotes * 2); // bigger = more reports
+      const darkIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: `<div title="${ds.street_name || 'Calle oscura'}" style="
+          width: ${size}px;
+          height: ${size}px;
+          background: rgba(249, 115, 22, 0.25);
+          border: 2px solid rgba(249, 115, 22, 0.8);
+          border-radius: 50%;
+          box-shadow: 0 0 10px 2px rgba(249, 115, 22, 0.3);
+        "></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
       });
-    }
+      const marker = L.marker([ds.latitude, ds.longitude], { icon: darkIcon }).addTo(mapRef.current!);
+      marker.bindPopup(
+        `<div style="font-size:12px;color:#f97316;font-weight:600;">🌑 Calle oscura</div>` +
+        (ds.street_name ? `<div style="font-size:11px;">${ds.street_name}</div>` : '') +
+        (ds.description ? `<div style="font-size:11px;color:#666;">${ds.description}</div>` : '') +
+        `<div style="font-size:10px;color:#999;">${ds.upvotes} reporte${ds.upvotes !== 1 ? 's' : ''}</div>`,
+        { maxWidth: 180 }
+      );
+      markersRef.current.push(marker);
+    });
 
     // User navigation arrow
     if (showUserArrow && userPosition) {
@@ -319,7 +317,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       const marker = L.marker(userPosition, { icon: arrowIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);
     }
-  }, [origin, destination, route, alternativeRoute, selectedRoute, friendLocations, friendRoutes, showUserArrow, userPosition, lightPoints, showLightPoints]);
+  }, [origin, destination, route, alternativeRoute, selectedRoute, friendLocations, friendRoutes, showUserArrow, userPosition, darkStreets]);
 
   return (
     <div className={`relative w-full h-full ${className}`}>

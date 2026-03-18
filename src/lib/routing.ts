@@ -187,7 +187,7 @@ export async function fetchSafeAndFastRoutes(
       different: JSON.stringify(r.coordinates) !== footGeomKey,
     })));
 
-    // Best illumination score; tie-break by fewest turns
+    // Best illumination score (already penalised for dark streets); tie-break by fewest turns
     const best = cleanZenit
       .map((r, i) => ({ route: r, score: scores[i].score, turns: turnsPerKm(r) }))
       .sort((a, b) => b.score - a.score || a.turns - b.turns)[0];

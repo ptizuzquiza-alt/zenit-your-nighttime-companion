@@ -8,10 +8,6 @@ export interface RouteResult {
   coordinates: [number, number][];
   distance: number; // meters
   duration: number; // seconds
-  isTransit?: boolean;
-  transitLegs?: import('./transit').TransitLeg[];
-  transfers?: number;
-  walkDistance?: number;
 }
 
 function parseOSRMRoute(route: any): RouteResult {
@@ -55,29 +51,19 @@ function turnsPerKm(route: RouteResult): number {
 }
 
 /**
- * Detect if a route backtracks (has loops/doubled segments).
- * Checks if the route visits nearly the same point twice.
+ * Deduplicate routes that are essentially the same path (within 3% distance of each other).
  */
-function hasBacktracking(coords: [number, number][]): boolean {
-  if (coords.length < 10) return false;
-  const step = Math.max(1, Math.floor(coords.length / 30));
-  const sampled: [number, number][] = [];
-  for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
-  
-  for (let i = 0; i < sampled.length; i++) {
-    for (let j = i + 3; j < sampled.length; j++) {
-      const dLat = Math.abs(sampled[i][0] - sampled[j][0]);
-      const dLon = Math.abs(sampled[i][1] - sampled[j][1]);
-      // ~15m threshold
-      if (dLat < 0.00015 && dLon < 0.00015) return true;
-    }
+function deduplicateRoutes(routes: RouteResult[]): RouteResult[] {
+  const unique: RouteResult[] = [];
+  for (const r of routes) {
+    const isDuplicate = unique.some(u => Math.abs(u.distance - r.distance) / u.distance < 0.03);
+    if (!isDuplicate) unique.push(r);
   }
-  return false;
+  return unique;
 }
 
 /**
  * Small perpendicular waypoint to nudge route onto parallel streets.
- * Only ONE waypoint at 40% of the way (not midpoint, to create asymmetric routes).
  */
 function getNudgeWaypoint(
   origin: [number, number],
@@ -102,10 +88,9 @@ function getNudgeWaypoint(
 }
 
 /**
- * Fetch two routes:
- * - Zenit (safe): OSRM car profile → main avenues, fewer turns, well-lit streets
- * - Standard (fast): TMB transit (walk + public transport) for fastest travel
- *   Falls back to OSRM foot if TMB unavailable
+ * Fetch two walking routes:
+ * - Zenit (safe): best-lit walking route (most street lamps nearby)
+ * - Standard (fast): shortest walking route
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -113,98 +98,71 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  // Larger nudges for route variety on Zenit
   const dist = Math.sqrt(
     Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
   );
-  const nudge = Math.max(0.002, dist * 0.15);
+  // Use larger nudges to force genuinely different street choices
+  const nudge = Math.max(0.004, dist * 0.25);
   const wp1 = getNudgeWaypoint(origin, destination, nudge);
   const wp2 = getNudgeWaypoint(origin, destination, -nudge);
-  const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
-  const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
+  const wp3 = getNudgeWaypoint(origin, destination, nudge * 1.5);
+  const wp4 = getNudgeWaypoint(origin, destination, -nudge * 1.5);
+  const toCoords = (wps: [number, number][]) =>
+    [origin, ...wps, destination].map(p => `${p[1]},${p[0]}`).join(';');
 
-  // Import transit module dynamically
-  const { fetchTransitRoute } = await import('./transit');
-
-  // Fetch Zenit (car profile for main avenues) + Standard (TMB transit) in parallel
-  const [zenitDirectRes, wp1Res, wp2Res, transitResult, footFallbackRes] = await Promise.all([
-    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+  // Fetch walking routes in parallel — direct with alternatives + nudged variants
+  const [directRes, wp1Res, wp2Res, wp3Res, wp4Res] = await Promise.all([
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/foot/${toCoords([wp1])}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/foot/${toCoords([wp2])}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
-    fetchTransitRoute(origin, destination).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
+    fetch(`${OSRM_BASE}/foot/${toCoords([wp3])}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/foot/${toCoords([wp4])}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
   ]);
 
-  // --- ZENIT (safe): car-profile routes for main avenues ---
-  const zenitCandidates: RouteResult[] = [];
-  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
-    for (const route of zenitDirectRes.routes) zenitCandidates.push(parseOSRMRoute(route));
-  }
-  if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
-  }
-  if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
-  }
-
-  const cleanZenit = zenitCandidates.filter(r => !hasBacktracking(r.coordinates));
-
-  console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
-    distance: Math.round(r.distance) + 'm',
-    turnsPerKm: Math.round(turnsPerKm(r)) + '°/km',
-  })));
-
-  // Zenit = straightest car-profile route
-  let safe: RouteResult | null = null;
-  if (cleanZenit.length > 0) {
-    const sorted = [...cleanZenit].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
-    safe = sorted[0];
-  }
-
-  // --- STANDARD (fast): TMB transit or OSRM foot fallback ---
-  let fast: RouteResult | null = null;
-
-  if (transitResult && transitResult.coordinates.length > 0) {
-    // Use TMB transit route
-    fast = {
-      coordinates: transitResult.coordinates,
-      distance: transitResult.distance,
-      duration: transitResult.duration,
-      isTransit: true,
-      transitLegs: transitResult.legs,
-      transfers: transitResult.transfers,
-      walkDistance: transitResult.walkDistance,
-    };
-    console.log('Standard: Using TMB transit route', {
-      duration: Math.round(transitResult.duration) + 's',
-      transfers: transitResult.transfers,
-      legs: transitResult.legs.map(l => `${l.mode} ${l.route}`).join(' → '),
-    });
-  } else {
-    // Fallback to OSRM foot
-    console.warn('TMB transit unavailable, falling back to OSRM foot');
-    const footCandidates: RouteResult[] = [];
-    if (footFallbackRes?.code === 'Ok' && footFallbackRes.routes?.length) {
-      for (const route of footFallbackRes.routes) footCandidates.push(parseOSRMRoute(route));
-    }
-    const cleanFoot = footCandidates.filter(r => !hasBacktracking(r.coordinates));
-    if (cleanFoot.length > 0) {
-      fast = [...cleanFoot].sort((a, b) => a.distance - b.distance)[0];
+  const all: RouteResult[] = [];
+  for (const res of [directRes, wp1Res, wp2Res, wp3Res, wp4Res]) {
+    if (res?.code === 'Ok' && res.routes?.length) {
+      for (const route of res.routes) all.push(parseOSRMRoute(route));
     }
   }
 
-  // Fallbacks
-  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.15 };
-  if (!fast && safe) fast = { ...safe, duration: safe.duration * 0.85 };
+  // Deduplicate routes that are essentially the same path
+  const candidates = deduplicateRoutes(all);
 
-  console.log('Selected:', {
-    zenit: safe ? Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's' : 'none',
-    standard: fast ? `${Math.round(fast.distance)}m, ${Math.round(fast.duration)}s${fast.isTransit ? ' (transit)' : ''}` : 'none',
-  });
+  if (candidates.length === 0) return { safe: null, fast: null };
+
+  // Standard (fast) = shortest route
+  const fast = [...candidates].sort((a, b) => a.distance - b.distance)[0];
+
+  // Zenit (safe) = best-lit route using OSM street lamp data
+  let safe: RouteResult;
+  try {
+    const { fetchStreetLamps, scoreLighting, getBoundingBox } = await import('./streetlamps');
+    const bbox = getBoundingBox(candidates.map(r => r.coordinates));
+    const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
+
+    if (lamps.length > 0) {
+      const scored = candidates.map(r => ({ route: r, score: scoreLighting(r.coordinates, lamps) }));
+      scored.sort((a, b) => b.score - a.score);
+      safe = scored[0].route;
+      console.log('Zenit lighting scores:', scored.map(s => `${Math.round(s.score * 100)}%`));
+    } else {
+      safe = [...candidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b))[0];
+    }
+  } catch {
+    safe = [...candidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b))[0];
+  }
+
+  // If safe and fast ended up being the same route, pick a different one for fast
+  if (safe === fast && candidates.length > 1) {
+    const others = candidates.filter(r => r !== safe);
+    return { safe, fast: others.sort((a, b) => a.distance - b.distance)[0] };
+  }
 
   return { safe, fast };
 }

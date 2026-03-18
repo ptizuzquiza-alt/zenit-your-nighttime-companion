@@ -56,6 +56,20 @@ function areDistinct(a: RouteResult, b: RouteResult): boolean {
 /**
  * Fetch a route via a perpendicular waypoint at the midpoint.
  * offsetDeg controls how far left/right of the direct line the waypoint is.
+/**
+ * Deduplicate routes that are essentially the same path (within 3% distance of each other).
+ */
+function deduplicateRoutes(routes: RouteResult[]): RouteResult[] {
+  const unique: RouteResult[] = [];
+  for (const r of routes) {
+    const isDuplicate = unique.some(u => Math.abs(u.distance - r.distance) / u.distance < 0.03);
+    if (!isDuplicate) unique.push(r);
+  }
+  return unique;
+}
+
+/**
+ * Small perpendicular waypoint to nudge route onto parallel streets.
  */
 async function fetchNudged(
   origin: [number, number],
@@ -99,6 +113,27 @@ export async function fetchSafeAndFastRoutes(
   const [res, nudgedRoute] = await Promise.all([
     fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=3`),
     fetchNudged(origin, destination, 0.0012),
+  // Larger nudges (~200-300m each direction) to force genuinely different streets
+  const dist = Math.sqrt(
+    Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
+  );
+  const nudge = Math.max(0.002, dist * 0.15); // At least ~200m, scales with distance
+  const wp1 = getNudgeWaypoint(origin, destination, nudge);
+  const wp2 = getNudgeWaypoint(origin, destination, -nudge);
+  const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
+  const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
+
+  // Zenit uses 'car' profile to prefer main avenues/wide streets
+  // Standard uses 'foot' for shortest walking path
+  const [zenitDirectRes, footDirectRes, wp1Res, wp2Res] = await Promise.all([
+    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
+    fetch(`${OSRM_BASE}/foot/${toCoords([wp2])}?overview=full&geometries=geojson&continue_straight=true`)
+      .then(r => r.json()).catch(() => null),
   ]);
 
   if (!res || res.code !== 'Ok' || !res.routes?.length) {

@@ -1,0 +1,4 @@
+project_id = "fvestyvmpwpemigdelov"
+
+[functions.tmb-planner]
+verify_jwt = false

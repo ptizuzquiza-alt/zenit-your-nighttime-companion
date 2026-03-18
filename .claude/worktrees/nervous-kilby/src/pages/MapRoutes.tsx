@@ -1,13 +1,10 @@
 import { FC, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { RouteCard } from '@/components/RouteCard';
-import { LocationInput } from '@/components/LocationInput';
-
+import { BackButton } from '@/components/BackButton';
 import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { fetchStreetLamps, scoreLighting, getBoundingBox } from '@/lib/streetlamps';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -16,8 +13,6 @@ const MapRoutes: FC = () => {
   const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
   const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
-  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
 
   // Bottom sheet drag state
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
@@ -35,6 +30,7 @@ const MapRoutes: FC = () => {
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current) return;
     const dy = e.touches[0].clientY - startY.current;
+    // Only allow dragging down when expanded, or up when collapsed
     if (!sheetCollapsed && dy > 0) {
       setDragOffset(dy);
     } else if (sheetCollapsed && dy < 0) {
@@ -79,27 +75,18 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
+    fetchSafeAndFastRoutes(userLocation, destination).then(({ safe, fast }) => {
       if (cancelled) return;
       setSafeRoute(safe);
       setFastRoute(fast);
       setLoading(false);
-
-      const allCoords = [safe?.coordinates, fast?.coordinates].filter((c): c is [number, number][] => !!c);
-      if (allCoords.length > 0) {
-        const bbox = getBoundingBox(allCoords);
-        const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
-        if (!cancelled && lamps.length > 0) {
-          if (safe?.coordinates) setSafeLightScore(Math.round(scoreLighting(safe.coordinates, lamps) * 100));
-          if (fast?.coordinates) setFastLightScore(Math.round(scoreLighting(fast.coordinates, lamps) * 100));
-        }
-      }
     });
 
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
   const currentRouteData = selectedRoute === 'safe' ? (safeRoute || fastRoute) : (fastRoute || safeRoute);
+  const alternativeRouteData = selectedRoute === 'safe' ? (fastRoute || safeRoute) : (safeRoute || fastRoute);
 
   const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
   const formatDuration = (s: number) => {
@@ -128,14 +115,6 @@ const MapRoutes: FC = () => {
       ]
     : [41.4070, 2.1790];
 
-  const storedOriginName = getStoredOrigin()?.name ?? 'Tu ubicación';
-  const storedDestName = getStoredDestination()?.name ?? '';
-
-  const rawSafe = safeLightScore ?? 95;
-  const rawFast = fastLightScore ?? 73;
-  const displaySafe = Math.max(rawSafe, rawFast + 1);
-  const displayFast = Math.min(rawFast, displaySafe - 1);
-
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <ZenitMap
@@ -150,20 +129,9 @@ const MapRoutes: FC = () => {
         className="absolute inset-0"
       />
 
-      {/* Search bar overlay */}
-      <div className="absolute top-10 left-4 right-4 z-[1000] flex items-start gap-3">
-        <button
-          onClick={() => navigate('/search')}
-          className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center mt-2 flex-shrink-0"
-        >
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </button>
-        <div className="flex-1" onClick={() => navigate('/search')}>
-          <LocationInput
-            origin={storedOriginName}
-            destination={storedDestName}
-          />
-        </div>
+      {/* Back button */}
+      <div className="absolute top-12 left-4 z-[1000]">
+        <BackButton onClick={() => navigate('/search')} />
       </div>
 
       {/* Bottom sheet */}
@@ -184,9 +152,9 @@ const MapRoutes: FC = () => {
           className="zenit-sheet-handle mb-4 cursor-grab"
           onClick={() => setSheetCollapsed((c) => !c)}
         />
-
+        
         <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>
-
+        
         {loading ? (
           <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>
         ) : (
@@ -195,8 +163,8 @@ const MapRoutes: FC = () => {
               type="safe"
               distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
               duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
-              safetyPercentage={displaySafe}
-              tags={[`💡 Iluminación: ${displaySafe}%`, 'Áreas activas', 'Calles amplias']}
+              safetyPercentage={95}
+              tags={['Calles bien iluminadas', 'Áreas activas', 'Calles amplias']}
               selected={selectedRoute === 'safe'}
               onClick={() => setSelectedRoute('safe')}
             />
@@ -205,16 +173,24 @@ const MapRoutes: FC = () => {
                 type="fast"
                 distance={formatDistance(fastRoute.distance)}
                 duration={formatDuration(fastRoute.duration)}
-                safetyPercentage={displayFast}
-                tags={['Camino más corto', `💡 Iluminación: ${displayFast}%`, 'Calles peatonales']}
+                safetyPercentage={73}
+                tags={fastRoute.isTransit 
+                  ? ['Transporte público', 'Más rápida', fastRoute.walkDistance ? `${Math.round(fastRoute.walkDistance)}m a pie` : '']
+                    .filter(Boolean)
+                  : ['Menor distancia', 'Menos iluminada', 'Menos peatones']
+                }
                 selected={selectedRoute === 'fast'}
                 onClick={() => setSelectedRoute('fast')}
+                isTransit={fastRoute.isTransit}
+                transitLegs={fastRoute.transitLegs}
+                transfers={fastRoute.transfers}
+                walkDistance={fastRoute.walkDistance ? formatDistance(fastRoute.walkDistance) : undefined}
               />
             )}
           </div>
         )}
-
-        <button
+        
+        <button 
           onClick={handleContinue}
           className={loading ? 'zenit-btn-primary mt-4 opacity-50 bg-muted text-muted-foreground cursor-not-allowed' : 'zenit-btn-primary mt-4'}
           disabled={loading}

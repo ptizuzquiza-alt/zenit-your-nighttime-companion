@@ -51,19 +51,29 @@ function turnsPerKm(route: RouteResult): number {
 }
 
 /**
- * Deduplicate routes that are essentially the same path (within 3% distance of each other).
+ * Detect if a route backtracks (has loops/doubled segments).
+ * Checks if the route visits nearly the same point twice.
  */
-function deduplicateRoutes(routes: RouteResult[]): RouteResult[] {
-  const unique: RouteResult[] = [];
-  for (const r of routes) {
-    const isDuplicate = unique.some(u => Math.abs(u.distance - r.distance) / u.distance < 0.03);
-    if (!isDuplicate) unique.push(r);
+function hasBacktracking(coords: [number, number][]): boolean {
+  if (coords.length < 10) return false;
+  const step = Math.max(1, Math.floor(coords.length / 30));
+  const sampled: [number, number][] = [];
+  for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
+  
+  for (let i = 0; i < sampled.length; i++) {
+    for (let j = i + 3; j < sampled.length; j++) {
+      const dLat = Math.abs(sampled[i][0] - sampled[j][0]);
+      const dLon = Math.abs(sampled[i][1] - sampled[j][1]);
+      // ~15m threshold
+      if (dLat < 0.00015 && dLon < 0.00015) return true;
+    }
   }
-  return unique;
+  return false;
 }
 
 /**
  * Small perpendicular waypoint to nudge route onto parallel streets.
+ * Only ONE waypoint at 40% of the way (not midpoint, to create asymmetric routes).
  */
 function getNudgeWaypoint(
   origin: [number, number],
@@ -124,7 +134,7 @@ export async function fetchSafeAndFastRoutes(
       .then(r => r.json()).catch(() => null),
     fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${toCoords([wp2])}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
   ]);
 

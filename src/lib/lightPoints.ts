@@ -58,29 +58,69 @@ export async function fetchLightPointsNearRoute(
 }
 
 /**
- * Count light points near a route to score illumination quality
+ * Count light points near a route to score illumination quality.
+ * Uses per-segment proximity (not bounding-box) so two parallel routes
+ * through different streets receive genuinely different scores.
  */
 export async function scoreLightingForRoute(
   routeCoords: [number, number][]
 ): Promise<{ totalLights: number; lightsPerKm: number; score: number }> {
-  const lights = await fetchLightPointsNearRoute(routeCoords, 0.0005); // ~50m buffer
+  // 1. Fetch all lights in a generous bounding box around the route
+  const allLights = await fetchLightPointsNearRoute(routeCoords, 0.002); // ~200m broad fetch
 
-  // Calculate route length in km
+  // 2. Sample the route at one point every ~30 m (degree ≈ 111 km → 30 m ≈ 0.00027°)
+  const STEP_DEG = 0.00027;
+  const sampled: [number, number][] = [];
+  let accumulated = 0;
+  sampled.push(routeCoords[0]);
+  for (let i = 1; i < routeCoords.length; i++) {
+    const [lat1, lng1] = routeCoords[i - 1];
+    const [lat2, lng2] = routeCoords[i];
+    const segLen = Math.sqrt((lat2 - lat1) ** 2 + (lng2 - lng1) ** 2);
+    accumulated += segLen;
+    if (accumulated >= STEP_DEG) {
+      sampled.push(routeCoords[i]);
+      accumulated = 0;
+    }
+  }
+  sampled.push(routeCoords[routeCoords.length - 1]);
+
+  // 3. For each light, check if it is within ~40 m of any sampled point
+  const BUFFER = 0.00040; // ~40 m in degrees
+  const counted = new Set<string>();
+  for (const light of allLights) {
+    if (counted.has(light.id)) continue;
+    for (const [lat, lng] of sampled) {
+      if (
+        Math.abs(light.latitude - lat) < BUFFER &&
+        Math.abs(light.longitude - lng) < BUFFER
+      ) {
+        counted.add(light.id);
+        break;
+      }
+    }
+  }
+
+  // 4. Route length in km (Haversine)
   let totalDist = 0;
   for (let i = 1; i < routeCoords.length; i++) {
     const [lat1, lng1] = routeCoords[i - 1];
     const [lat2, lng2] = routeCoords[i];
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-    totalDist += 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
+    totalDist += 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
   const distKm = totalDist / 1000;
 
-  const lightsPerKm = distKm > 0 ? lights.length / distKm : 0;
+  const lightsPerKm = distKm > 0 ? counted.size / distKm : 0;
 
-  // Score: 0-100 based on density (>40 lights/km = excellent)
+  // Score 0-100: ≥ 40 lights/km = 100 %
   const score = Math.min(100, Math.round((lightsPerKm / 40) * 100));
 
-  return { totalLights: lights.length, lightsPerKm: Math.round(lightsPerKm), score };
+  return { totalLights: counted.size, lightsPerKm: Math.round(lightsPerKm), score };
 }

@@ -1,5 +1,6 @@
 // OSRM routing via edge function proxy (avoids CORS)
 import { supabase } from '@/integrations/supabase/client';
+import { scoreLightingForRoute } from '@/lib/lightPoints';
 
 const OSRM_FUNCTION = 'osrm-proxy';
 
@@ -18,10 +19,6 @@ export interface RouteResult {
   coordinates: [number, number][];
   distance: number; // meters
   duration: number; // seconds
-  isTransit?: boolean;
-  transitLegs?: import('./transit').TransitLeg[];
-  transfers?: number;
-  walkDistance?: number;
 }
 
 function parseOSRMRoute(route: any): RouteResult {
@@ -112,10 +109,9 @@ function getNudgeWaypoint(
 }
 
 /**
- * Fetch two routes:
+ * Fetch two routes (both walking):
  * - Zenit (safe): OSRM car profile → main avenues, fewer turns, well-lit streets
- * - Standard (fast): TMB transit (walk + public transport) for fastest travel
- *   Falls back to OSRM foot if TMB unavailable
+ * - Standard (fast): OSRM foot profile → shortest walking path
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -133,74 +129,71 @@ export async function fetchSafeAndFastRoutes(
   const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
   const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
 
-  // Import transit module dynamically
-  const { fetchTransitRoute } = await import('./transit');
-
-  // Fetch Zenit (car profile for main avenues) + Standard (TMB transit) in parallel
-  const [zenitDirectRes, wp1Res, wp2Res, transitResult, footFallbackRes] = await Promise.all([
+  // Fetch Zenit (car profile for main avenues) + Standard (foot profile) in parallel
+  const [zenitDirectRes, wp1Res, wp2Res, footRes] = await Promise.all([
     fetchOSRM('car', directCoords, { overview: 'full', geometries: 'geojson', alternatives: '3' }).catch(() => null),
     fetchOSRM('car', wpCoords1, { overview: 'full', geometries: 'geojson', continue_straight: 'true' }).catch(() => null),
     fetchOSRM('car', wpCoords2, { overview: 'full', geometries: 'geojson', continue_straight: 'true' }).catch(() => null),
-    fetchTransitRoute(origin, destination).catch(() => null),
     fetchOSRM('foot', directCoords, { overview: 'full', geometries: 'geojson', alternatives: '2' }).catch(() => null),
   ]);
 
-  // --- ZENIT (safe): car-profile routes for main avenues ---
-  const zenitCandidates: RouteResult[] = [];
-  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
-    for (const route of zenitDirectRes.routes) zenitCandidates.push(parseOSRMRoute(route));
+  // --- STANDARD (fast): OSRM foot profile — shortest direct path, shortcuts included ---
+  let fast: RouteResult | null = null;
+  if (footRes?.code === 'Ok' && footRes.routes?.length) {
+    const footRoutes: RouteResult[] = footRes.routes.map((r: any) => parseOSRMRoute(r));
+    fast = [...footRoutes].sort((a, b) => a.distance - b.distance)[0];
   }
+
+  // Serialise the foot path to detect duplicates among Zenit candidates
+  const footGeomKey = fast ? JSON.stringify(fast.coordinates) : '';
+
+  // --- ZENIT (safe): nudged car routes through different (well-lit) streets ---
+  // Only use waypointed candidates (wp1, wp2) so Zenit is always a distinct path
+  // from the standard route. Falls back to direct car if no waypointed route exists.
+  const wpCandidates: RouteResult[] = [];
   if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
+    wpCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
   }
   if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
+    wpCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
   }
 
-  const cleanZenit = zenitCandidates.filter(r => !hasBacktracking(r.coordinates));
+  // Direct car route — used only as fallback when no waypointed route is available
+  const directCarCandidates: RouteResult[] = [];
+  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
+    for (const route of zenitDirectRes.routes) directCarCandidates.push(parseOSRMRoute(route));
+  }
 
-  console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
-    distance: Math.round(r.distance) + 'm',
-    turnsPerKm: Math.round(turnsPerKm(r)) + '°/km',
-  })));
+  // Prefer waypointed candidates that differ from the foot route
+  const differentWp = wpCandidates.filter(
+    r => JSON.stringify(r.coordinates) !== footGeomKey && !hasBacktracking(r.coordinates)
+  );
+  const zenitPool = differentWp.length > 0
+    ? differentWp
+    : wpCandidates.filter(r => !hasBacktracking(r.coordinates));
+  const fallbackPool = directCarCandidates.filter(r => !hasBacktracking(r.coordinates));
+  const cleanZenit = zenitPool.length > 0 ? zenitPool : fallbackPool;
 
-  // Zenit = straightest car-profile route
+  // Zenit = candidate with highest illumination score from the light points DB
   let safe: RouteResult | null = null;
   if (cleanZenit.length > 0) {
-    const sorted = [...cleanZenit].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
-    safe = sorted[0];
-  }
+    const scores = await Promise.all(
+      cleanZenit.map(r => scoreLightingForRoute(r.coordinates).catch(() => ({ score: 0 })))
+    );
 
-  // --- STANDARD (fast): TMB transit or OSRM foot fallback ---
-  let fast: RouteResult | null = null;
+    console.log('Zenit candidates:', cleanZenit.map((r, i) => ({
+      distance: Math.round(r.distance) + 'm',
+      lightScore: scores[i].score,
+      different: JSON.stringify(r.coordinates) !== footGeomKey,
+    })));
 
-  if (transitResult && transitResult.coordinates.length > 0) {
-    // Use TMB transit route
-    fast = {
-      coordinates: transitResult.coordinates,
-      distance: transitResult.distance,
-      duration: transitResult.duration,
-      isTransit: true,
-      transitLegs: transitResult.legs,
-      transfers: transitResult.transfers,
-      walkDistance: transitResult.walkDistance,
-    };
-    console.log('Standard: Using TMB transit route', {
-      duration: Math.round(transitResult.duration) + 's',
-      transfers: transitResult.transfers,
-      legs: transitResult.legs.map(l => `${l.mode} ${l.route}`).join(' → '),
-    });
-  } else {
-    // Fallback to OSRM foot
-    console.warn('TMB transit unavailable, falling back to OSRM foot');
-    const footCandidates: RouteResult[] = [];
-    if (footFallbackRes?.code === 'Ok' && footFallbackRes.routes?.length) {
-      for (const route of footFallbackRes.routes) footCandidates.push(parseOSRMRoute(route));
-    }
-    const cleanFoot = footCandidates.filter(r => !hasBacktracking(r.coordinates));
-    if (cleanFoot.length > 0) {
-      fast = [...cleanFoot].sort((a, b) => a.distance - b.distance)[0];
-    }
+    // Best illumination score; tie-break by fewest turns
+    const best = cleanZenit
+      .map((r, i) => ({ route: r, score: scores[i].score, turns: turnsPerKm(r) }))
+      .sort((a, b) => b.score - a.score || a.turns - b.turns)[0];
+
+    safe = best.route;
+    console.log('Zenit selected: score=' + best.score + '% dist=' + Math.round(best.route.distance) + 'm');
   }
 
   // Fallbacks
@@ -209,7 +202,7 @@ export async function fetchSafeAndFastRoutes(
 
   console.log('Selected:', {
     zenit: safe ? Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's' : 'none',
-    standard: fast ? `${Math.round(fast.distance)}m, ${Math.round(fast.duration)}s${fast.isTransit ? ' (transit)' : ''}` : 'none',
+    standard: fast ? `${Math.round(fast.distance)}m, ${Math.round(fast.duration)}s` : 'none',
   });
 
   return { safe, fast };

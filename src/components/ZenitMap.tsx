@@ -22,6 +22,7 @@ interface FriendRoute {
   name: string;
   coordinates: [number, number][];
   position: [number, number];
+  dim?: boolean;
 }
 
 interface ZenitMapProps {
@@ -134,8 +135,13 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {
+        // Show Standard clearly as a solid dashed lila line when Zenit is selected
+        const altGlow = L.polyline(alternativeRoute, {
+          color: MAP_ROUTE_FAST_COLOR, weight: 8, opacity: 0.15, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(altGlow);
         const alt = L.polyline(alternativeRoute, {
-          color: 'rgba(167, 139, 250, 0.4)', weight: 4, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_FAST_COLOR, weight: 3, opacity: 0.85, dashArray: '10, 6', lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(alt);
       }
@@ -214,9 +220,9 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (fr.coordinates.length > 1) {
         const friendPolyline = L.polyline(fr.coordinates, {
           color: '#a78bfa',
-          weight: 4,
+          weight: fr.dim ? 3 : 4,
           dashArray: '6, 6',
-          opacity: 0.7,
+          opacity: fr.dim ? 0.2 : 0.7,
         }).addTo(mapRef.current!);
         polylinesRef.current.push(friendPolyline);
       }
@@ -226,28 +232,36 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     friendRoutes.forEach(fr => {
       const combinedIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<div style="display:flex;flex-direction:column;align-items:center;">
-          <span style="
-            background: rgba(167,139,250,0.85);
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 10px;
-            white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            margin-bottom: 4px;
-          ">${fr.name}</span>
-          <div style="
-            width: 14px;
-            height: 14px;
-            background: #a78bfa;
-            border-radius: 50%;
-            box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
-          "></div>
-        </div>`,
-        iconSize: [60, 36],
-        iconAnchor: [30, 36],
+        html: fr.dim
+          ? `<div style="
+              width: 10px;
+              height: 10px;
+              background: #a78bfa;
+              border-radius: 50%;
+              opacity: 0.25;
+            "></div>`
+          : `<div style="display:flex;flex-direction:column;align-items:center;">
+              <span style="
+                background: rgba(167,139,250,0.85);
+                color: white;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 2px 8px;
+                border-radius: 10px;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                margin-bottom: 4px;
+              ">${fr.name}</span>
+              <div style="
+                width: 14px;
+                height: 14px;
+                background: #a78bfa;
+                border-radius: 50%;
+                box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
+              "></div>
+            </div>`,
+        iconSize: fr.dim ? [10, 10] : [60, 36],
+        iconAnchor: fr.dim ? [5, 5] : [30, 36],
       });
       const marker = L.marker(fr.position, { icon: combinedIcon }).addTo(mapRef.current!);
       markersRef.current.push(marker);

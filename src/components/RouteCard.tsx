@@ -11,7 +11,6 @@ interface RouteCardProps {
   onClick?: () => void;
 }
 
-
 export const RouteCard: FC<RouteCardProps> = ({
   type,
   distance,

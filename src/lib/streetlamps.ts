@@ -38,7 +38,7 @@ export async function fetchStreetLamps(
 
 /**
  * Score a route by how many street lamps are within 30m of its path.
- * Higher = better lit.
+ * Higher = better lit. Returns value between 0 and 1.
  */
 export function scoreLighting(
   coords: [number, number][],

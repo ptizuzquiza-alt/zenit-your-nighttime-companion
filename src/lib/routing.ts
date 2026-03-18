@@ -174,26 +174,41 @@ export async function fetchSafeAndFastRoutes(
   const fallbackPool = directCarCandidates.filter(r => !hasBacktracking(r.coordinates));
   const cleanZenit = zenitPool.length > 0 ? zenitPool : fallbackPool;
 
-  // Zenit = candidate with highest illumination score from the light points DB
+  // Score ALL candidates together (car/nudged + foot) so Zenit is always
+  // the most illuminated option, regardless of profile.
   let safe: RouteResult | null = null;
-  if (cleanZenit.length > 0) {
+  const allCandidates: RouteResult[] = [...cleanZenit];
+  if (fast) allCandidates.push(fast); // include foot route in the pool
+
+  if (allCandidates.length > 0) {
     const scores = await Promise.all(
-      cleanZenit.map(r => scoreLightingForRoute(r.coordinates).catch(() => ({ score: 0 })))
+      allCandidates.map(r => scoreLightingForRoute(r.coordinates).catch(() => ({ score: 0 })))
     );
 
-    console.log('Zenit candidates:', cleanZenit.map((r, i) => ({
+    console.log('All candidates:', allCandidates.map((r, i) => ({
       distance: Math.round(r.distance) + 'm',
       lightScore: scores[i].score,
-      different: JSON.stringify(r.coordinates) !== footGeomKey,
+      isFoot: JSON.stringify(r.coordinates) === footGeomKey,
     })));
 
-    // Best illumination score (already penalised for dark streets); tie-break by fewest turns
-    const best = cleanZenit
+    // Sort all by illumination score; tie-break by fewest turns
+    const ranked = allCandidates
       .map((r, i) => ({ route: r, score: scores[i].score, turns: turnsPerKm(r) }))
-      .sort((a, b) => b.score - a.score || a.turns - b.turns)[0];
+      .sort((a, b) => b.score - a.score || a.turns - b.turns);
 
-    safe = best.route;
-    console.log('Zenit selected: score=' + best.score + '% dist=' + Math.round(best.route.distance) + 'm');
+    // Zenit = most illuminated route overall
+    safe = ranked[0].route;
+    console.log('Zenit selected: score=' + ranked[0].score + '% dist=' + Math.round(safe.distance) + 'm');
+
+    // Standard = foot route if it didn't become Zenit; otherwise second-best candidate
+    const safeKey = JSON.stringify(safe.coordinates);
+    if (fast && JSON.stringify(fast.coordinates) !== safeKey) {
+      // foot route is still available as Standard — keep fast as-is
+    } else {
+      // foot became Zenit → Standard = second-best distinct candidate
+      const secondBest = ranked.find(c => JSON.stringify(c.route.coordinates) !== safeKey);
+      fast = secondBest ? secondBest.route : (ranked[1]?.route ?? null);
+    }
   }
 
   // Fallbacks

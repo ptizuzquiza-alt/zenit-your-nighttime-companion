@@ -33,28 +33,22 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
   return (
     <>
       <div className={`zenit-friend-activity transition-all ${!tracking ? 'opacity-60' : ''}`}>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">{time}</p>
-          {onToggleTracking && tracking && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25"
-            >
-              <UserX className="w-3 h-3" />
-              Dejar de seguir
-            </button>
-          )}
-          {onToggleTracking && !tracking && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleTracking(); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
-            >
-              Volver a seguir
-            </button>
-          )}
-        </div>
-        <div className="flex items-start gap-3 cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+        {tracking && (
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-muted-foreground">{time}</p>
+            {onToggleTracking && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25"
+              >
+                <UserX className="w-3 h-3" />
+                Dejar de seguir
+              </button>
+            )}
+          </div>
+        )}
+        <div className="flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
             {avatar ? (
               <img src={avatar} alt={name} className="w-full h-full object-cover" />
             ) : (
@@ -66,21 +60,33 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
               <span className="font-semibold text-accent">{name}</span>
               <span className="text-muted-foreground"> {activity}</span>
             </p>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Hacia <span className="text-foreground font-medium">{destination}</span>, en {address}
-            </p>
-            {(departureTime || estimatedArrival) && (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
-                {departureTime && (
-                  <span>Salió a las <span className="text-foreground font-medium">{departureTime}</span></span>
+            {tracking && (
+              <>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Hacia <span className="text-foreground font-medium">{destination}</span>, en {address}
+                </p>
+                {(departureTime || estimatedArrival) && (
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
+                    {departureTime && (
+                      <span>Salió a las <span className="text-foreground font-medium">{departureTime}</span></span>
+                    )}
+                    {departureTime && estimatedArrival && <span className="text-border">•</span>}
+                    {estimatedArrival && (
+                      <span>Llega ~<span className="text-foreground font-medium">{estimatedArrival}</span></span>
+                    )}
+                  </div>
                 )}
-                {departureTime && estimatedArrival && <span className="text-border">•</span>}
-                {estimatedArrival && (
-                  <span>Llega ~<span className="text-foreground font-medium">{estimatedArrival}</span></span>
-                )}
-              </div>
+              </>
             )}
           </div>
+          {!tracking && onToggleTracking && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleTracking(); }}
+              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
+            >
+              Volver a seguir
+            </button>
+          )}
         </div>
       </div>
 

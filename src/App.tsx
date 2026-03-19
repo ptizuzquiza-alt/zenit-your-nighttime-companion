@@ -10,6 +10,8 @@ import MapRouteDetails from "./pages/MapRouteDetails";
 import Navigation from "./pages/Navigation";
 import NavigationEnd from "./pages/NavigationEnd";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import Friends from "./pages/Friends";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/route-details" element={<MapRouteDetails />} />
             <Route path="/navigation" element={<Navigation />} />
             <Route path="/navigation-end" element={<NavigationEnd />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/friends" element={<Friends />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

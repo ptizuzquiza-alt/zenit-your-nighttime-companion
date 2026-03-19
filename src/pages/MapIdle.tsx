@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Users, Map, User, UserPlus, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -72,6 +72,8 @@ const MapIdle: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_hidden_friends') || '[]');
     } catch { return []; }
   });
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [addFriendInput, setAddFriendInput] = useState('');
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show next request from queue with delay
@@ -193,6 +195,7 @@ const MapIdle: FC = () => {
     });
   }, []);
 
+  // Only show routes for friends being actively tracked
   const acceptedFriendRoutes = friendData
     .filter(fd => {
       const fr = FRIEND_ROUTES.find(r => r.name === fd.name);
@@ -243,7 +246,7 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Friends FAB with badge */}
-      <div className="absolute bottom-6 left-4 z-[1000]">
+      <div className="absolute bottom-20 left-4 z-[1000]">
         <button
           onClick={() => setShowFriends((p) => !p)}
           className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
@@ -262,7 +265,7 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Locate me FAB */}
-      <div className="absolute bottom-6 right-4 z-[1000]">
+      <div className="absolute bottom-20 right-4 z-[1000]">
         <button
           onClick={() => {
             setFocusBounds(undefined);
@@ -281,9 +284,9 @@ const MapIdle: FC = () => {
         </button>
       </div>
 
-      {/* Friends activity cards */}
-      {showFriends && (acceptedFriendRoutes.length > 0 || pendingRequests.length > 0) && (
-        <div className="absolute bottom-20 left-4 right-4 z-[1000] space-y-2 max-h-[60vh] overflow-y-auto pb-2">
+      {/* Friends panel */}
+      {showFriends && (
+        <div className="absolute bottom-36 left-4 right-4 z-[1000] space-y-2 max-h-[55vh] overflow-y-auto pb-2">
           {/* Pending requests */}
           <PendingRequestsList
             requests={pendingRequests}
@@ -292,7 +295,7 @@ const MapIdle: FC = () => {
           />
 
           {/* Active friends */}
-          {acceptedFriendRoutes.length > 0 && (
+          {acceptedFriendData.length > 0 && (
             <>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
                 Amigos activos
@@ -322,6 +325,45 @@ const MapIdle: FC = () => {
               })}
             </>
           )}
+
+          {acceptedFriendData.length === 0 && pendingRequests.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              Ningún amigo activo ahora mismo
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Add friend modal */}
+      {showAddFriend && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6" onClick={() => setShowAddFriend(false)}>
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+          <div
+            className="relative bg-card border border-border rounded-2xl p-5 w-full max-w-[320px] shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-foreground font-semibold">Añadir amigo</p>
+              <button onClick={() => setShowAddFriend(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Nombre de usuario o teléfono"
+              value={addFriendInput}
+              onChange={(e) => setAddFriendInput(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary mb-3"
+              autoFocus
+            />
+            <button
+              onClick={() => { setAddFriendInput(''); setShowAddFriend(false); }}
+              disabled={!addFriendInput.trim()}
+              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            >
+              Enviar solicitud
+            </button>
+          </div>
         </div>
       )}
 
@@ -331,6 +373,19 @@ const MapIdle: FC = () => {
         onAccept={handleAcceptRequest}
         onReject={handleRejectRequest}
       />
+
+      {/* Bottom navigation bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+        <button className="flex items-center justify-center text-primary w-12 h-12">
+          <Map className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => navigate('/friends')}
+          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+        >
+          <Users className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 };

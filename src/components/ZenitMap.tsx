@@ -22,6 +22,7 @@ interface FriendRoute {
   name: string;
   coordinates: [number, number][];
   position: [number, number];
+  dim?: boolean;
 }
 
 interface ZenitMapProps {
@@ -214,9 +215,9 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (fr.coordinates.length > 1) {
         const friendPolyline = L.polyline(fr.coordinates, {
           color: '#a78bfa',
-          weight: 4,
+          weight: fr.dim ? 3 : 4,
           dashArray: '6, 6',
-          opacity: 0.7,
+          opacity: fr.dim ? 0.2 : 0.7,
         }).addTo(mapRef.current!);
         polylinesRef.current.push(friendPolyline);
       }
@@ -224,31 +225,44 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     // Friend position markers (purple dot at current position)
     friendRoutes.forEach(fr => {
-      const combinedIcon = L.divIcon({
-        className: 'zenit-marker',
-        html: `<div style="display:flex;flex-direction:column;align-items:center;">
-          <span style="
-            background: rgba(167,139,250,0.85);
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 10px;
-            white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            margin-bottom: 4px;
-          ">${fr.name}</span>
-          <div style="
-            width: 14px;
-            height: 14px;
-            background: #a78bfa;
-            border-radius: 50%;
-            box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
-          "></div>
-        </div>`,
-        iconSize: [60, 36],
-        iconAnchor: [30, 36],
-      });
+      const combinedIcon = fr.dim
+        ? L.divIcon({
+            className: 'zenit-marker',
+            html: `<div style="
+              width: 10px;
+              height: 10px;
+              background: #a78bfa;
+              border-radius: 50%;
+              opacity: 0.25;
+            "></div>`,
+            iconSize: [10, 10],
+            iconAnchor: [5, 5],
+          })
+        : L.divIcon({
+            className: 'zenit-marker',
+            html: `<div style="display:flex;flex-direction:column;align-items:center;">
+              <span style="
+                background: rgba(167,139,250,0.85);
+                color: white;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 2px 8px;
+                border-radius: 10px;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                margin-bottom: 4px;
+              ">${fr.name}</span>
+              <div style="
+                width: 14px;
+                height: 14px;
+                background: #a78bfa;
+                border-radius: 50%;
+                box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
+              "></div>
+            </div>`,
+            iconSize: [60, 36],
+            iconAnchor: [30, 36],
+          });
       const marker = L.marker(fr.position, { icon: combinedIcon }).addTo(mapRef.current!);
       markersRef.current.push(marker);
     });

@@ -124,7 +124,7 @@ export async function fetchSafeAndFastRoutes(
       .then(r => r.json()).catch(() => null),
     fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${toCoords([wp2])}?overview=full&geometries=geojson&continue_straight=true`)
+    fetch(`${OSRM_BASE}/foot/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
       .then(r => r.json()).catch(() => null),
   ]);
 
@@ -146,9 +146,21 @@ export async function fetchSafeAndFastRoutes(
     for (const route of footDirectRes.routes) footCandidates.push(parseOSRMRoute(route));
   }
 
-  // Filter out backtracking routes
-  const cleanZenit = zenitCandidates.filter(r => !hasBacktracking(r.coordinates));
-  const cleanFoot = footCandidates.filter(r => !hasBacktracking(r.coordinates));
+  // Filter out routes with excessive backtracking (>30% of path moving away from destination)
+  const hasExcessiveBacktracking = (coords: [number, number][]) => {
+    if (coords.length < 2) return false;
+    let backward = 0, total = 0;
+    for (let i = 1; i < coords.length; i++) {
+      const seg = Math.hypot(coords[i][0] - coords[i-1][0], coords[i][1] - coords[i-1][1]);
+      total += seg;
+      const prevD = Math.hypot(coords[i-1][0] - destination[0], coords[i-1][1] - destination[1]);
+      const currD = Math.hypot(coords[i][0] - destination[0], coords[i][1] - destination[1]);
+      if (currD > prevD) backward += seg;
+    }
+    return total > 0 && backward / total > 0.3;
+  };
+  const cleanZenit = zenitCandidates.filter(r => !hasExcessiveBacktracking(r.coordinates));
+  const cleanFoot = footCandidates.filter(r => !hasExcessiveBacktracking(r.coordinates));
 
   console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
     distance: Math.round(r.distance) + 'm',

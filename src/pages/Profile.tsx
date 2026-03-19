@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, Shield, Bell, ChevronRight, LogOut, UserPlus, Users } from 'lucide-react';
+import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft } from 'lucide-react';
 
 
 const Profile: FC = () => {
@@ -8,8 +8,18 @@ const Profile: FC = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background flex flex-col">
+      {/* Back button */}
+      <div className="pt-12 px-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      </div>
+
       {/* Header */}
-      <div className="pt-14 pb-6 px-6 flex flex-col items-center gap-3">
+      <div className="pt-4 pb-6 px-6 flex flex-col items-center gap-3">
         <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40">
           <User className="w-9 h-9 text-primary" />
         </div>
@@ -21,26 +31,7 @@ const Profile: FC = () => {
 
       {/* Options */}
       <div className="flex-1 px-4 space-y-2 overflow-y-auto pb-24">
-        {/* Friends section */}
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">Amigos</p>
-        {[
-          { icon: Users, label: 'Mis amigos', action: () => navigate('/friends') },
-          { icon: UserPlus, label: 'Añadir amigos', action: () => navigate('/friends') },
-        ].map(({ icon: Icon, label, action }) => (
-          <button
-            key={label}
-            onClick={action}
-            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl bg-card border border-border text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Icon className="w-5 h-5 text-primary" />
-              <span className="text-foreground text-sm">{label}</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        ))}
-
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-2">Cuenta</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">Cuenta</p>
         {[
           { icon: Shield, label: 'Privacidad y seguridad' },
           { icon: Bell, label: 'Notificaciones' },

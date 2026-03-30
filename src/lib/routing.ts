@@ -184,7 +184,7 @@ export async function fetchSafeAndFastRoutes(
     return { safe: fast, fast };
   }
 
-  const safe = safeCandidate.route;
+  safe = safeCandidate.route;
   return safe.distance < fast.distance
     ? { safe: fast, fast: safe }
     : { safe, fast };

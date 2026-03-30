@@ -260,9 +260,9 @@ export const ZenitMap: FC<ZenitMapProps> = ({
                 box-shadow: 0 0 10px 3px rgba(167, 139, 250, 0.5);
               "></div>
             </div>`,
-        iconSize: fr.dim ? [10, 10] : [60, 36],
-        iconAnchor: fr.dim ? [5, 5] : [30, 36],
-      });
+            iconSize: [60, 36],
+            iconAnchor: [30, 36],
+          });
       const marker = L.marker(fr.position, { icon: combinedIcon }).addTo(mapRef.current!);
       markersRef.current.push(marker);
     });

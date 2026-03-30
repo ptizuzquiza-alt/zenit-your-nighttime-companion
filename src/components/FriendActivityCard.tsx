@@ -89,6 +89,14 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
               </>
             )}
           </div>
+          {!tracking && onToggleTracking && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleTracking(); }}
+              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
+            >
+              Volver a seguir
+            </button>
+          )}
         </div>
       </div>
 

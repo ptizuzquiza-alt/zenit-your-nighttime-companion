@@ -135,8 +135,13 @@ export const ZenitMap: FC<ZenitMapProps> = ({
         }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {
+        // Show Standard clearly as a solid dashed lila line when Zenit is selected
+        const altGlow = L.polyline(alternativeRoute, {
+          color: MAP_ROUTE_FAST_COLOR, weight: 8, opacity: 0.15, lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapRef.current!);
+        polylinesRef.current.push(altGlow);
         const alt = L.polyline(alternativeRoute, {
-          color: 'rgba(167, 139, 250, 0.4)', weight: 4, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round',
+          color: MAP_ROUTE_FAST_COLOR, weight: 3, opacity: 0.85, dashArray: '10, 6', lineCap: 'round', lineJoin: 'round',
         }).addTo(mapRef.current!);
         polylinesRef.current.push(alt);
       }
@@ -225,22 +230,17 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     // Friend position markers (purple dot at current position)
     friendRoutes.forEach(fr => {
-      const combinedIcon = fr.dim
-        ? L.divIcon({
-            className: 'zenit-marker',
-            html: `<div style="
+      const combinedIcon = L.divIcon({
+        className: 'zenit-marker',
+        html: fr.dim
+          ? `<div style="
               width: 10px;
               height: 10px;
               background: #a78bfa;
               border-radius: 50%;
               opacity: 0.25;
-            "></div>`,
-            iconSize: [10, 10],
-            iconAnchor: [5, 5],
-          })
-        : L.divIcon({
-            className: 'zenit-marker',
-            html: `<div style="display:flex;flex-direction:column;align-items:center;">
+            "></div>`
+          : `<div style="display:flex;flex-direction:column;align-items:center;">
               <span style="
                 background: rgba(167,139,250,0.85);
                 color: white;

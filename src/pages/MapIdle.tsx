@@ -199,9 +199,12 @@ const MapIdle: FC = () => {
   const acceptedFriendRoutes = friendData
     .filter(fd => {
       const fr = FRIEND_ROUTES.find(r => r.name === fd.name);
-      return fr && acceptedFriends.includes(fr.id) && !hiddenFriends.includes(fr.id);
+      return fr && acceptedFriends.includes(fr.id);
     })
-    .map(({ name, coordinates, position }) => ({ name, coordinates, position }));
+    .map(({ name, coordinates, position }) => {
+      const fr = FRIEND_ROUTES.find(r => r.name === name);
+      return { name, coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
+    });
 
   const badgeCount = acceptedFriends.length + pendingRequests.length;
 

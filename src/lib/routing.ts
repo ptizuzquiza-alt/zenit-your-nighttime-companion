@@ -1,8 +1,18 @@
-// OSRM public API for real street routing
+// OSRM public routing API (CORS enabled)
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;
+
+/** Fetch with timeout */
+async function fetchWithTimeout(path: string, ms = 8000): Promise<any> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  return fetch(`${OSRM_BASE}/${path}`, { signal: controller.signal })
+    .then((r) => r.json())
+    .catch(() => null)
+    .finally(() => clearTimeout(id));
+}
 
 export interface RouteResult {
   coordinates: [number, number][];
@@ -12,92 +22,77 @@ export interface RouteResult {
 
 function parseOSRMRoute(route: any): RouteResult {
   const distance = route.distance;
-  return {
-    coordinates: route.geometry.coordinates.map(
-      ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
-    ),
-    distance,
-    duration: distance / WALKING_SPEED,
-  };
+  const coordinates: [number, number][] = route.geometry.coordinates.map(
+    ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+  );
+  return { coordinates, distance, duration: distance / WALKING_SPEED };
 }
 
-/**
- * Calculate total cumulative angular change along a route (in degrees).
- */
-function totalAngularChange(coords: [number, number][]): number {
-  if (coords.length < 3) return 0;
-  const step = Math.max(1, Math.floor(coords.length / 50));
-  const sampled: [number, number][] = [];
-  for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
-  if (sampled[sampled.length - 1] !== coords[coords.length - 1]) {
-    sampled.push(coords[coords.length - 1]);
-  }
+/** Fraction of route that moves away from destination (0=direct, >0.3=hook) */
+function backtrackRatio(
+  coords: [number, number][],
+  destination: [number, number]
+): number {
+  if (coords.length < 2) return 0;
+
+  let backward = 0;
   let total = 0;
-  for (let i = 1; i < sampled.length - 1; i++) {
-    const [lat1, lon1] = sampled[i - 1];
-    const [lat2, lon2] = sampled[i];
-    const [lat3, lon3] = sampled[i + 1];
-    const b1 = Math.atan2(lon2 - lon1, lat2 - lat1);
-    const b2 = Math.atan2(lon3 - lon2, lat3 - lat2);
-    let diff = Math.abs(b2 - b1) * (180 / Math.PI);
-    if (diff > 180) diff = 360 - diff;
-    total += diff;
+  for (let i = 1; i < coords.length; i++) {
+    const seg = Math.hypot(
+      coords[i][0] - coords[i - 1][0],
+      coords[i][1] - coords[i - 1][1]
+    );
+    total += seg;
+
+    const prevD = Math.hypot(
+      coords[i - 1][0] - destination[0],
+      coords[i - 1][1] - destination[1]
+    );
+    const currD = Math.hypot(
+      coords[i][0] - destination[0],
+      coords[i][1] - destination[1]
+    );
+    if (currD > prevD) backward += seg;
   }
-  return total;
+
+  return total > 0 ? backward / total : 0;
 }
 
-function turnsPerKm(route: RouteResult): number {
-  return totalAngularChange(route.coordinates) / (route.distance / 1000);
-}
-
-/**
- * Deduplicate routes that are essentially the same path (within 3% distance of each other).
- */
-function deduplicateRoutes(routes: RouteResult[]): RouteResult[] {
-  const unique: RouteResult[] = [];
-  for (const r of routes) {
-    const isDuplicate = unique.some(u => Math.abs(u.distance - r.distance) / u.distance < 0.03);
-    if (!isDuplicate) unique.push(r);
-  }
-  return unique;
+/** Two routes are distinct if their midpoints are >50m apart */
+function areDistinct(a: RouteResult, b: RouteResult): boolean {
+  const ma = a.coordinates[Math.floor(a.coordinates.length / 2)];
+  const mb = b.coordinates[Math.floor(b.coordinates.length / 2)];
+  if (!ma || !mb) return false;
+  return Math.hypot(ma[0] - mb[0], ma[1] - mb[1]) > 0.00045;
 }
 
 /**
  * Small perpendicular waypoint to nudge route onto parallel streets.
  */
-function getNudgeWaypoint(
+async function fetchNudged(
   origin: [number, number],
   destination: [number, number],
   offsetDeg: number
-): [number, number] {
+): Promise<RouteResult | null> {
+  const midLat = (origin[0] + destination[0]) / 2;
+  const midLon = (origin[1] + destination[1]) / 2;
   const dLat = destination[0] - origin[0];
   const dLon = destination[1] - origin[1];
-  const len = Math.sqrt(dLat * dLat + dLon * dLon);
-  if (len === 0) return origin;
-  
-  // Point at 40% along the line
-  const t = 0.4;
-  const midLat = origin[0] + dLat * t;
-  const midLon = origin[1] + dLon * t;
-  
-  // Perpendicular
-  const perpLat = (-dLon / len) * offsetDeg;
-  const perpLon = (dLat / len) * offsetDeg;
-  
-  return [midLat + perpLat, midLon + perpLon];
+  const len = Math.sqrt(dLat * dLat + dLon * dLon) || 1;
+  const wpLat = midLat + (-dLon / len) * offsetDeg;
+  const wpLon = midLon + (dLat / len) * offsetDeg;
+
+  const coords = `${origin[1]},${origin[0]};${wpLon},${wpLat};${destination[1]},${destination[0]}`;
+  const res = await fetchWithTimeout(`foot/${coords}?overview=full&geometries=geojson`);
+
+  if (!res || res.code !== 'Ok' || !res.routes?.length) return null;
+  return parseOSRMRoute(res.routes[0]);
 }
 
 /**
- * Fetch two visually different walking routes:
- * - Standard (fast): shortest/most direct → callejuelas, atajos
- * - Zenit (safe): straighter, fewer turns → vías principales
- * 
- * Strategy:
- * 1. OSRM alternatives (up to 3)
- * 2. Two small nudge waypoints (~80m offset) for variety
- * 3. Filter out routes with backtracking/loops
- * 4. Filter out routes > 1.6x shortest
- * 5. Standard = shortest, Zenit = straightest (fewest °/km) that differs
+ * Returns two walking routes:
+ * - Standard (fast): shortest OSRM path
+ * - Zenit (safe): different corridor, clean (no hooks), max 60% longer
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -128,23 +123,13 @@ export async function fetchSafeAndFastRoutes(
       .then(r => r.json()).catch(() => null),
   ]);
 
-  // Collect car-profile routes for Zenit (main avenues)
-  const zenitCandidates: RouteResult[] = [];
-  if (zenitDirectRes?.code === 'Ok' && zenitDirectRes.routes?.length) {
-    for (const route of zenitDirectRes.routes) zenitCandidates.push(parseOSRMRoute(route));
-  }
-  if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp1Res.routes[0]));
-  }
-  if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
-    zenitCandidates.push(parseOSRMRoute(wp2Res.routes[0]));
+  if (!res || res.code !== 'Ok' || !res.routes?.length) {
+    return { safe: null, fast: null };
   }
 
-  // Collect foot-profile routes for Standard (fastest walking)
-  const footCandidates: RouteResult[] = [];
-  if (footDirectRes?.code === 'Ok' && footDirectRes.routes?.length) {
-    for (const route of footDirectRes.routes) footCandidates.push(parseOSRMRoute(route));
-  }
+  const sorted: RouteResult[] = res.routes
+    .map(parseOSRMRoute)
+    .sort((a: RouteResult, b: RouteResult) => a.distance - b.distance);
 
   // Filter out routes with excessive backtracking (>30% of path moving away from destination)
   const hasExcessiveBacktracking = (coords: [number, number][]) => {
@@ -177,28 +162,32 @@ export async function fetchSafeAndFastRoutes(
     safe = sorted[0];
   }
 
-  // Standard = shortest foot route (most direct walking path)
-  let fast: RouteResult | null = null;
-  if (cleanFoot.length > 0) {
-    const sorted = [...cleanFoot].sort((a, b) => a.distance - b.distance);
-    fast = sorted[0];
+  const naturalAlts = sorted
+    .slice(1)
+    .filter((r) => r.distance <= maxDist && areDistinct(r, fast))
+    .map((r) => ({ route: r, bt: backtrackRatio(r.coordinates, destination) }));
+
+  const nudgeCandidates = nudgedRoute && nudgedRoute.distance <= maxDist
+    ? [{ route: nudgedRoute, bt: backtrackRatio(nudgedRoute.coordinates, destination) }]
+    : [];
+
+  const cleanNatural = naturalAlts
+    .filter((c) => c.bt < 0.3)
+    .sort((a, b) => a.bt - b.bt);
+
+  const safeCandidate = cleanNatural[0]
+    ?? nudgeCandidates[0]
+    ?? naturalAlts.sort((a, b) => a.bt - b.bt)[0]
+    ?? null;
+
+  if (!safeCandidate) {
+    return { safe: fast, fast };
   }
 
-  // Fallbacks
-  if (!safe && fast) safe = { ...fast, duration: fast.duration * 1.15 };
-  if (!fast && safe) fast = { ...safe, duration: safe.duration * 0.85 };
-
-  // Ensure Zenit always shows slightly longer time (safer but slower)
-  if (safe && fast && safe.duration <= fast.duration) {
-    safe = { ...safe, duration: fast.duration * 1.15 };
-  }
-
-  console.log('Selected:', {
-    zenit: safe ? Math.round(safe.distance) + 'm, ' + Math.round(safe.duration) + 's' : 'none',
-    standard: fast ? Math.round(fast.distance) + 'm, ' + Math.round(fast.duration) + 's' : 'none',
-  });
-
-  return { safe, fast };
+  const safe = safeCandidate.route;
+  return safe.distance < fast.distance
+    ? { safe: fast, fast: safe }
+    : { safe, fast };
 }
 
 /** Store the selected route in sessionStorage for cross-page use */

@@ -236,13 +236,21 @@ const MapIdle: FC = () => {
         className="absolute inset-0"
       />
 
-      {/* Search bar */}
-      <div className="absolute top-0 left-0 right-0 p-4 pt-12 z-[1000]">
-        <SearchBar
-          placeholder="Buscar"
-          onClick={() => navigate('/search')}
-          readOnly
-        />
+      {/* Search bar + profile icon */}
+      <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-2">
+        <div className="flex-1">
+          <SearchBar
+            placeholder="Buscar"
+            onClick={() => navigate('/search')}
+            readOnly
+          />
+        </div>
+        <button
+          onClick={() => navigate('/profile')}
+          className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0"
+        >
+          <User className="w-5 h-5 text-muted-foreground" />
+        </button>
       </div>
 
       {/* Friends FAB with badge */}

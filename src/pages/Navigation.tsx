@@ -100,20 +100,24 @@ const Navigation: FC = () => {
     return () => clearInterval(interval);
   }, [juanRoute]);
 
-  // Simulate user movement along the real route
+  // Simulate user movement along the real route + auto-finish
   useEffect(() => {
     const interval = setInterval(() => {
       setRouteIndex((prev) => {
         const next = prev + 1;
         if (next < routeCoords.length) {
           setUserPosition(routeCoords[next]);
+          // Auto-navigate to end screen when reaching destination
+          if (next === routeCoords.length - 1) {
+            setTimeout(() => navigate('/navigation-end'), 1000);
+          }
           return next;
         }
         return prev;
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, [routeCoords]);
+  }, [routeCoords, navigate]);
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
@@ -379,8 +383,11 @@ const Navigation: FC = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
           <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-foreground mb-2">¿Cancelar esta ruta?</h3>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-3">
               Se le notificará a tus amigos de que tu ruta ha sido cancelada antes de llegar a su destino.
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-6">
+              Tu ubicación no será compartida hasta que compartas tu próxima ruta.
             </p>
             <div className="flex gap-3">
               <button

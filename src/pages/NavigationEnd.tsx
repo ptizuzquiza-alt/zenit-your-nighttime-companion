@@ -14,8 +14,11 @@ const NavigationEnd: FC = () => {
       </div>
       
       <h1 className="text-2xl font-bold text-foreground mb-2">¡Has llegado!</h1>
-      <p className="text-muted-foreground text-center mb-8">
+      <p className="text-muted-foreground text-center mb-4">
         Tu trayecto ha finalizado de forma segura. Tus contactos han sido notificados.
+      </p>
+      <p className="text-sm text-muted-foreground/80 text-center mb-8 px-4">
+        Tu ubicación no será compartida hasta que compartas tu próxima ruta.
       </p>
       
       <button 

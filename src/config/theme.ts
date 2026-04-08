@@ -46,7 +46,7 @@ export const MAP_BACKGROUND = '249 42% 12%';
 
 // Filtro CSS para dar tinte a los tiles del mapa
 // Ajusta sepia, hue-rotate, saturate y brightness para cambiar el tono
-export const MAP_TILE_FILTER = 'sepia(0.3) hue-rotate(45deg) saturate(1.8) brightness(0.85)';
+export const MAP_TILE_FILTER = 'sepia(0.6) hue-rotate(220deg) saturate(2.5) brightness(1.1)';
 
 // Color de la ruta Zenit (segura) — amarillo
 export const MAP_ROUTE_SAFE_COLOR = '#FFD700';

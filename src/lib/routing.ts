@@ -100,38 +100,34 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  // Larger nudges (~200-300m each direction) to force genuinely different streets
+  // Nudge waypoints to force different corridors
   const dist = Math.sqrt(
     Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
   );
-  const nudge = Math.max(0.002, dist * 0.15); // At least ~200m, scales with distance
-  const wp1 = getNudgeWaypoint(origin, destination, nudge);
-  const wp2 = getNudgeWaypoint(origin, destination, -nudge);
-  const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
-  const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
+  const nudgeOffset = Math.max(0.002, dist * 0.15);
 
-  // Zenit uses 'car' profile to prefer main avenues/wide streets
-  // Standard uses 'foot' for shortest walking path
-  const [zenitDirectRes, footDirectRes, wp1Res, wp2Res] = await Promise.all([
-    fetch(`${OSRM_BASE}/car/${directCoords}?overview=full&geometries=geojson&alternatives=3`)
-      .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`)
-      .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null),
-    fetch(`${OSRM_BASE}/foot/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`)
-      .then(r => r.json()).catch(() => null),
+  const [carRes, footRes, nudgedRes] = await Promise.all([
+    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3`),
+    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`),
+    fetchNudged(origin, destination, nudgeOffset),
   ]);
 
-  if (!res || res.code !== 'Ok' || !res.routes?.length) {
-    return { safe: null, fast: null };
+  // --- Fast route: shortest foot path ---
+  let fast: RouteResult | null = null;
+  if (footRes?.code === 'Ok' && footRes.routes?.length) {
+    fast = parseOSRMRoute(
+      footRes.routes.sort((a: any, b: any) => a.distance - b.distance)[0]
+    );
+  }
+  if (!fast) {
+    // Fallback to car direct
+    if (carRes?.code === 'Ok' && carRes.routes?.length) {
+      fast = parseOSRMRoute(carRes.routes[0]);
+    }
+    return { safe: fast, fast };
   }
 
-  const sorted: RouteResult[] = res.routes
-    .map(parseOSRMRoute)
-    .sort((a: RouteResult, b: RouteResult) => a.distance - b.distance);
-
-  // Filter out routes with excessive backtracking (>30% of path moving away from destination)
+  // --- Backtracking filter helper ---
   const hasExcessiveBacktracking = (coords: [number, number][]) => {
     if (coords.length < 2) return false;
     let backward = 0, total = 0;
@@ -144,50 +140,50 @@ export async function fetchSafeAndFastRoutes(
     }
     return total > 0 && backward / total > 0.3;
   };
-  const cleanZenit = zenitCandidates.filter(r => !hasExcessiveBacktracking(r.coordinates));
-  const cleanFoot = footCandidates.filter(r => !hasExcessiveBacktracking(r.coordinates));
 
-  console.log('Zenit candidates (car profile):', cleanZenit.map(r => ({
-    distance: Math.round(r.distance) + 'm',
-    turnsPerKm: Math.round(turnsPerKm(r)) + '°/km',
-  })));
-  console.log('Standard candidates (foot profile):', cleanFoot.map(r => ({
-    distance: Math.round(r.distance) + 'm',
-  })));
+  // Turns per km metric (fewer turns = main avenues)
+  const turnsPerKm = (r: RouteResult) => {
+    let turns = 0;
+    for (let i = 2; i < r.coordinates.length; i++) {
+      const [p, c, n] = [r.coordinates[i-2], r.coordinates[i-1], r.coordinates[i]];
+      const a1 = Math.atan2(c[0] - p[0], c[1] - p[1]);
+      const a2 = Math.atan2(n[0] - c[0], n[1] - c[1]);
+      let diff = Math.abs(a2 - a1) * (180 / Math.PI);
+      if (diff > 180) diff = 360 - diff;
+      if (diff > 25) turns++;
+    }
+    return r.distance > 0 ? (turns / (r.distance / 1000)) : 0;
+  };
 
-  // Zenit = straightest car-profile route (fewest turns = main avenues)
-  let safe: RouteResult | null = null;
-  if (cleanZenit.length > 0) {
-    const sorted = [...cleanZenit].sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
-    safe = sorted[0];
-  }
+  // --- Zenit (safe) route: prefer car-profile (main avenues), fewest turns ---
+  const maxDist = fast.distance * 1.6;
 
-  const naturalAlts = sorted
-    .slice(1)
-    .filter((r) => r.distance <= maxDist && areDistinct(r, fast))
-    .map((r) => ({ route: r, bt: backtrackRatio(r.coordinates, destination) }));
-
-  const nudgeCandidates = nudgedRoute && nudgedRoute.distance <= maxDist
-    ? [{ route: nudgedRoute, bt: backtrackRatio(nudgedRoute.coordinates, destination) }]
+  // Collect car-profile candidates
+  const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
+    ? carRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates) && r.distance <= maxDist)
     : [];
 
-  const cleanNatural = naturalAlts
-    .filter((c) => c.bt < 0.3)
-    .sort((a, b) => a.bt - b.bt);
+  // Add nudged route if valid
+  if (nudgedRes && !hasExcessiveBacktracking(nudgedRes.coordinates) && nudgedRes.distance <= maxDist) {
+    carCandidates.push(nudgedRes);
+  }
 
-  const safeCandidate = cleanNatural[0]
-    ?? nudgeCandidates[0]
-    ?? naturalAlts.sort((a, b) => a.bt - b.bt)[0]
-    ?? null;
+  // Pick the straightest (fewest turns) that is distinct from fast
+  const distinctCandidates = carCandidates
+    .filter(r => areDistinct(r, fast!))
+    .sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
 
-  if (!safeCandidate) {
+  let safe: RouteResult | null = distinctCandidates[0] ?? carCandidates[0] ?? null;
+
+  if (!safe) {
     return { safe: fast, fast };
   }
 
-  safe = safeCandidate.route;
-  return safe.distance < fast.distance
-    ? { safe: fast, fast: safe }
-    : { safe, fast };
+  // Ensure safe is always the longer one
+  if (safe.distance < fast.distance) {
+    return { safe: fast, fast: safe };
+  }
+  return { safe, fast };
 }
 
 /** Store the selected route in sessionStorage for cross-page use */

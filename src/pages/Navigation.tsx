@@ -193,16 +193,8 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* Cancel X button top-left */}
-      <button
-        onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
-        className="fixed top-12 left-4 z-[1000] w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-lg text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
-
       {/* Direction card */}
-      <div className="fixed top-12 left-16 right-4 z-[1000]">
+      <div className="fixed top-12 left-4 right-4 z-[1000]">
         <DirectionCard
           distance="Siga 900 m y"
           instruction="gire a la derecha"
@@ -280,6 +272,13 @@ const Navigation: FC = () => {
                 className="w-9 h-9 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Share2 className="w-4 h-4" />
+              </button>
+              {/* Cancel route button */}
+              <button
+                onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
+                className="w-9 h-9 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>

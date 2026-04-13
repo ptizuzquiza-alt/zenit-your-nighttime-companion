@@ -40,7 +40,7 @@ export const COLOR_DESTRUCTIVE = '0 84% 60%';
 export const COLOR_GREEN = '145 70% 50%';
 export const COLOR_BLUE = '220 80% 60%';
 
-// ─── COLORES DEL MAPA ──────────────────────────────────────
+// ─── COLORES DEL MAPAA ──────────────────────────────────────
 // Color de fondo del contenedor del mapa (mientras cargan los tiles)
 export const MAP_BACKGROUND = '249 42% 12%';
 

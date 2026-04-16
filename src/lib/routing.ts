@@ -14,10 +14,25 @@ async function fetchWithTimeout(path: string, ms = 8000): Promise<any> {
     .finally(() => clearTimeout(id));
 }
 
+export interface RouteStep {
+  distance: number;       // meters
+  instruction: string;
+  direction: 'left' | 'right' | 'straight';
+  streetName: string;
+}
+
 export interface RouteResult {
   coordinates: [number, number][];
   distance: number; // meters
   duration: number; // seconds
+  steps: RouteStep[];
+}
+
+function mapManeuverDirection(modifier?: string): 'left' | 'right' | 'straight' {
+  if (!modifier) return 'straight';
+  if (modifier.includes('left')) return 'left';
+  if (modifier.includes('right')) return 'right';
+  return 'straight';
 }
 
 function parseOSRMRoute(route: any): RouteResult {
@@ -25,7 +40,23 @@ function parseOSRMRoute(route: any): RouteResult {
   const coordinates: [number, number][] = route.geometry.coordinates.map(
     ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
   );
-  return { coordinates, distance, duration: distance / WALKING_SPEED };
+  const steps: RouteStep[] = (route.legs ?? []).flatMap((leg: any) =>
+    (leg.steps ?? [])
+      .filter((s: any) => s.distance > 0)
+      .map((s: any) => ({
+        distance: s.distance,
+        instruction: s.maneuver?.type === 'depart'
+          ? `Dirígete hacia ${s.name || 'tu destino'}`
+          : s.maneuver?.type === 'arrive'
+            ? `Llegada a ${s.name || 'tu destino'}`
+            : s.maneuver?.modifier
+              ? `Gira a la ${mapManeuverDirection(s.maneuver.modifier) === 'left' ? 'izquierda' : mapManeuverDirection(s.maneuver.modifier) === 'right' ? 'derecha' : 'adelante'} en ${s.name || 'la calle'}`
+              : `Continúa por ${s.name || 'la calle'}`,
+        direction: mapManeuverDirection(s.maneuver?.modifier),
+        streetName: s.name || '',
+      }))
+  );
+  return { coordinates, distance, duration: distance / WALKING_SPEED, steps };
 }
 
 /** Fraction of route that moves away from destination (0=direct, >0.3=hook) */
@@ -83,7 +114,7 @@ async function fetchNudged(
   const wpLon = midLon + (dLat / len) * offsetDeg;
 
   const coords = `${origin[1]},${origin[0]};${wpLon},${wpLat};${destination[1]},${destination[0]}`;
-  const res = await fetchWithTimeout(`foot/${coords}?overview=full&geometries=geojson`);
+  const res = await fetchWithTimeout(`foot/${coords}?overview=full&geometries=geojson&steps=true`);
 
   if (!res || res.code !== 'Ok' || !res.routes?.length) return null;
   return parseOSRMRoute(res.routes[0]);
@@ -107,8 +138,8 @@ export async function fetchSafeAndFastRoutes(
   const nudgeOffset = Math.max(0.002, dist * 0.15);
 
   const [carRes, footRes, nudgedRes] = await Promise.all([
-    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3`),
-    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`),
+    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
+    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2&steps=true`),
     fetchNudged(origin, destination, nudgeOffset),
   ]);
 

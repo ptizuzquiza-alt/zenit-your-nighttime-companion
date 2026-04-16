@@ -219,24 +219,6 @@ const MapRoutes: FC = () => {
         </div>
 
         <div className="px-6 overflow-y-auto" style={{ maxHeight: panelExpanded ? `calc(75vh - ${FIXED_BAR_HEIGHT + 16}px)` : `calc(55vh - ${FIXED_BAR_HEIGHT + 16}px)` }}>
-          {/* Dismissible Zenit banner */}
-          {!bannerDismissed && selectedRoute === 'safe' && (
-            <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
-                <p className="text-xs text-muted-foreground">
-                  Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
-                </p>
-              </div>
-              <button
-                onClick={handleDismissBanner}
-                className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
-              >
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            </div>
-          )}
-
           {/* Route selection cards */}
           {!panelExpanded && (
             <>
@@ -250,6 +232,23 @@ const MapRoutes: FC = () => {
                   <Info className="w-4.5 h-4.5 text-foreground" />
                 </button>
               </div>
+
+              {!bannerDismissed && selectedRoute === 'safe' && (
+                <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
+                    <p className="text-xs text-muted-foreground">
+                      Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDismissBanner}
+                    className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
 
               {loading ? (
                 <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>

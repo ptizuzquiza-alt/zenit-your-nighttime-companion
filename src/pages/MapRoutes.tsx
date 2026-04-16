@@ -199,15 +199,20 @@ const MapRoutes: FC = () => {
           {/* Route selection cards */}
           {!panelExpanded && (
             <>
-              <div className="mb-4 px-3 py-2 rounded-xl bg-secondary/40 border border-border/40 flex items-center justify-between">
-                <h3 className="text-foreground font-semibold">Elige tu ruta</h3>
-                <button
-                  onClick={() => setShowInfoModal(true)}
-                  className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
-                  aria-label="Mostrar información de la ruta"
-                >
-                  <Info className="w-4.5 h-4.5 text-foreground" />
-                </button>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex-1 px-3 py-2 rounded-xl bg-secondary/40 border border-border/40 flex items-center">
+                  <h3 className="text-foreground font-semibold">Elige tu ruta</h3>
+                </div>
+
+                <div className="ml-3 flex-shrink-0 flex items-center">
+                  <button
+                    onClick={() => setShowInfoModal(true)}
+                    className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
+                    aria-label="Mostrar información de la ruta"
+                  >
+                    <Info className="w-4.5 h-4.5 text-foreground" />
+                  </button>
+                </div>
               </div>
 
               {!bannerDismissed && (

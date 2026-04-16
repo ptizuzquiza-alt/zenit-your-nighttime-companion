@@ -121,7 +121,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     const safeSelected = selectedRoute === 'safe';
 
-    // Helper: draw Ruta Estándar (lila)
+    // Helper: draw alternative route (lila)
     const drawStandard = () => {
       if (!alternativeRoute || alternativeRoute.length < 2) return;
       if (!safeSelected) {

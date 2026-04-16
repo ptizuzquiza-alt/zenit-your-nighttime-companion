@@ -59,7 +59,7 @@ export const RouteCard: FC<RouteCardProps> = ({
             <Icon className={`w-4 h-4 ${isZenit ? 'text-accent' : 'text-muted-foreground'}`} />
           </div>
           <span className="font-semibold text-foreground">
-            {isZenit ? 'Ruta Zenit' : 'Ruta Estándar'}
+            {isZenit ? 'Ruta Zenit' : 'Ruta rápida'}
           </span>
         </div>
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${

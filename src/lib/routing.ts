@@ -121,6 +121,64 @@ async function fetchNudged(
 }
 
 /**
+ * Returns one Zenit route optimized for safety/main avenues.
+ */
+export async function fetchZenitRoute(
+  origin: [number, number],
+  destination: [number, number]
+): Promise<RouteResult | null> {
+  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+  const dist = Math.sqrt(
+    Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
+  );
+  const nudgeOffset = Math.max(0.002, dist * 0.15);
+
+  const [carRes, nudgedRes, footRes] = await Promise.all([
+    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
+    fetchNudged(origin, destination, nudgeOffset),
+    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2&steps=true`),
+  ]);
+
+  const hasExcessiveBacktracking = (coords: [number, number][]) => {
+    if (coords.length < 2) return false;
+    return backtrackRatio(coords, destination) > 0.3;
+  };
+
+  const turnsPerKm = (r: RouteResult) => {
+    let turns = 0;
+    for (let i = 2; i < r.coordinates.length; i++) {
+      const [p, c, n] = [r.coordinates[i - 2], r.coordinates[i - 1], r.coordinates[i]];
+      const a1 = Math.atan2(c[0] - p[0], c[1] - p[1]);
+      const a2 = Math.atan2(n[0] - c[0], n[1] - c[1]);
+      let diff = Math.abs(a2 - a1) * (180 / Math.PI);
+      if (diff > 180) diff = 360 - diff;
+      if (diff > 25) turns++;
+    }
+    return r.distance > 0 ? (turns / (r.distance / 1000)) : 0;
+  };
+
+  const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
+    ? carRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates))
+    : [];
+
+  if (nudgedRes && !hasExcessiveBacktracking(nudgedRes.coordinates)) {
+    carCandidates.push(nudgedRes);
+  }
+
+  if (carCandidates.length > 0) {
+    return [...carCandidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b))[0];
+  }
+
+  if (footRes?.code === 'Ok' && footRes.routes?.length) {
+    return parseOSRMRoute(
+      footRes.routes.sort((a: any, b: any) => a.distance - b.distance)[0]
+    );
+  }
+
+  return null;
+}
+
+/**
  * Returns two walking routes:
  * - Standard (fast): shortest OSRM path
  * - Zenit (safe): different corridor, clean (no hooks), max 60% longer

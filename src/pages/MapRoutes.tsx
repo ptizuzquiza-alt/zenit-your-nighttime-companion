@@ -8,22 +8,17 @@ import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { DirectionCard } from '@/components/DirectionCard';
 
-import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { fetchStreetLamps, scoreLighting, getBoundingBox } from '@/lib/streetlamps';
 import { CONTACTS } from '@/config/contacts';
 
 const BANNER_DISMISSED_KEY = 'zenit_banner_dismissed';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
-  const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
-  const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
+  const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
-  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
 
   // UI state
   const [showShareModal, setShowShareModal] = useState(false);
@@ -91,27 +86,16 @@ const MapRoutes: FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
+    fetchZenitRoute(userLocation, destination).then((zenitRoute) => {
       if (cancelled) return;
-      setSafeRoute(safe);
-      setFastRoute(fast);
+      setRoute(zenitRoute);
       setLoading(false);
-
-      const allCoords = [safe?.coordinates, fast?.coordinates].filter((c): c is [number, number][] => !!c);
-      if (allCoords.length > 0) {
-        const bbox = getBoundingBox(allCoords);
-        const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
-        if (!cancelled && lamps.length > 0) {
-          if (safe?.coordinates) setSafeLightScore(Math.round(scoreLighting(safe.coordinates, lamps) * 100));
-          if (fast?.coordinates) setFastLightScore(Math.round(scoreLighting(fast.coordinates, lamps) * 100));
-        }
-      }
     });
 
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
-  const currentRouteData = selectedRoute === 'safe' ? (safeRoute || fastRoute) : (fastRoute || safeRoute);
+  const currentRouteData = route;
 
   const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
   const formatDuration = (s: number) => {
@@ -134,7 +118,7 @@ const MapRoutes: FC = () => {
     if (currentRouteData) {
       storeSelectedRoute(currentRouteData);
     }
-    sessionStorage.setItem('zenit_selected_route_type', selectedRoute);
+    sessionStorage.setItem('zenit_selected_route_type', 'safe');
     sessionStorage.setItem('zenit_shared_contacts', JSON.stringify(sharedContacts));
     navigate('/navigation');
   };
@@ -144,7 +128,7 @@ const MapRoutes: FC = () => {
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
-  const mapCenter: [number, number] = safeRoute?.coordinates?.length
+  const mapCenter: [number, number] = route?.coordinates?.length
     ? [
         (userLocation[0] + destination[0]) / 2,
         (userLocation[1] + destination[1]) / 2,
@@ -153,11 +137,6 @@ const MapRoutes: FC = () => {
 
   const storedOriginName = getStoredOrigin()?.name ?? 'Tu ubicación';
   const storedDestName = getStoredDestination()?.name ?? '';
-
-  const rawSafe = safeLightScore ?? 95;
-  const rawFast = fastLightScore ?? 73;
-  const displaySafe = Math.max(rawSafe, rawFast + 1);
-  const displayFast = Math.min(rawFast, displaySafe - 1);
 
   const steps = currentRouteData?.steps ?? [];
 
@@ -171,9 +150,7 @@ const MapRoutes: FC = () => {
         zoom={14}
         origin={userLocation}
         destination={destination}
-        route={safeRoute?.coordinates}
-        alternativeRoute={fastRoute?.coordinates}
-        selectedRoute={selectedRoute}
+        route={route?.coordinates}
         fitToRoute
         className="absolute inset-0"
       />
@@ -233,7 +210,7 @@ const MapRoutes: FC = () => {
                 </button>
               </div>
 
-              {!bannerDismissed && selectedRoute === 'safe' && (
+              {!bannerDismissed && (
                 <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
@@ -251,29 +228,17 @@ const MapRoutes: FC = () => {
               )}
 
               {loading ? (
-                <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>
+                <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
               ) : (
                 <div className="space-y-3 mb-4">
                   <RouteCard
                     type="safe"
-                    distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
-                    duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
-                    safetyPercentage={displaySafe}
-                    tags={[`💡 Iluminación: ${displaySafe}%`, 'Áreas activas', 'Calles amplias']}
-                    selected={selectedRoute === 'safe'}
-                    onClick={() => setSelectedRoute('safe')}
+                    distance={route ? formatDistance(route.distance) : '—'}
+                    duration={route ? formatDuration(route.duration) : '—'}
+                    safetyPercentage={95}
+                    tags={['💡 Buena iluminación', 'Áreas activas', 'Calles amplias']}
+                    selected
                   />
-                  {fastRoute && (
-                    <RouteCard
-                      type="fast"
-                      distance={formatDistance(fastRoute.distance)}
-                      duration={formatDuration(fastRoute.duration)}
-                      safetyPercentage={displayFast}
-                      tags={['Camino más corto', `💡 Iluminación: ${displayFast}%`, 'Calles peatonales']}
-                      selected={selectedRoute === 'fast'}
-                      onClick={() => setSelectedRoute('fast')}
-                    />
-                  )}
                 </div>
               )}
 
@@ -294,9 +259,7 @@ const MapRoutes: FC = () => {
           {panelExpanded && currentRouteData && (
             <>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-foreground font-semibold">
-                  {selectedRoute === 'safe' ? 'Ruta Zenit' : 'Ruta Estándar'}
-                </h3>
+                <h3 className="text-foreground font-semibold">Ruta Zenit</h3>
                 <button
                   onClick={() => setPanelExpanded(false)}
                   className="flex items-center gap-1 text-xs text-muted-foreground"
@@ -352,8 +315,8 @@ const MapRoutes: FC = () => {
         </button>
         <button
           onClick={handleStartNavigation}
-          className={loading ? 'zenit-btn-primary opacity-50 cursor-not-allowed' : 'zenit-btn-primary'}
-          disabled={loading}
+          className={loading || !route ? 'zenit-btn-primary opacity-50 cursor-not-allowed' : 'zenit-btn-primary'}
+          disabled={loading || !route}
         >
           {loading ? 'Cargando…' : 'Iniciar trayecto'}
         </button>

@@ -10,6 +10,7 @@ import { DirectionCard } from '@/components/DirectionCard';
 import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 import { CONTACTS } from '@/config/contacts';
+import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
 
 const BANNER_DISMISSED_KEY = 'zenit_banner_dismissed';
 
@@ -157,9 +158,14 @@ const MapRoutes: FC = () => {
         </div>
 
         <div className="px-6 pb-4 flex items-center justify-between shrink-0">
-          <div className="flex-1 px-4 py-3 rounded-full bg-secondary/40 border border-border/40 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">✓</span>
-            <h3 className="text-foreground font-semibold">Ruta Zenit</h3>
+          <div className="inline-flex items-center gap-2 rounded-full bg-secondary/40 border border-border/40 px-4 py-3 max-w-max">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: MAP_ROUTE_SAFE_COLOR }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
+                <path d="M6 14.6459V4.95C6 4.70147 6.20147 4.5 6.45 4.5H17.55C17.7985 4.5 18 4.70147 18 4.95V14.6459C18 15.7822 17.358 16.821 16.3416 17.3292L12.2012 19.3994C12.0746 19.4627 11.9254 19.4627 11.7988 19.3994L7.65836 17.3292C6.64201 16.821 6 15.7822 6 14.6459Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9.375 10.875L11.625 13.125L15.375 9.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <h3 className="font-semibold" style={{ color: MAP_ROUTE_SAFE_COLOR }}>Ruta Zenit</h3>
           </div>
 
           <div className="ml-3 flex-shrink-0 flex items-center">

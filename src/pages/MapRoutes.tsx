@@ -107,7 +107,7 @@ const MapRoutes: FC = () => {
 
   const steps = currentRouteData?.steps ?? [];
 
-  const panelHeight = panelExpanded ? '75vh' : '175px';
+  const panelHeight = panelExpanded ? '75vh' : '230px';
   const FIXED_BAR_HEIGHT = 140; // px approx
 
   return (

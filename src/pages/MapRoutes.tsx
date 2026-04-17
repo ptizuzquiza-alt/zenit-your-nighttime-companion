@@ -182,18 +182,25 @@ const MapRoutes: FC = () => {
         {panelExpanded && (
           <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
             {!bannerDismissed && (
-              <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
+              <div className="mb-4 p-4 rounded-2xl bg-[#665D93] border border-border/50 flex items-center gap-3">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
-                  <p className="text-xs text-muted-foreground">
-                    Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 15.5279V2.6C4 2.26863 4.26863 2 4.6 2H19.4C19.7314 2 20 2.26863 20 2.6V15.5279C20 17.043 19.144 18.428 17.7889 19.1056L12.2683 21.8658C12.0994 21.9503 11.9006 21.9503 11.7317 21.8658L6.21115 19.1056C4.85601 18.428 4 17.043 4 15.5279Z" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M8.5 10.5L11.5 13.5L16.5 8.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <p className="text-xs text-white">
+                      Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleDismissBanner}
                   className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
                 >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  <X className="w-3.5 h-3.5 text-white" />
                 </button>
               </div>
             )}

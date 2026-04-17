@@ -1,8 +1,7 @@
-import { FC, useState, useEffect, useRef, useCallback } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Info, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Info, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
-import { RouteCard } from '@/components/RouteCard';
 import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
@@ -28,40 +27,8 @@ const MapRoutes: FC = () => {
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
 
-  // Panel expand state: 'collapsed' (route cards), 'expanded' (steps visible)
-  const [panelExpanded, setPanelExpanded] = useState(false);
-
-  // Bottom sheet drag state
-  const [dragOffset, setDragOffset] = useState(0);
-  const isDragging = useRef(false);
-  const startY = useRef(0);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    isDragging.current = true;
-    startY.current = e.touches[0].clientY;
-    setDragOffset(0);
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const dy = e.touches[0].clientY - startY.current;
-    if (panelExpanded && dy > 0) {
-      setDragOffset(dy);
-    } else if (!panelExpanded && dy < 0) {
-      setDragOffset(dy);
-    }
-  }, [panelExpanded]);
-
-  const handleTouchEnd = useCallback(() => {
-    isDragging.current = false;
-    const threshold = 60;
-    if (panelExpanded && dragOffset > threshold) {
-      setPanelExpanded(false);
-    } else if (!panelExpanded && dragOffset < -threshold) {
-      setPanelExpanded(true);
-    }
-    setDragOffset(0);
-  }, [panelExpanded, dragOffset]);
+  // Panel state: minimized or expanded
+  const [panelExpanded, setPanelExpanded] = useState(true);
 
   const storedDest = getStoredDestination();
   const destination: [number, number] = storedDest
@@ -140,7 +107,7 @@ const MapRoutes: FC = () => {
 
   const steps = currentRouteData?.steps ?? [];
 
-  // Fixed bar height for spacing
+  const panelHeight = panelExpanded ? '75vh' : '175px';
   const FIXED_BAR_HEIGHT = 140; // px approx
 
   return (
@@ -173,141 +140,99 @@ const MapRoutes: FC = () => {
 
       {/* Expandable steps panel - behind fixed bar */}
       <div
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="fixed bottom-0 left-0 right-0 z-[1000] bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 z-[1000] bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 overflow-hidden flex flex-col"
         style={{
-          maxHeight: panelExpanded ? '75vh' : '55vh',
-          paddingBottom: `${FIXED_BAR_HEIGHT}px`,
-          transform: panelExpanded
-            ? `translateY(${Math.max(dragOffset, 0)}px)`
-            : `translateY(${Math.min(dragOffset, 0)}px)`,
-          transition: isDragging.current ? 'none' : 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+          height: panelHeight,
+          transition: 'height 0.35s cubic-bezier(0.4,0,0.2,1)',
           boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
         }}
       >
         {/* Handle */}
         <div
-          className="py-3 cursor-grab flex justify-center"
+          className="py-3 cursor-pointer flex justify-center"
           onClick={() => setPanelExpanded(prev => !prev)}
+          aria-label={panelExpanded ? 'Minimizar panel de ruta' : 'Expandir panel de ruta'}
         >
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        <div className="px-6 overflow-y-auto" style={{ maxHeight: panelExpanded ? `calc(75vh - ${FIXED_BAR_HEIGHT + 16}px)` : `calc(55vh - ${FIXED_BAR_HEIGHT + 16}px)` }}>
-          {/* Route selection cards */}
-          {!panelExpanded && (
-            <>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex-1 px-3 py-2 rounded-xl bg-secondary/40 border border-border/40 flex items-center">
-                  <h3 className="text-foreground font-semibold">Elige tu ruta</h3>
-                </div>
+        <div className="px-6 pb-4 flex items-center justify-between shrink-0">
+          <div className="flex-1 px-4 py-3 rounded-full bg-secondary/40 border border-border/40 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">✓</span>
+            <h3 className="text-foreground font-semibold">Ruta Zenit</h3>
+          </div>
 
-                <div className="ml-3 flex-shrink-0 flex items-center">
-                  <button
-                    onClick={() => setShowInfoModal(true)}
-                    className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
-                    aria-label="Mostrar información de la ruta"
-                  >
-                    <Info className="w-4.5 h-4.5 text-foreground" />
-                  </button>
-                </div>
-              </div>
-
-              {!bannerDismissed && (
-                <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
-                    <p className="text-xs text-muted-foreground">
-                      Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDismissBanner}
-                    className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                </div>
-              )}
-
-              {loading ? (
-                <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
-              ) : (
-                <div className="space-y-3 mb-4">
-                  <RouteCard
-                    type="safe"
-                    distance={route ? formatDistance(route.distance) : '—'}
-                    duration={route ? formatDuration(route.duration) : '—'}
-                    safetyPercentage={95}
-                    tags={['💡 Buena iluminación', 'Áreas activas', 'Calles amplias']}
-                    selected
-                  />
-                </div>
-              )}
-
-              {/* Expand hint */}
-              {!loading && steps.length > 0 && (
-                <button
-                  onClick={() => setPanelExpanded(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                  <span>Ver pasos de la ruta</span>
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Expanded: route summary + steps */}
-          {panelExpanded && currentRouteData && (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-foreground font-semibold">Ruta Zenit</h3>
-                <button
-                  onClick={() => setPanelExpanded(false)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                  <span>Cerrar</span>
-                </button>
-              </div>
-
-              {/* Summary */}
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-sm font-medium text-foreground">
-                  {formatDistance(currentRouteData.distance)}
-                </span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-sm font-medium text-foreground">
-                  {formatDuration(currentRouteData.duration)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Llegada a las {formatETA(currentRouteData.duration)}
-              </p>
-
-              {/* Steps list */}
-              <div className="space-y-2 pb-4">
-                {steps.map((step, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40">
-                    <DirectionCard
-                      distance={step.distance < 1000 ? `${Math.round(step.distance)} m` : `${(step.distance / 1000).toFixed(1)} km`}
-                      instruction={step.instruction}
-                      direction={step.direction}
-                    />
-                  </div>
-                ))}
-                {steps.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    No se encontraron pasos detallados para esta ruta.
-                  </p>
-                )}
-              </div>
-            </>
-          )}
+          <div className="ml-3 flex-shrink-0 flex items-center">
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
+              aria-label="Mostrar información de la ruta"
+            >
+              <Info className="w-4.5 h-4.5 text-foreground" />
+            </button>
+          </div>
         </div>
+
+        {panelExpanded && (
+          <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
+            {!bannerDismissed && (
+              <div className="mb-4 p-4 rounded-2xl bg-secondary/60 border border-border/50 flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground mb-1">Ruta Zenit</p>
+                  <p className="text-xs text-muted-foreground">
+                    Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDismissBanner}
+                  className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
+            ) : currentRouteData ? (
+              <>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDistance(currentRouteData.distance)}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDuration(currentRouteData.duration)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Llegada a las {formatETA(currentRouteData.duration)}
+                </p>
+
+                <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+
+                <div className="space-y-2 pb-4">
+                  {steps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40">
+                      <DirectionCard
+                        distance={step.distance < 1000 ? `${Math.round(step.distance)} m` : `${(step.distance / 1000).toFixed(1)} km`}
+                        instruction={step.instruction}
+                        direction={step.direction}
+                      />
+                    </div>
+                  ))}
+                  {steps.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No se encontraron pasos detallados para esta ruta.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">Esperando ruta segura…</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Fixed bottom bar - always on top */}

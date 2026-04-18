@@ -9,6 +9,7 @@ import {
   MAP_MARKER_ORIGIN_COLOR,
   MAP_MARKER_FRIEND_COLOR,
 } from '@/config/theme';
+import { destinationMarkerHtml } from '@/components/icons/DestinationMarkerIcon';
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
@@ -194,22 +195,13 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       markersRef.current.push(marker);
     }
 
-    // Destination marker (yellow with dot)
+    // Destination marker
     if (destination) {
       const destIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<div style="
-          width: 24px;
-          height: 24px;
-          background: #FFCC00;
-          border-radius: 50%;
-          box-shadow: 0 0 12px 3px rgba(255, 204, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        "><div style="width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%;"></div></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        html: destinationMarkerHtml,
+        iconSize: [32, 33],
+        iconAnchor: [16, 33],
       });
       const marker = L.marker(destination, { icon: destIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);

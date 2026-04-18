@@ -23,8 +23,8 @@ export const RouteInfoModal: FC<RouteInfoModalProps> = ({ isOpen, onClose }) => 
           </button>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-5">
-          La Ruta Zenit prioriza tu seguridad teniendo en cuenta:
+        <p className="text-sm text-white mb-5">
+          La <b className="text-accent">Ruta Zenit</b> prioriza aspectos como:
         </p>
 
         <div className="space-y-4">
@@ -34,7 +34,7 @@ export const RouteInfoModal: FC<RouteInfoModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Buena iluminación</p>
-              <p className="text-xs text-muted-foreground">Calles con puntos de luz frecuentes</p>
+              <p className="text-xs text-muted-foreground">Puntos de luz frecuentes</p>
             </div>
           </div>
 
@@ -44,7 +44,7 @@ export const RouteInfoModal: FC<RouteInfoModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Calles anchas</p>
-              <p className="text-xs text-muted-foreground">Vías principales y avenidas amplias</p>
+              <p className="text-xs text-muted-foreground">Evitando callejones</p>
             </div>
           </div>
 
@@ -54,7 +54,7 @@ export const RouteInfoModal: FC<RouteInfoModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vías principales</p>
-              <p className="text-xs text-muted-foreground">Recorridos por calles transitadas y activas</p>
+              <p className="text-xs text-muted-foreground">Más transitadas y activas</p>
             </div>
           </div>
         </div>

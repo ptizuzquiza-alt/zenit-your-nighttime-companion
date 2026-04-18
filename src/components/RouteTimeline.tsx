@@ -82,7 +82,7 @@ function TimelineDistance({ distance }: { distance: string }) {
   return (
     <div className="flex gap-3 py-4">
       <div className="flex w-7 shrink-0 justify-center">
-        <div className="h-full min-h-5 border-l border-dotted border-white/30" />
+        <div className="h-full min-h-5 border-l-4 border-dotted border-white/30" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm leading-tight text-white/78">
@@ -102,7 +102,7 @@ function TimelineInstruction({
 }) {
   return (
     <div className="flex items-center gap-3 py-1.5">
-      <div className="flex w-7 shrink-0 justify-center">
+      <div className="flex w-8 shrink-0 justify-center">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5a5384] text-white shadow-[0_4px_14px_-4px_hsla(240,25%,5%,0.45)]">
           {direction === 'right' && <TurnRightIcon className="h-4.5 w-4.5" />}
           {direction === 'left' && <TurnLeftIcon className="h-4.5 w-4.5" />}
@@ -140,7 +140,7 @@ function DestinationIcon() {
 
 function TurnRightIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 18v-6a3 3 0 0 1 3-3h7" />
       <path d="m16 6 3 3-3 3" />
     </svg>
@@ -149,7 +149,7 @@ function TurnRightIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function TurnLeftIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 18v-6a3 3 0 0 0-3-3H5" />
       <path d="m8 6-3 3 3 3" />
     </svg>
@@ -158,7 +158,7 @@ function TurnLeftIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function ArrowUpIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 19V5" />
       <path d="m5 12 7-7 7 7" />
     </svg>

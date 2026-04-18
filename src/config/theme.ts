@@ -27,7 +27,7 @@ export const COLOR_PRIMARY = '265 90% 60%';
 export const COLOR_PRIMARY_LIGHT = '265 80% 70%';
 
 // Amarillo / Accent (marcadores, ruta Zenit)
-export const COLOR_ACCENT = '45 100% 50%';
+export const COLOR_ACCENT = '56 100% 50%';
 
 // Colores secundarios
 export const COLOR_SECONDARY = '249 35% 20%';
@@ -49,7 +49,7 @@ export const MAP_BACKGROUND = '249 42% 12%';
 export const MAP_TILE_FILTER = 'sepia(0.6) hue-rotate(220deg) saturate(2.5) brightness(1.1)';
 
 // Color de la ruta Zenit (segura) — amarillo
-export const MAP_ROUTE_SAFE_COLOR = '#FFD700';
+export const MAP_ROUTE_SAFE_COLOR = '#FFEE02';
 // Color de la ruta estándar (rápida) — lila
 export const MAP_ROUTE_FAST_COLOR = '#a78bfa';
 // Color del marcador de origen

@@ -6,6 +6,7 @@ import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { DirectionCard } from '@/components/DirectionCard';
+import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
 
 import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
@@ -158,14 +159,17 @@ const MapRoutes: FC = () => {
         </div>
 
         <div className="px-6 pb-4 flex items-center justify-between shrink-0">
-          <div className="inline-flex items-center gap-2 rounded-full bg-secondary/40 border border-border/40 px-4 py-3 max-w-max">
+          <div
+            className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
+            style={{ borderColor: MAP_ROUTE_SAFE_COLOR, color: MAP_ROUTE_SAFE_COLOR }}
+          >
             <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: MAP_ROUTE_SAFE_COLOR }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
                 <path d="M6 14.6459V4.95C6 4.70147 6.20147 4.5 6.45 4.5H17.55C17.7985 4.5 18 4.70147 18 4.95V14.6459C18 15.7822 17.358 16.821 16.3416 17.3292L12.2012 19.3994C12.0746 19.4627 11.9254 19.4627 11.7988 19.3994L7.65836 17.3292C6.64201 16.821 6 15.7822 6 14.6459Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M9.375 10.875L11.625 13.125L15.375 9.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <h3 className="font-semibold" style={{ color: MAP_ROUTE_SAFE_COLOR }}>Ruta Zenit</h3>
+            <h3 className="font-semibold">Ruta Zenit</h3>
           </div>
 
           <div className="ml-3 flex-shrink-0 flex items-center">
@@ -186,13 +190,10 @@ const MapRoutes: FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 15.5279V2.6C4 2.26863 4.26863 2 4.6 2H19.4C19.7314 2 20 2.26863 20 2.6V15.5279C20 17.043 19.144 18.428 17.7889 19.1056L12.2683 21.8658C12.0994 21.9503 11.9006 21.9503 11.7317 21.8658L6.21115 19.1056C4.85601 18.428 4 17.043 4 15.5279Z" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M8.5 10.5L11.5 13.5L16.5 8.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <ShieldCheckIcon className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-xs text-white">
-                      Esta ruta prioriza calles bien iluminadas, avenidas anchas y vías transitadas para tu seguridad.
+                      La <b className="text-accent">Ruta Zenit</b> prioriza las vias más bien iluminadas, más anchas y con mayor flujo de personas.
                     </p>
                   </div>
                 </div>

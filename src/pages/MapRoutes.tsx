@@ -7,6 +7,8 @@ import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
 import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
+import { ShareIcon } from '@/components/icons/ShareIcon';
+import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
 import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
@@ -253,15 +255,18 @@ const MapRoutes: FC = () => {
       <div className="fixed bottom-0 left-0 right-0 z-[1001] bg-card/98 backdrop-blur-xl border-t border-border/50 px-6 py-4 pb-6">
         <button
           onClick={() => setShowShareModal(true)}
-          className="zenit-btn-secondary mb-3"
+          className="zenit-btn-secondary mb-3 inline-flex items-center justify-center"
         >
+          <ShareIcon className="w-4 h-4 mr-2" />
           Compartir ruta
         </button>
         <button
           onClick={handleStartNavigation}
-          className={loading || !route ? 'zenit-btn-primary opacity-50 cursor-not-allowed' : 'zenit-btn-primary'}
+          className={loading || !route ? 'zenit-btn-primary inline-flex items-center justify-center gap-2 opacity-50 cursor-not-allowed' : 'zenit-btn-primary inline-flex items-center justify-center gap-2'}
           disabled={loading || !route}
+          style={{ background: '#FFEE02', color: '#333000' }}
         >
+          <ArrowDiagonalIcon className="w-4 h-4" />
           {loading ? 'Cargando…' : 'Iniciar trayecto'}
         </button>
       </div>

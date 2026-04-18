@@ -62,7 +62,7 @@ function TimelineStop({
   variant: 'start' | 'end';
 }) {
   return (
-    <div className="flex items-start gap-3 py-1.5">
+    <div className="flex items-center gap-3 py-1.5">
       <div className="flex w-7 shrink-0 justify-center pt-0.5">
         {variant === 'start' ? <CurrentLocationIcon /> : <DestinationIcon />}
       </div>

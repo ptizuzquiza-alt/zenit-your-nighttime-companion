@@ -257,7 +257,7 @@ const MapRoutes: FC = () => {
           onClick={() => setShowShareModal(true)}
           className="zenit-btn-secondary mb-3 inline-flex items-center justify-center"
         >
-          <ShareIcon className="w-4 h-4 mr-2" />
+          <ShareIcon className="w-5 h-5 mr-2" />
           Compartir ruta
         </button>
         <button
@@ -266,7 +266,7 @@ const MapRoutes: FC = () => {
           disabled={loading || !route}
           style={{ background: '#FFEE02', color: '#333000' }}
         >
-          <ArrowDiagonalIcon className="w-4 h-4" />
+          <ArrowDiagonalIcon className="w-5 h-5" />
           {loading ? 'Cargando…' : 'Iniciar trayecto'}
         </button>
       </div>

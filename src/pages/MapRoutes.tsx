@@ -5,7 +5,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
-import { DirectionCard } from '@/components/DirectionCard';
+import { RouteTimeline } from '@/components/RouteTimeline';
 import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
 
 import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
@@ -82,6 +82,8 @@ const MapRoutes: FC = () => {
     const eta = new Date(now.getTime() + s * 1000);
     return eta.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
+
+  const formatNow = () => new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
   const handleStartNavigation = () => {
     if (currentRouteData) {
@@ -225,16 +227,14 @@ const MapRoutes: FC = () => {
 
                 <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
 
-                <div className="space-y-2 pb-4">
-                  {steps.map((step, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40">
-                      <DirectionCard
-                        distance={step.distance < 1000 ? `${Math.round(step.distance)} m` : `${(step.distance / 1000).toFixed(1)} km`}
-                        instruction={step.instruction}
-                        direction={step.direction}
-                      />
-                    </div>
-                  ))}
+                <div className="pb-4">
+                  <RouteTimeline
+                    originLabel={storedOriginName}
+                    destinationLabel={storedDestName || 'Destino'}
+                    startTimeLabel={formatNow()}
+                    endTimeLabel={formatETA(currentRouteData.duration)}
+                    steps={steps}
+                  />
                   {steps.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-4">
                       No se encontraron pasos detallados para esta ruta.

@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapIdle from "./pages/MapIdle";
 import MapSearch from "./pages/MapSearch";
 import MapRoutes from "./pages/MapRoutes";
-import MapRouteDetails from "./pages/MapRouteDetails";
+
 import Navigation from "./pages/Navigation";
 import NavigationEnd from "./pages/NavigationEnd";
 import NotFound from "./pages/NotFound";
@@ -26,7 +26,7 @@ const App = () => (
             <Route path="/" element={<MapIdle />} />
             <Route path="/search" element={<MapSearch />} />
             <Route path="/routes" element={<MapRoutes />} />
-            <Route path="/route-details" element={<MapRouteDetails />} />
+            
             <Route path="/navigation" element={<Navigation />} />
             <Route path="/navigation-end" element={<NavigationEnd />} />
             <Route path="/profile" element={<Profile />} />

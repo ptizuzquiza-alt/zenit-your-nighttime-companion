@@ -1,65 +1,44 @@
-import { FC, useState, useEffect, useRef, useCallback } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Info, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
-import { RouteCard } from '@/components/RouteCard';
 import { LocationInput } from '@/components/LocationInput';
+import { ShareRouteModal } from '@/components/ShareRouteModal';
+import { RouteInfoModal } from '@/components/RouteInfoModal';
+import { RouteTimeline } from '@/components/RouteTimeline';
+import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
+import { ShareIcon } from '@/components/icons/ShareIcon';
+import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
-import { fetchSafeAndFastRoutes, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { fetchStreetLamps, scoreLighting, getBoundingBox } from '@/lib/streetlamps';
+import { CONTACTS } from '@/config/contacts';
+import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
+
+const BANNER_DISMISSED_KEY = 'zenit_banner_dismissed';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
-  const [selectedRoute, setSelectedRoute] = useState<'safe' | 'fast'>('safe');
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
-  const [safeRoute, setSafeRoute] = useState<RouteResult | null>(null);
-  const [fastRoute, setFastRoute] = useState<RouteResult | null>(null);
+  const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [safeLightScore, setSafeLightScore] = useState<number | null>(null);
-  const [fastLightScore, setFastLightScore] = useState<number | null>(null);
 
-  // Bottom sheet drag state
-  const [sheetCollapsed, setSheetCollapsed] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const isDragging = useRef(false);
-  const startY = useRef(0);
-  const sheetRef = useRef<HTMLDivElement>(null);
+  // UI state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [sharedContacts, setSharedContacts] = useState<string[]>([]);
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
+  );
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    isDragging.current = true;
-    startY.current = e.touches[0].clientY;
-    setDragOffset(0);
-  }, []);
+  // Panel state: minimized or expanded
+  const [panelExpanded, setPanelExpanded] = useState(true);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const dy = e.touches[0].clientY - startY.current;
-    if (!sheetCollapsed && dy > 0) {
-      setDragOffset(dy);
-    } else if (sheetCollapsed && dy < 0) {
-      setDragOffset(dy);
-    }
-  }, [sheetCollapsed]);
-
-  const handleTouchEnd = useCallback(() => {
-    isDragging.current = false;
-    const threshold = 60;
-    if (!sheetCollapsed && dragOffset > threshold) {
-      setSheetCollapsed(true);
-    } else if (sheetCollapsed && dragOffset < -threshold) {
-      setSheetCollapsed(false);
-    }
-    setDragOffset(0);
-  }, [sheetCollapsed, dragOffset]);
-
-  // Get destination from search selection or fallback
   const storedDest = getStoredDestination();
   const destination: [number, number] = storedDest
     ? [storedDest.lat, storedDest.lon]
     : [41.4110, 2.1850];
 
-  // Get custom origin or use geolocation
   const storedOrigin = getStoredOrigin();
 
   useEffect(() => {
@@ -74,32 +53,20 @@ const MapRoutes: FC = () => {
     }
   }, []);
 
-  // Fetch real routes when origin changes
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
 
-    fetchSafeAndFastRoutes(userLocation, destination).then(async ({ safe, fast }) => {
+    fetchZenitRoute(userLocation, destination).then((zenitRoute) => {
       if (cancelled) return;
-      setSafeRoute(safe);
-      setFastRoute(fast);
+      setRoute(zenitRoute);
       setLoading(false);
-
-      const allCoords = [safe?.coordinates, fast?.coordinates].filter((c): c is [number, number][] => !!c);
-      if (allCoords.length > 0) {
-        const bbox = getBoundingBox(allCoords);
-        const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
-        if (!cancelled && lamps.length > 0) {
-          if (safe?.coordinates) setSafeLightScore(Math.round(scoreLighting(safe.coordinates, lamps) * 100));
-          if (fast?.coordinates) setFastLightScore(Math.round(scoreLighting(fast.coordinates, lamps) * 100));
-        }
-      }
     });
 
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
-  const currentRouteData = selectedRoute === 'safe' ? (safeRoute || fastRoute) : (fastRoute || safeRoute);
+  const currentRouteData = route;
 
   const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
   const formatDuration = (s: number) => {
@@ -112,16 +79,29 @@ const MapRoutes: FC = () => {
     return `${mins} min`;
   };
 
-  const handleContinue = () => {
+  const formatETA = (s: number) => {
+    const now = new Date();
+    const eta = new Date(now.getTime() + s * 1000);
+    return eta.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatNow = () => new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+  const handleStartNavigation = () => {
     if (currentRouteData) {
       storeSelectedRoute(currentRouteData);
     }
-    sessionStorage.setItem('zenit_selected_route_type', selectedRoute);
-    navigate('/route-details');
+    sessionStorage.setItem('zenit_selected_route_type', 'safe');
+    sessionStorage.setItem('zenit_shared_contacts', JSON.stringify(sharedContacts));
+    navigate('/navigation');
   };
 
-  // Compute map center from route bounds
-  const mapCenter: [number, number] = safeRoute?.coordinates?.length
+  const handleDismissBanner = () => {
+    setBannerDismissed(true);
+    localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
+  };
+
+  const mapCenter: [number, number] = route?.coordinates?.length
     ? [
         (userLocation[0] + destination[0]) / 2,
         (userLocation[1] + destination[1]) / 2,
@@ -131,10 +111,10 @@ const MapRoutes: FC = () => {
   const storedOriginName = getStoredOrigin()?.name ?? 'Tu ubicación';
   const storedDestName = getStoredDestination()?.name ?? '';
 
-  const rawSafe = safeLightScore ?? 95;
-  const rawFast = fastLightScore ?? 73;
-  const displaySafe = Math.max(rawSafe, rawFast + 1);
-  const displayFast = Math.min(rawFast, displaySafe - 1);
+  const steps = currentRouteData?.steps ?? [];
+
+  const panelHeight = panelExpanded ? '75vh' : '230px';
+  const FIXED_BAR_HEIGHT = 140; // px approx
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -143,9 +123,7 @@ const MapRoutes: FC = () => {
         zoom={14}
         origin={userLocation}
         destination={destination}
-        route={safeRoute?.coordinates}
-        alternativeRoute={fastRoute?.coordinates}
-        selectedRoute={selectedRoute}
+        route={route?.coordinates}
         fitToRoute
         className="absolute inset-0"
       />
@@ -156,7 +134,7 @@ const MapRoutes: FC = () => {
           onClick={() => navigate('/search')}
           className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center mt-2 flex-shrink-0"
         >
-          <ChevronLeft className="w-5 h-5 text-white" />
+          <ChevronLeft className="w-5 h-5 text-primary-foreground" />
         </button>
         <div className="flex-1" onClick={() => navigate('/search')}>
           <LocationInput
@@ -166,62 +144,149 @@ const MapRoutes: FC = () => {
         </div>
       </div>
 
-      {/* Bottom sheet */}
+      {/* Expandable steps panel - behind fixed bar */}
       <div
-        ref={sheetRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="zenit-bottom-sheet p-6 pb-8 z-[1000]"
+        className="fixed bottom-0 left-0 right-0 z-[1000] bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 overflow-hidden flex flex-col"
         style={{
-          transform: sheetCollapsed
-            ? `translateY(calc(100% - 48px + ${Math.min(dragOffset, 0)}px))`
-            : `translateY(${Math.max(dragOffset, 0)}px)`,
-          transition: isDragging.current ? 'none' : 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+          height: panelHeight,
+          transition: 'height 0.35s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
         }}
       >
+        {/* Handle */}
         <div
-          className="zenit-sheet-handle mb-4 cursor-grab"
-          onClick={() => setSheetCollapsed((c) => !c)}
-        />
+          className="py-3 cursor-pointer flex justify-center"
+          onClick={() => setPanelExpanded(prev => !prev)}
+          aria-label={panelExpanded ? 'Minimizar panel de ruta' : 'Expandir panel de ruta'}
+        >
+          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+        </div>
 
-        <h3 className="text-foreground font-semibold mb-4">Elige tu ruta</h3>
+        <div className="px-6 pb-4 flex items-center justify-between shrink-0">
+          <div
+            className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
+            style={{ borderColor: MAP_ROUTE_SAFE_COLOR, color: MAP_ROUTE_SAFE_COLOR }}
+          >
+            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: MAP_ROUTE_SAFE_COLOR }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
+                <path d="M6 14.6459V4.95C6 4.70147 6.20147 4.5 6.45 4.5H17.55C17.7985 4.5 18 4.70147 18 4.95V14.6459C18 15.7822 17.358 16.821 16.3416 17.3292L12.2012 19.3994C12.0746 19.4627 11.9254 19.4627 11.7988 19.3994L7.65836 17.3292C6.64201 16.821 6 15.7822 6 14.6459Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9.375 10.875L11.625 13.125L15.375 9.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <h3 className="font-semibold">Ruta Zenit</h3>
+          </div>
 
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Calculando rutas reales…</p>
-        ) : (
-          <div className="space-y-3">
-            <RouteCard
-              type="safe"
-              distance={safeRoute ? formatDistance(safeRoute.distance) : '—'}
-              duration={safeRoute ? formatDuration(safeRoute.duration) : '—'}
-              safetyPercentage={displaySafe}
-              tags={[`💡 Iluminación: ${displaySafe}%`, 'Áreas activas', 'Calles amplias']}
-              selected={selectedRoute === 'safe'}
-              onClick={() => setSelectedRoute('safe')}
-            />
-            {fastRoute && (
-              <RouteCard
-                type="fast"
-                distance={formatDistance(fastRoute.distance)}
-                duration={formatDuration(fastRoute.duration)}
-                safetyPercentage={displayFast}
-                tags={['Camino más corto', `💡 Iluminación: ${displayFast}%`, 'Calles peatonales']}
-                selected={selectedRoute === 'fast'}
-                onClick={() => setSelectedRoute('fast')}
-              />
+          <div className="ml-3 flex-shrink-0 flex items-center">
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
+              aria-label="Mostrar información de la ruta"
+            >
+              <Info className="w-4.5 h-4.5 text-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {panelExpanded && (
+          <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
+            {!bannerDismissed && (
+              <div className="mb-4 p-4 rounded-2xl bg-[#665D93] border border-border/50 flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
+                      <ShieldCheckIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <p className="text-xs text-white">
+                      La <b className="text-accent">Ruta Zenit</b> prioriza las vias más bien iluminadas, más anchas y con mayor flujo de personas.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDismissBanner}
+                  className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
+                >
+                  <X className="w-3.5 h-3.5 text-white" />
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
+            ) : currentRouteData ? (
+              <>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDistance(currentRouteData.distance)}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDuration(currentRouteData.duration)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Llegada a las {formatETA(currentRouteData.duration)}
+                </p>
+
+                <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+
+                <div className="pb-4">
+                  <RouteTimeline
+                    originLabel={storedOriginName}
+                    destinationLabel={storedDestName || 'Destino'}
+                    startTimeLabel={formatNow()}
+                    endTimeLabel={formatETA(currentRouteData.duration)}
+                    steps={steps}
+                  />
+                  {steps.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No se encontraron pasos detallados para esta ruta.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">Esperando ruta segura…</p>
             )}
           </div>
         )}
+      </div>
 
+      {/* Fixed bottom bar - always on top */}
+      <div className="fixed bottom-0 left-0 right-0 z-[1001] bg-card/98 backdrop-blur-xl border-t border-border/50 px-6 py-4 pb-6">
         <button
-          onClick={handleContinue}
-          className={loading ? 'zenit-btn-primary mt-4 opacity-50 bg-muted text-muted-foreground cursor-not-allowed' : 'zenit-btn-primary mt-4'}
-          disabled={loading}
+          onClick={() => setShowShareModal(true)}
+          className="zenit-btn-secondary mb-3 inline-flex items-center justify-center"
         >
-          {loading ? 'Cargando…' : 'Continuar'}
+          <ShareIcon className="w-5 h-5 mr-2" />
+          Compartir ruta
+        </button>
+        <button
+          onClick={handleStartNavigation}
+          className={loading || !route ? 'zenit-btn-primary inline-flex items-center justify-center gap-2 opacity-50 cursor-not-allowed' : 'zenit-btn-primary inline-flex items-center justify-center gap-2'}
+          disabled={loading || !route}
+          style={{ background: '#FFEE02', color: '#333000' }}
+        >
+          <ArrowDiagonalIcon className="w-5 h-5" />
+          {loading ? 'Cargando…' : 'Iniciar trayecto'}
         </button>
       </div>
+
+      {/* Modals */}
+      <ShareRouteModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={(selected) => {
+          setSharedContacts(selected);
+          setShowShareModal(false);
+        }}
+        contacts={CONTACTS}
+        initialSelected={sharedContacts}
+      />
+
+      <RouteInfoModal
+        isOpen={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+      />
     </div>
   );
 };

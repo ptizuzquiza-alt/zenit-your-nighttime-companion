@@ -25,6 +25,15 @@ function parseOSRMRoute(route: any): RouteResult {
   };
 }
 
+async function fetchRouteJson(path: string): Promise<any> {
+  try {
+    const response = await fetch(`${OSRM_BASE}/${path}`);
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Calculate total cumulative angular change along a route (in degrees).
  */
@@ -100,6 +109,61 @@ function getNudgeWaypoint(
   
   return [midLat + perpLat, midLon + perpLon];
 }
+
+  /**
+   * Fetch the Zenit route only.
+   * Uses a small set of car-profile candidates and falls back to foot only if needed.
+   */
+  export async function fetchZenitRoute(
+    origin: [number, number],
+    destination: [number, number]
+  ): Promise<RouteResult | null> {
+    const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+
+    const dist = Math.sqrt(
+      Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
+    );
+    const nudge = Math.max(0.002, dist * 0.15);
+    const wp1 = getNudgeWaypoint(origin, destination, nudge);
+    const wp2 = getNudgeWaypoint(origin, destination, -nudge);
+    const wpCoords1 = `${origin[1]},${origin[0]};${wp1[1]},${wp1[0]};${destination[1]},${destination[0]}`;
+    const wpCoords2 = `${origin[1]},${origin[0]};${wp2[1]},${wp2[0]};${destination[1]},${destination[0]}`;
+
+    const [directRes, wp1Res, wp2Res] = await Promise.all([
+      fetchRouteJson(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3`),
+      fetchRouteJson(`car/${wpCoords1}?overview=full&geometries=geojson&continue_straight=true`),
+      fetchRouteJson(`car/${wpCoords2}?overview=full&geometries=geojson&continue_straight=true`),
+    ]);
+
+    const candidates: RouteResult[] = [];
+    if (directRes?.code === 'Ok' && directRes.routes?.length) {
+      for (const route of directRes.routes) {
+        candidates.push(parseOSRMRoute(route));
+      }
+    }
+    if (wp1Res?.code === 'Ok' && wp1Res.routes?.length) {
+      candidates.push(parseOSRMRoute(wp1Res.routes[0]));
+    }
+    if (wp2Res?.code === 'Ok' && wp2Res.routes?.length) {
+      candidates.push(parseOSRMRoute(wp2Res.routes[0]));
+    }
+
+    const cleanCandidates = candidates.filter((route) => !hasBacktracking(route.coordinates));
+    if (cleanCandidates.length > 0) {
+      return [...cleanCandidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b))[0];
+    }
+
+    if (candidates.length > 0) {
+      return candidates[0];
+    }
+
+    const footRes = await fetchRouteJson(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2`);
+    if (footRes?.code === 'Ok' && footRes.routes?.length) {
+      return parseOSRMRoute(footRes.routes.sort((a: any, b: any) => a.distance - b.distance)[0]);
+    }
+
+    return null;
+  }
 
 /**
  * Fetch two routes:

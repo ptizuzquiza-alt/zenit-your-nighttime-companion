@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef } from 'react';
+import { FC, useState, useEffect, useRef, type PointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Info, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
@@ -97,23 +97,50 @@ const MapRoutes: FC = () => {
     navigate('/navigation');
   };
 
+  const draggingRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
+
   const handleDismissBanner = () => {
     setBannerDismissed(true);
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
-  const handleHandlePointerDown = (e: React.PointerEvent) => {
+  const handleHandlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     dragStartYRef.current = e.clientY;
+    draggingRef.current = false;
+    activePointerIdRef.current = e.pointerId;
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handleHandlePointerUp = (e: React.PointerEvent) => {
-    if (dragStartYRef.current === null) return;
+  const handleHandlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (dragStartYRef.current === null || activePointerIdRef.current !== e.pointerId) return;
+    const deltaY = dragStartYRef.current - e.clientY;
+    if (Math.abs(deltaY) > 10) {
+      draggingRef.current = true;
+    }
+  };
+
+  const handleHandlePointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    if (dragStartYRef.current === null || activePointerIdRef.current !== e.pointerId) return;
     const deltaY = dragStartYRef.current - e.clientY;
     dragStartYRef.current = null;
-    handlePanelDrag(deltaY);
+    activePointerIdRef.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+
+    if (Math.abs(deltaY) >= 30) {
+      handlePanelDrag(deltaY);
+    }
+  };
+
+  const handleHandlePointerCancel = (e: PointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== e.pointerId) return;
+    dragStartYRef.current = null;
+    activePointerIdRef.current = null;
   };
 
   const handleHandleClick = () => {
+    if (draggingRef.current) return;
+
     if (panelState === 'fully-expanded') {
       setPanelState('half-expanded');
     } else if (panelState === 'half-expanded') {
@@ -211,7 +238,9 @@ const MapRoutes: FC = () => {
         <div
           className="py-3 cursor-pointer flex justify-center select-none"
           onPointerDown={handleHandlePointerDown}
+          onPointerMove={handleHandlePointerMove}
           onPointerUp={handleHandlePointerUp}
+          onPointerCancel={handleHandlePointerCancel}
           onClick={handleHandleClick}
           aria-label={
             panelState === 'minimized'

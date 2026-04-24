@@ -189,7 +189,7 @@ const MapRoutes: FC = () => {
   // Calculate panel height based on state
   const getPanelHeight = () => {
     if (panelState === 'minimized') return bannerDismissed ? '240px' : '340px';
-    if (panelState === 'half-expanded') return '75vh';
+    if (panelState === 'half-expanded') return '55vh';
     return 'calc(100vh - 40px)'; // fully-expanded, leaving 50px at top for search bar interaction
   };
 

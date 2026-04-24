@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Info, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
@@ -31,8 +31,9 @@ const MapRoutes: FC = () => {
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
 
-  // Panel state: minimized or expanded
-  const [panelExpanded, setPanelExpanded] = useState(true);
+  // Panel state: 'minimized' | 'half-expanded' | 'fully-expanded'
+  const [panelState, setPanelState] = useState<'minimized' | 'half-expanded' | 'fully-expanded'>('minimized');
+  const dragStartYRef = useRef<number | null>(null);
 
   const storedDest = getStoredDestination();
   const destination: [number, number] = storedDest
@@ -101,6 +102,60 @@ const MapRoutes: FC = () => {
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
+  const handleHandleMouseDown = (e: React.MouseEvent) => {
+    dragStartYRef.current = e.clientY;
+  };
+
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    dragStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleHandleMouseUp = (e: React.MouseEvent) => {
+    if (dragStartYRef.current === null) return;
+    const deltaY = dragStartYRef.current - e.clientY;
+    dragStartYRef.current = null;
+    handlePanelDrag(deltaY);
+  };
+
+  const handleHandleTouchEnd = (e: React.TouchEvent) => {
+    if (dragStartYRef.current === null) return;
+    const deltaY = dragStartYRef.current - e.changedTouches[0].clientY;
+    dragStartYRef.current = null;
+    handlePanelDrag(deltaY);
+  };
+
+  const handlePanelDrag = (deltaY: number) => {
+    const DRAG_THRESHOLD = 30; // pixels
+
+    if (Math.abs(deltaY) < DRAG_THRESHOLD) {
+      // Click detected - toggle between minimized and half-expanded
+      if (panelState === 'minimized') {
+        setPanelState('half-expanded');
+      } else if (panelState === 'half-expanded') {
+        setPanelState('minimized');
+      } else if (panelState === 'fully-expanded') {
+        setPanelState('half-expanded');
+      }
+      return;
+    }
+
+    if (deltaY > 0) {
+      // Drag UP
+      if (panelState === 'minimized') {
+        setPanelState('half-expanded');
+      } else if (panelState === 'half-expanded') {
+        setPanelState('fully-expanded');
+      }
+    } else {
+      // Drag DOWN
+      if (panelState === 'fully-expanded') {
+        setPanelState('half-expanded');
+      } else if (panelState === 'half-expanded') {
+        setPanelState('minimized');
+      }
+    }
+  };
+
   const mapCenter: [number, number] = route?.coordinates?.length
     ? [
         (userLocation[0] + destination[0]) / 2,
@@ -113,7 +168,15 @@ const MapRoutes: FC = () => {
 
   const steps = currentRouteData?.steps ?? [];
 
-  const panelHeight = panelExpanded ? '75vh' : '230px';
+  // Calculate panel height based on state
+  const getPanelHeight = () => {
+    if (panelState === 'minimized') return '340px';
+    if (panelState === 'half-expanded') return '75vh';
+    return 'calc(100vh - 50px)'; // fully-expanded, leaving 50px at top for search bar interaction
+  };
+
+  const panelHeight = getPanelHeight();
+  const panelZIndex = panelState === 'fully-expanded' ? 'z-[1100]' : 'z-[1000]';
   const FIXED_BAR_HEIGHT = 140; // px approx
 
   return (
@@ -146,7 +209,7 @@ const MapRoutes: FC = () => {
 
       {/* Expandable steps panel - behind fixed bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-[1000] bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 overflow-hidden flex flex-col"
+        className={`fixed bottom-0 left-0 right-0 ${panelZIndex} bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 overflow-hidden flex flex-col`}
         style={{
           height: panelHeight,
           transition: 'height 0.35s cubic-bezier(0.4,0,0.2,1)',
@@ -155,9 +218,18 @@ const MapRoutes: FC = () => {
       >
         {/* Handle */}
         <div
-          className="py-3 cursor-pointer flex justify-center"
-          onClick={() => setPanelExpanded(prev => !prev)}
-          aria-label={panelExpanded ? 'Minimizar panel de ruta' : 'Expandir panel de ruta'}
+          className="py-3 cursor-pointer flex justify-center select-none"
+          onMouseDown={handleHandleMouseDown}
+          onMouseUp={handleHandleMouseUp}
+          onTouchStart={handleHandleTouchStart}
+          onTouchEnd={handleHandleTouchEnd}
+          aria-label={
+            panelState === 'minimized'
+              ? 'Expandir panel de ruta'
+              : panelState === 'half-expanded'
+                ? 'Expandir panel completamente o minimizar'
+                : 'Minimizar panel de ruta'
+          }
         >
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
@@ -174,6 +246,12 @@ const MapRoutes: FC = () => {
               </svg>
             </span>
             <h3 className="font-semibold">Ruta Zenit</h3>
+            {panelState === 'minimized' && currentRouteData && (
+              <>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-sm font-medium">{formatDuration(currentRouteData.duration)}</span>
+              </>
+            )}
           </div>
 
           <div className="ml-3 flex-shrink-0 flex items-center">
@@ -187,29 +265,31 @@ const MapRoutes: FC = () => {
           </div>
         </div>
 
-        {panelExpanded && (
-          <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
-            {!bannerDismissed && (
-              <div className="mb-4 p-4 rounded-2xl bg-[#665D93] border border-border/50 flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
-                      <ShieldCheckIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-xs text-white">
-                      La <b className="text-accent">Ruta Zenit</b> prioriza las vias más bien iluminadas, más anchas y con mayor flujo de personas.
-                    </p>
+        {!bannerDismissed && (
+          <div className="px-6 pb-4 shrink-0">
+            <div className="p-4 rounded-xl bg-[#665D93] border border-border/50 flex items-center gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
+                    <ShieldCheckIcon className="w-5 h-5 text-white" />
                   </div>
+                  <p className="text-xs text-white">
+                    La <b className="text-accent">Ruta Zenit</b> prioriza las vias más bien iluminadas, más anchas y con mayor flujo de personas.
+                  </p>
                 </div>
-                <button
-                  onClick={handleDismissBanner}
-                  className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
-                >
-                  <X className="w-3.5 h-3.5 text-white" />
-                </button>
               </div>
-            )}
+              <button
+                onClick={handleDismissBanner}
+                className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
+              >
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
+          </div>
+        )}
 
+        {(panelState === 'half-expanded' || panelState === 'fully-expanded') && (
+          <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
             {loading ? (
               <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
             ) : currentRouteData ? (

@@ -216,11 +216,11 @@ const MapRoutes: FC = () => {
               <>
                 <div className="flex items-center gap-3 mb-1">
                   <span className="text-sm font-medium text-foreground">
-                    {formatDistance(currentRouteData.distance)}
+                    {formatDuration(currentRouteData.duration)}
                   </span>
                   <span className="text-muted-foreground">·</span>
                   <span className="text-sm font-medium text-foreground">
-                    {formatDuration(currentRouteData.duration)}
+                    {formatDistance(currentRouteData.distance)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-4">

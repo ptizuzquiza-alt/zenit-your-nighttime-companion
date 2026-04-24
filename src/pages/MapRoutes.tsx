@@ -102,40 +102,31 @@ const MapRoutes: FC = () => {
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
-  const handleHandleMouseDown = (e: React.MouseEvent) => {
+  const handleHandlePointerDown = (e: React.PointerEvent) => {
     dragStartYRef.current = e.clientY;
   };
 
-  const handleHandleTouchStart = (e: React.TouchEvent) => {
-    dragStartYRef.current = e.touches[0].clientY;
-  };
-
-  const handleHandleMouseUp = (e: React.MouseEvent) => {
+  const handleHandlePointerUp = (e: React.PointerEvent) => {
     if (dragStartYRef.current === null) return;
     const deltaY = dragStartYRef.current - e.clientY;
     dragStartYRef.current = null;
     handlePanelDrag(deltaY);
   };
 
-  const handleHandleTouchEnd = (e: React.TouchEvent) => {
-    if (dragStartYRef.current === null) return;
-    const deltaY = dragStartYRef.current - e.changedTouches[0].clientY;
-    dragStartYRef.current = null;
-    handlePanelDrag(deltaY);
+  const handleHandleClick = () => {
+    if (panelState === 'fully-expanded') {
+      setPanelState('half-expanded');
+    } else if (panelState === 'half-expanded') {
+      setPanelState('minimized');
+    } else if (panelState === 'minimized') {
+      setPanelState('half-expanded');
+    }
   };
 
   const handlePanelDrag = (deltaY: number) => {
     const DRAG_THRESHOLD = 30; // pixels
 
     if (Math.abs(deltaY) < DRAG_THRESHOLD) {
-      // Click detected - toggle between minimized and half-expanded
-      if (panelState === 'minimized') {
-        setPanelState('half-expanded');
-      } else if (panelState === 'half-expanded') {
-        setPanelState('minimized');
-      } else if (panelState === 'fully-expanded') {
-        setPanelState('half-expanded');
-      }
       return;
     }
 
@@ -170,13 +161,13 @@ const MapRoutes: FC = () => {
 
   // Calculate panel height based on state
   const getPanelHeight = () => {
-    if (panelState === 'minimized') return '340px';
+    if (panelState === 'minimized') return bannerDismissed ? '240px' : '340px';
     if (panelState === 'half-expanded') return '75vh';
-    return 'calc(100vh - 50px)'; // fully-expanded, leaving 50px at top for search bar interaction
+    return 'calc(100vh - 40px)'; // fully-expanded, leaving 50px at top for search bar interaction
   };
 
   const panelHeight = getPanelHeight();
-  const panelZIndex = panelState === 'fully-expanded' ? 'z-[1100]' : 'z-[1000]';
+  const panelZIndex = 'z-[1000]';
   const FIXED_BAR_HEIGHT = 140; // px approx
 
   return (
@@ -219,10 +210,9 @@ const MapRoutes: FC = () => {
         {/* Handle */}
         <div
           className="py-3 cursor-pointer flex justify-center select-none"
-          onMouseDown={handleHandleMouseDown}
-          onMouseUp={handleHandleMouseUp}
-          onTouchStart={handleHandleTouchStart}
-          onTouchEnd={handleHandleTouchEnd}
+          onPointerDown={handleHandlePointerDown}
+          onPointerUp={handleHandlePointerUp}
+          onClick={handleHandleClick}
           aria-label={
             panelState === 'minimized'
               ? 'Expandir panel de ruta'
@@ -234,7 +224,7 @@ const MapRoutes: FC = () => {
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        <div className="px-6 pb-4 flex items-center justify-between shrink-0">
+        <div className="px-6 pb-4 flex items-center justify-between shrink-0 gap-3">
           <div
             className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
             style={{ borderColor: MAP_ROUTE_SAFE_COLOR, color: MAP_ROUTE_SAFE_COLOR }}
@@ -246,13 +236,15 @@ const MapRoutes: FC = () => {
               </svg>
             </span>
             <h3 className="font-semibold">Ruta Zenit</h3>
-            {panelState === 'minimized' && currentRouteData && (
-              <>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-sm font-medium">{formatDuration(currentRouteData.duration)}</span>
-              </>
-            )}
           </div>
+
+          {panelState === 'minimized' && currentRouteData && (
+            <div className="flex items-center gap-2 text-sm font-medium text-white">
+              <span>{formatDuration(currentRouteData.duration)}</span>
+              <span>·</span>
+              <span>{formatDistance(currentRouteData.distance)}</span>
+            </div>
+          )}
 
           <div className="ml-3 flex-shrink-0 flex items-center">
             <button

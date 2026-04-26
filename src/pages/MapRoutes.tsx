@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef, type PointerEvent } from 'react';
+import { FC, useState, useEffect, useRef, type PointerEvent, type TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Info, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
@@ -52,6 +52,22 @@ const MapRoutes: FC = () => {
         }
       );
     }
+  }, []);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverscrollY = html.style.overscrollBehaviorY;
+    const previousBodyOverscrollY = body.style.overscrollBehaviorY;
+
+    // Prevent pull-to-refresh and scroll chaining to the page while this view is active.
+    html.style.overscrollBehaviorY = 'none';
+    body.style.overscrollBehaviorY = 'none';
+
+    return () => {
+      html.style.overscrollBehaviorY = previousHtmlOverscrollY;
+      body.style.overscrollBehaviorY = previousBodyOverscrollY;
+    };
   }, []);
 
   useEffect(() => {
@@ -136,6 +152,49 @@ const MapRoutes: FC = () => {
     if (activePointerIdRef.current !== e.pointerId) return;
     dragStartYRef.current = null;
     activePointerIdRef.current = null;
+  };
+
+  const handleHandleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    dragStartYRef.current = e.touches[0]?.clientY ?? null;
+    draggingRef.current = false;
+  };
+
+  const handleHandleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    if (dragStartYRef.current === null) return;
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    const currentY = e.touches[0]?.clientY;
+    if (currentY === undefined) return;
+    const deltaY = dragStartYRef.current - currentY;
+    if (Math.abs(deltaY) > 10) {
+      draggingRef.current = true;
+    }
+  };
+
+  const handleHandleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    if (dragStartYRef.current === null) return;
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    const endY = e.changedTouches[0]?.clientY;
+    if (endY === undefined) {
+      dragStartYRef.current = null;
+      return;
+    }
+
+    const deltaY = dragStartYRef.current - endY;
+    dragStartYRef.current = null;
+
+    if (Math.abs(deltaY) >= 30) {
+      handlePanelDrag(deltaY);
+    }
+  };
+
+  const handleHandleTouchCancel = (e: TouchEvent<HTMLDivElement>) => {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    dragStartYRef.current = null;
   };
 
   const handleHandleClick = () => {
@@ -232,6 +291,7 @@ const MapRoutes: FC = () => {
           height: panelHeight,
           transition: 'height 0.35s cubic-bezier(0.4,0,0.2,1)',
           boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
+          overscrollBehavior: 'contain',
         }}
       >
         {/* Handle */}
@@ -241,7 +301,12 @@ const MapRoutes: FC = () => {
           onPointerMove={handleHandlePointerMove}
           onPointerUp={handleHandlePointerUp}
           onPointerCancel={handleHandlePointerCancel}
+          onTouchStart={handleHandleTouchStart}
+          onTouchMove={handleHandleTouchMove}
+          onTouchEnd={handleHandleTouchEnd}
+          onTouchCancel={handleHandleTouchCancel}
           onClick={handleHandleClick}
+          style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
           aria-label={
             panelState === 'minimized'
               ? 'Expandir panel de ruta'
@@ -253,7 +318,19 @@ const MapRoutes: FC = () => {
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        <div className="px-6 pb-4 flex items-center justify-between">
+        <div
+          className="px-6 pb-4 flex items-center justify-between cursor-pointer"
+          onPointerDown={handleHandlePointerDown}
+          onPointerMove={handleHandlePointerMove}
+          onPointerUp={handleHandlePointerUp}
+          onPointerCancel={handleHandlePointerCancel}
+          onTouchStart={handleHandleTouchStart}
+          onTouchMove={handleHandleTouchMove}
+          onTouchEnd={handleHandleTouchEnd}
+          onTouchCancel={handleHandleTouchCancel}
+          onClick={handleHandleClick}
+          style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+        >
           <div className="flex items-center justify-between shrink-0 gap-6">
             <div
               className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
@@ -278,7 +355,10 @@ const MapRoutes: FC = () => {
 
           <div className="ml-3 flex-shrink-0 flex items-center">
             <button
-              onClick={() => setShowInfoModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowInfoModal(true);
+              }}
               className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center"
               aria-label="Mostrar información de la ruta"
             >
@@ -288,7 +368,19 @@ const MapRoutes: FC = () => {
         </div>
 
         {!bannerDismissed && (
-          <div className="px-6 pb-4 shrink-0">
+          <div
+            className="px-6 pb-4 shrink-0 cursor-pointer"
+            onPointerDown={handleHandlePointerDown}
+            onPointerMove={handleHandlePointerMove}
+            onPointerUp={handleHandlePointerUp}
+            onPointerCancel={handleHandlePointerCancel}
+            onTouchStart={handleHandleTouchStart}
+            onTouchMove={handleHandleTouchMove}
+            onTouchEnd={handleHandleTouchEnd}
+            onTouchCancel={handleHandleTouchCancel}
+            onClick={handleHandleClick}
+            style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+          >
             <div className="p-4 rounded-xl bg-[#665D93] border border-border/50 flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-3">
@@ -301,7 +393,10 @@ const MapRoutes: FC = () => {
                 </div>
               </div>
               <button
-                onClick={handleDismissBanner}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismissBanner();
+                }}
                 className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
               >
                 <X className="w-3.5 h-3.5 text-white" />
@@ -311,7 +406,7 @@ const MapRoutes: FC = () => {
         )}
 
         {(panelState === 'half-expanded' || panelState === 'fully-expanded') && (
-          <div className="flex-1 min-h-0 overflow-y-auto px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px` }}>
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px`, WebkitOverflowScrolling: 'touch' }}>
             {loading ? (
               <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
             ) : currentRouteData ? (

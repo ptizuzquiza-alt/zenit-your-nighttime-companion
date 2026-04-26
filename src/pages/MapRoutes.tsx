@@ -115,6 +115,7 @@ const MapRoutes: FC = () => {
 
   const draggingRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
+  const justCollapsedFromFullRef = useRef(false);
 
   const handleDismissBanner = () => {
     setBannerDismissed(true);
@@ -124,6 +125,7 @@ const MapRoutes: FC = () => {
   const handleHandlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     dragStartYRef.current = e.clientY;
     draggingRef.current = false;
+    justCollapsedFromFullRef.current = false;
     activePointerIdRef.current = e.pointerId;
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -159,6 +161,7 @@ const MapRoutes: FC = () => {
     e.stopPropagation();
     dragStartYRef.current = e.touches[0]?.clientY ?? null;
     draggingRef.current = false;
+    justCollapsedFromFullRef.current = false;
   };
 
   const handleHandleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
@@ -198,15 +201,28 @@ const MapRoutes: FC = () => {
   };
 
   const handleHandleClick = () => {
-    if (draggingRef.current) return;
-
-    if (panelState === 'fully-expanded') {
-      setPanelState('half-expanded');
-    } else if (panelState === 'half-expanded') {
-      setPanelState('minimized');
-    } else if (panelState === 'minimized') {
-      setPanelState('half-expanded');
+    if (draggingRef.current) {
+      draggingRef.current = false;
+      return;
     }
+
+    setPanelState((prev) => {
+      if (prev === 'fully-expanded') {
+        justCollapsedFromFullRef.current = true;
+        return 'half-expanded';
+      }
+
+      if (prev === 'half-expanded') {
+        if (justCollapsedFromFullRef.current) {
+          justCollapsedFromFullRef.current = false;
+          return 'half-expanded';
+        }
+        return 'minimized';
+      }
+
+      justCollapsedFromFullRef.current = false;
+      return 'half-expanded';
+    });
   };
 
   const handlePanelDrag = (deltaY: number) => {

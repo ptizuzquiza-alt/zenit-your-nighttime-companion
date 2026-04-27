@@ -24,25 +24,34 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
 }) => {
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [search, setSearch] = useState('');
+  const [confirm, setConfirm] = useState<{ id: string; name: string; removing: boolean } | null>(null);
 
   // Sync with external state only when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelected(initialSelected);
+      setConfirm(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const filteredContacts = contacts.filter(c => 
+  const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleContact = (id: string) => {
-    setSelected(prev => 
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+  const toggleContact = (id: string, name: string) => {
+    const removing = selected.includes(id);
+    setConfirm({ id, name, removing });
+  };
+
+  const handleConfirm = () => {
+    if (!confirm) return;
+    setSelected(prev =>
+      confirm.removing ? prev.filter(x => x !== confirm.id) : [...prev, confirm.id]
     );
+    setConfirm(null);
   };
 
   return (
@@ -80,7 +89,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           {filteredContacts.map(contact => (
             <button
               key={contact.id}
-              onClick={() => toggleContact(contact.id)}
+              onClick={() => toggleContact(contact.id, contact.name)}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors"
             >
               <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
@@ -116,6 +125,37 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           Cancelar
         </button>
       </div>
+
+      {/* Confirmation dialog */}
+      {confirm && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/50 rounded-t-3xl" onClick={() => setConfirm(null)} />
+          <div className="relative bg-card border border-border rounded-2xl p-5 w-full shadow-xl">
+            <p className="text-foreground font-semibold text-base mb-2">
+              {confirm.removing ? 'Dejar de compartir' : 'Compartir ruta'}
+            </p>
+            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+              {confirm.removing
+                ? `¿Vas a dejar de compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`
+                : `¿Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirm(null)}
+                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirm}
+                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.removing ? 'bg-destructive' : 'bg-primary'}`}
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

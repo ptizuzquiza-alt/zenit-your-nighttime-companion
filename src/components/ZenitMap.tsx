@@ -1,4 +1,5 @@
 import { FC, useEffect, useRef } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -6,9 +7,11 @@ import {
   MAP_BACKGROUND,
   MAP_ROUTE_SAFE_COLOR,
   MAP_ROUTE_FAST_COLOR,
-  MAP_MARKER_ORIGIN_COLOR,
   MAP_MARKER_FRIEND_COLOR,
 } from '@/config/theme';
+import { OriginMarkerIcon } from '@/components/icons/OriginMarkerIcon';
+import { destinationMarkerHtml } from '@/components/icons/DestinationMarkerIcon';
+import { userNavigationArrowHtml } from '@/components/icons/UserNavigationArrowIcon';
 
 // Dark map style tiles (CartoDB Dark Matter)
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
@@ -176,40 +179,25 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       drawStandard();
     }
 
-    // Origin marker (yellow circle)
+    // Origin marker (animated radar badge)
     if (origin) {
       const originIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<div style="
-          width: 20px;
-          height: 20px;
-          background: ${MAP_MARKER_ORIGIN_COLOR};
-          border-radius: 50%;
-          box-shadow: 0 0 16px 4px rgba(255, 204, 0, 0.5);
-        "></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
+        html: renderToStaticMarkup(<OriginMarkerIcon />),
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
       });
       const marker = L.marker(origin, { icon: originIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);
     }
 
-    // Destination marker (yellow with dot)
+    // Destination marker
     if (destination) {
       const destIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<div style="
-          width: 24px;
-          height: 24px;
-          background: #FFCC00;
-          border-radius: 50%;
-          box-shadow: 0 0 12px 3px rgba(255, 204, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        "><div style="width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%;"></div></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        html: destinationMarkerHtml,
+        iconSize: [32, 33],
+        iconAnchor: [16, 33],
       });
       const marker = L.marker(destination, { icon: destIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);
@@ -292,11 +280,9 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     if (showUserArrow && userPosition) {
       const arrowIcon = L.divIcon({
         className: 'zenit-marker',
-        html: `<svg width="40" height="48" viewBox="0 0 40 48" fill="none" style="filter: drop-shadow(0 4px 8px rgba(255, 204, 0, 0.5));">
-          <path d="M20 0L40 48L20 36L0 48L20 0Z" fill="#FFCC00"/>
-        </svg>`,
-        iconSize: [40, 48],
-        iconAnchor: [20, 24],
+        html: userNavigationArrowHtml,
+        iconSize: [83, 83],
+        iconAnchor: [41, 41],
       });
       const marker = L.marker(userPosition, { icon: arrowIcon }).addTo(mapRef.current);
       markersRef.current.push(marker);

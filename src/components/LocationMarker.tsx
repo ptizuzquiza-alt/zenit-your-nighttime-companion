@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { OriginMarkerIcon } from '@/components/icons/OriginMarkerIcon';
 
 interface LocationMarkerProps {
   type: 'origin' | 'destination' | 'friend' | 'user';
@@ -10,8 +11,7 @@ export const LocationMarker: FC<LocationMarkerProps> = ({ type, label, style }) 
   if (type === 'origin') {
     return (
       <div className="absolute flex flex-col items-center" style={style}>
-        <div className="w-5 h-5 rounded-full bg-accent shadow-lg animate-pulse-glow" 
-             style={{ boxShadow: '0 0 16px 4px hsl(45 100% 50% / 0.5)' }} />
+        <OriginMarkerIcon />
         {label && <span className="mt-1 text-xs text-foreground/80">{label}</span>}
       </div>
     );

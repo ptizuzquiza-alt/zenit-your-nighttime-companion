@@ -62,9 +62,7 @@ const MapRouteDetails: FC = () => {
         
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-foreground font-semibold">
-            {sessionStorage.getItem('zenit_selected_route_type') === 'fast'
-              ? 'Has elegido la Ruta Estándar'
-              : 'Has elegido la Ruta Zenit'}
+            Has elegido la Ruta Zenit
           </h3>
           {sharedContacts.length > 0 && (
             <button

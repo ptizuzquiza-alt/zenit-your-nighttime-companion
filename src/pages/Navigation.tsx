@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Users, Navigation2, Share2, Eye, X } from 'lucide-react';
+import { Map, Navigation2, Share2, Eye, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -236,7 +236,7 @@ const Navigation: FC = () => {
             {fitAll || focusJuan ? (
               <Navigation2 className="w-5 h-5" />
             ) : (
-              <Users className="w-5 h-5" />
+              <Map className="w-5 h-5" />
             )}
           </button>
 

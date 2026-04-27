@@ -366,12 +366,12 @@ const Onboarding: FC = () => {
       navigator.geolocation.getCurrentPosition(() => {}, () => {});
     }
     localStorage.setItem('zenit_onboarded', 'true');
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   const handleSkipLocation = () => {
     localStorage.setItem('zenit_onboarded', 'true');
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   // ── Touch events ──

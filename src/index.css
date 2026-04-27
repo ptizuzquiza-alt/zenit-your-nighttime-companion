@@ -30,7 +30,7 @@
     --muted: 249 35% 18%;
     --muted-foreground: 249 20% 55%;
 
-    --accent: 45 100% 50%;
+    --accent: 58 100% 50%;
     --accent-foreground: 249 42% 12%;
 
     --destructive: 0 84% 60%;
@@ -49,7 +49,7 @@
     --zenit-surface-light: 249 35% 20%;
     --zenit-purple: 265 90% 60%;
     --zenit-purple-light: 265 80% 70%;
-    --zenit-yellow: 45 100% 50%;
+    --zenit-yellow: 58 100% 50%;
     --zenit-green: 145 70% 50%;
     --zenit-blue: 220 80% 60%;
     --zenit-grid: 249 35% 24%;
@@ -86,7 +86,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 15% 18%;
     --muted-foreground: 240 10% 60%;
-    --accent: 45 100% 50%;
+    --accent: 58 100% 50%;
     --accent-foreground: 240 25% 8%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;

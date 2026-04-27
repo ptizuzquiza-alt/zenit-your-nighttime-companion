@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MapIdle from "./pages/MapIdle";
 import MapSearch from "./pages/MapSearch";
 import MapRoutes from "./pages/MapRoutes";
@@ -12,8 +12,11 @@ import NavigationEnd from "./pages/NavigationEnd";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Friends from "./pages/Friends";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
+
+const hasOnboarded = () => localStorage.getItem('zenit_onboarded') === 'true';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,7 +26,11 @@ const App = () => (
       <BrowserRouter>
         <div className="max-w-md mx-auto bg-background min-h-screen relative overflow-hidden">
           <Routes>
-            <Route path="/" element={<MapIdle />} />
+            <Route
+              path="/"
+              element={hasOnboarded() ? <MapIdle /> : <Navigate to="/onboarding" replace />}
+            />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/search" element={<MapSearch />} />
             <Route path="/routes" element={<MapRoutes />} />
             <Route path="/route-details" element={<MapRouteDetails />} />

@@ -1,3 +1,4 @@
+import { FC } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,13 @@ import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
-const hasOnboarded = () => localStorage.getItem('zenit_onboarded') === 'true';
+// Component-based guard so localStorage is read fresh on every render
+const HomeRoute: FC = () => {
+  if (localStorage.getItem('zenit_onboarded') !== 'true') {
+    return <Navigate to="/onboarding" replace />;
+  }
+  return <MapIdle />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -26,10 +33,7 @@ const App = () => (
       <BrowserRouter>
         <div className="max-w-md mx-auto bg-background min-h-screen relative overflow-hidden">
           <Routes>
-            <Route
-              path="/"
-              element={hasOnboarded() ? <MapIdle /> : <Navigate to="/onboarding" replace />}
-            />
+            <Route path="/" element={<HomeRoute />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/search" element={<MapSearch />} />
             <Route path="/routes" element={<MapRoutes />} />

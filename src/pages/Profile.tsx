@@ -294,7 +294,10 @@ const Profile: FC = () => {
                 Cancelar
               </button>
               <button
-                onClick={() => { setActiveSheet(null); toast.success('Sesión cerrada'); }}
+                onClick={() => {
+                  localStorage.removeItem('zenit_onboarded');
+                  window.location.replace('/onboarding');
+                }}
                 className="flex-1 py-3.5 rounded-2xl bg-destructive text-white font-semibold text-sm"
               >
                 Cerrar sesión

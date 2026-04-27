@@ -296,7 +296,7 @@ const Profile: FC = () => {
               <button
                 onClick={() => {
                   localStorage.removeItem('zenit_onboarded');
-                  window.location.replace('/onboarding');
+                  navigate('/onboarding', { replace: true });
                 }}
                 className="flex-1 py-3.5 rounded-2xl bg-destructive text-white font-semibold text-sm"
               >

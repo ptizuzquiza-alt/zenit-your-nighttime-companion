@@ -29,18 +29,26 @@ function haversineM(a: [number, number], b: [number, number]): number {
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
 
-function getDirection(coords: [number, number][], idx: number): { dir: 'left' | 'right' | 'straight'; distM: number } {
+function getDirection(coords: [number, number][], idx: number): { dir: 'left' | 'right' | 'straight'; distToTurnM: number } {
+  // Walk ahead to find the next real turn and the distance to it
+  let distToTurnM = 0;
+  for (let i = idx; i + 2 < coords.length; i++) {
+    distToTurnM += haversineM(coords[i], coords[i + 1]);
+    const b1 = getBearing(coords[i], coords[i + 1]);
+    const b2 = getBearing(coords[i + 1], coords[i + 2]);
+    let diff = b2 - b1;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    if (Math.abs(diff) > 20) {
+      return { dir: diff > 0 ? 'right' : 'left', distToTurnM };
+    }
+  }
+  // No turn ahead — show remaining distance
   const remaining = coords.slice(idx);
   const distM = remaining.length > 1
-    ? remaining.reduce((sum, pt, i) => i === 0 ? sum : sum + haversineM(remaining[i - 1], pt), 0)
+    ? remaining.reduce((s, pt, i) => i === 0 ? s : s + haversineM(remaining[i - 1], pt), 0)
     : 0;
-  if (idx + 2 >= coords.length) return { dir: 'straight', distM };
-  const b1 = getBearing(coords[idx], coords[idx + 1]);
-  const b2 = getBearing(coords[idx + 1], coords[idx + 2]);
-  let diff = b2 - b1;
-  if (diff > 180) diff -= 360;
-  if (diff < -180) diff += 360;
-  return { dir: diff > 20 ? 'right' : diff < -20 ? 'left' : 'straight', distM };
+  return { dir: 'straight', distToTurnM: distM };
 }
 
 const JUAN_ORIGIN: [number, number] = [41.3950, 2.1650];
@@ -247,17 +255,17 @@ const Navigation: FC = () => {
 
       {/* Direction card — dynamic based on route progress */}
       {(() => {
-        const { dir, distM } = getDirection(routeCoords, routeIndex);
-        const distLabel = distM > 1000
-          ? `Siga ${(distM / 1000).toFixed(1)} km y`
-          : `Siga ${Math.round(distM)} m y`;
-        const instrLabel = dir === 'right' ? 'gire a la derecha' : dir === 'left' ? 'gire a la izquierda' : 'continúe recto';
+        const { dir, distToTurnM } = getDirection(routeCoords, routeIndex);
+        const distLabel = distToTurnM > 1000
+          ? `En ${(distToTurnM / 1000).toFixed(1)} km`
+          : `En ${Math.round(distToTurnM)} m`;
+        const instrLabel = dir === 'right' ? 'gire a la derecha' : dir === 'left' ? 'gire a la izquierda' : 'has llegado';
         return (
           <div className="fixed top-12 left-4 right-4 z-[1000]">
             <DirectionCard
               distance={distLabel}
               instruction={instrLabel}
-              direction={dir}
+              direction={dir === 'straight' ? 'straight' : dir}
               onIconClick={handleFastForward}
             />
           </div>

@@ -4,20 +4,25 @@ interface DirectionCardProps {
   distance: string;
   instruction: string;
   direction?: 'right' | 'left' | 'straight';
+  onIconClick?: () => void;
 }
 
-export const DirectionCard: FC<DirectionCardProps> = ({ 
-  distance, 
-  instruction, 
-  direction = 'right' 
+export const DirectionCard: FC<DirectionCardProps> = ({
+  distance,
+  instruction,
+  direction = 'right',
+  onIconClick,
 }) => {
   return (
     <div className="zenit-direction-card">
-      <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+      <button
+        onClick={onIconClick}
+        className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform"
+      >
         {direction === 'right' && <TurnRightIcon className="w-6 h-6 text-white" />}
         {direction === 'left' && <TurnLeftIcon className="w-6 h-6 text-white" />}
         {direction === 'straight' && <ArrowUpIcon className="w-6 h-6 text-white" />}
-      </div>
+      </button>
       <div className="flex flex-col">
         <span className="text-white/90 text-lg font-semibold">{distance}</span>
         <span className="text-white/70 text-sm">{instruction}</span>

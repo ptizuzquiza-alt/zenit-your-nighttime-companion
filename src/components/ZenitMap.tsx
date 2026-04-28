@@ -42,6 +42,7 @@ interface ZenitMapProps {
   userPosition?: [number, number];
   fitToRoute?: boolean;
   focusBounds?: [number, number][];
+  centerOffsetPx?: [number, number];
   className?: string;
 }
 
@@ -59,6 +60,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   userPosition,
   fitToRoute = false,
   focusBounds,
+  centerOffsetPx,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -102,9 +104,12 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (destination) bounds.extend(destination);
       mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 450], maxZoom: 15, animate: true });
     } else if (!fitToRoute) {
-      mapRef.current.setView(center, zoom);
+      mapRef.current.setView(center, zoom, { animate: false });
+      if (centerOffsetPx && (centerOffsetPx[0] !== 0 || centerOffsetPx[1] !== 0)) {
+        mapRef.current.panBy([centerOffsetPx[0], centerOffsetPx[1]], { animate: false });
+      }
     }
-  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds]);
+  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds, centerOffsetPx]);
 
   // Focus on specific bounds (e.g. friend's route)
   useEffect(() => {

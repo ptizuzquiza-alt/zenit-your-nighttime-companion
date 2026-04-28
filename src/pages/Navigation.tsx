@@ -41,11 +41,13 @@ const Navigation: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_shared_contacts') || '[]');
     } catch { return []; }
   });
+  const [arrived, setArrived] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const sheetCollapsedByUser = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const fastForwardRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const storedRoute = getStoredRoute();
   const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [
@@ -107,9 +109,8 @@ const Navigation: FC = () => {
         const next = prev + 1;
         if (next < routeCoords.length) {
           setUserPosition(routeCoords[next]);
-          // Auto-navigate to end screen when reaching destination
           if (next === routeCoords.length - 1) {
-            setTimeout(() => navigate('/navigation-end'), 1000);
+            setTimeout(() => navigate('/navigation-end'), 600);
           }
           return next;
         }
@@ -117,7 +118,34 @@ const Navigation: FC = () => {
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, [routeCoords, navigate]);
+  }, [routeCoords]);
+
+  // Collapse sheet when arrived popup shows
+  useEffect(() => {
+    if (arrived) {
+      setSheetOffset(getSheetContentHeight());
+    }
+  }, [arrived]);
+
+  const handleFastForward = () => {
+    if (fastForwardRef.current) return; // already running
+    let idx = 0;
+    fastForwardRef.current = setInterval(() => {
+      idx += 1;
+      if (idx < routeCoords.length) {
+        setRouteIndex(idx);
+        setUserPosition(routeCoords[idx]);
+        if (idx === routeCoords.length - 1) {
+          clearInterval(fastForwardRef.current!);
+          fastForwardRef.current = null;
+          setTimeout(() => setArrived(true), 600);
+        }
+      } else {
+        clearInterval(fastForwardRef.current!);
+        fastForwardRef.current = null;
+      }
+    }, 80);
+  };
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
@@ -189,6 +217,7 @@ const Navigation: FC = () => {
           userPosition={userPosition}
           fitToRoute={fitAll && !focusJuan}
           focusBounds={focusJuan ? juanRoute : undefined}
+          centerOffsetPx={(!fitAll && !focusJuan) ? [0, 75] : undefined}
           className="w-full h-full"
         />
       </div>
@@ -199,6 +228,7 @@ const Navigation: FC = () => {
           distance="Siga 900 m y"
           instruction="gire a la derecha"
           direction="right"
+          onIconClick={handleFastForward}
         />
       </div>
 
@@ -377,6 +407,32 @@ const Navigation: FC = () => {
         initialSelected={sharedContacts}
         contacts={CONTACTS}
       />
+
+      {/* Arrived overlay */}
+      {arrived && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-md bg-card rounded-t-3xl px-6 pt-8 pb-12 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mb-5">
+              <svg viewBox="0 0 24 24" className="w-8 h-8 text-accent" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                <circle cx="12" cy="9" r="2.5" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-3">¡Has llegado a tu destino!</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-[280px]">
+              Tu ubicación no se volverá a compartir hasta que vuelvas a compartir tu ruta con tus amigos.
+            </p>
+            <button
+              onClick={() => navigate('/navigation-end')}
+              className="w-full py-4 rounded-full font-bold text-base text-background"
+              style={{ background: '#FFEE02' }}
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Cancel confirmation overlay */}
       {showCancelConfirm && (

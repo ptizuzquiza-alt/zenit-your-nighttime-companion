@@ -212,7 +212,7 @@ const MapIdle: FC = () => {
     })
     .map(({ name, coordinates, position }) => {
       const fr = FRIEND_ROUTES.find(r => r.name === name);
-      return { name, coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
+      return { name, avatar: AVATAR_BY_NAME[name], coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
     });
 
   const badgeCount = acceptedFriends.length + pendingRequests.length;

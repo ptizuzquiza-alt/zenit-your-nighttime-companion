@@ -21,6 +21,7 @@ const MAP_CSS = `
 
 interface FriendRoute {
   name: string;
+  avatar?: string;
   coordinates: [number, number][];
   position: [number, number];
   dim?: boolean;
@@ -118,12 +119,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     } else if (!fitToRoute) {
       mapRef.current.setView(center, zoom, { animate: false });
       if (centerOffsetPx && (centerOffsetPx[0] !== 0 || centerOffsetPx[1] !== 0)) {
-        // Rotate the screen-space offset into Leaflet map space
-        const [ox, oy] = centerOffsetPx;
-        const B = (mapBearing ?? 0) * Math.PI / 180;
-        const Lx = ox * Math.cos(B) - oy * Math.sin(B);
-        const Ly = ox * Math.sin(B) + oy * Math.cos(B);
-        mapRef.current.panBy([Lx, Ly], { animate: false });
+        mapRef.current.panBy(centerOffsetPx, { animate: false });
       }
     }
   }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds, centerOffsetPx, mapBearing]);
@@ -207,16 +203,22 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     });
 
     friendRoutes.forEach(fr => {
+      const avatarInner = fr.avatar
+        ? `<img src="${fr.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+        : `<span style="color:white;font-size:14px;font-weight:700;">${fr.name[0]}</span>`;
+
       const combinedIcon = L.divIcon({
         className: 'zenit-marker',
         html: fr.dim
           ? `<div style="width:10px;height:10px;background:#a78bfa;border-radius:50%;opacity:0.25;"></div>`
           : `<div style="display:flex;flex-direction:column;align-items:center;">
-              <span style="background:rgba(167,139,250,0.85);color:white;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);margin-bottom:4px;">${fr.name}</span>
-              <div style="width:14px;height:14px;background:#a78bfa;border-radius:50%;box-shadow:0 0 10px 3px rgba(167,139,250,0.5);"></div>
+              <div style="width:38px;height:38px;border-radius:50%;border:2.5px solid rgba(167,139,250,0.95);overflow:hidden;background:#2a1f4e;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px 3px rgba(167,139,250,0.55);">
+                ${avatarInner}
+              </div>
+              <div style="width:7px;height:7px;background:#a78bfa;border-radius:50%;margin-top:3px;box-shadow:0 0 6px 2px rgba(167,139,250,0.5);"></div>
             </div>`,
-        iconSize: [60, 36],
-        iconAnchor: [30, 36],
+        iconSize: [44, 52],
+        iconAnchor: [22, 52],
       });
       markersRef.current.push(L.marker(fr.position, { icon: combinedIcon }).addTo(mapRef.current!));
     });
@@ -248,10 +250,10 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
   }, [origin, destination, route, alternativeRoute, selectedRoute, friendLocations, friendRoutes, showUserArrow, userPosition]);
 
-  // Smoothly update counter-rotation when bearing changes
+  // Update counter-rotation each time bearing changes (RAF-driven, no CSS transition needed)
   useEffect(() => {
     const bearing = mapBearing ?? 0;
-    markersRef.current.forEach(m => applyCounterRotation(m, bearing, true));
+    markersRef.current.forEach(m => applyCounterRotation(m, bearing, false));
   }, [mapBearing]);
 
   return (
@@ -273,7 +275,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
           height: '142%',
           transform: `translate(-50%, -50%) rotate(${-(mapBearing ?? 0)}deg)`,
           transformOrigin: 'center center',
-          transition: 'transform 0.4s ease-out',
+          transition: 'none',
         }}
       >
         <div

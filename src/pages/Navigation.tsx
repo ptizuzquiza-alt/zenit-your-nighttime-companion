@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useCallback, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Map, Navigation2, Share2, Eye, X } from 'lucide-react';
@@ -86,24 +86,32 @@ const Navigation: FC = () => {
   const dragStartY = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
   const fastForwardRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animRef = useRef<number | null>(null);
 
-  const storedRoute = getStoredRoute();
-  const routeCoords: [number, number][] = (storedRoute?.coordinates as [number, number][]) ?? [
-    [41.4036, 2.1744],
-    [41.4050, 2.1750],
-    [41.4060, 2.1780],
-    [41.4080, 2.1790],
-    [41.4095, 2.1820],
-    [41.4110, 2.1850],
-  ];
+  const routeCoords = useMemo<[number, number][]>(() => {
+    const stored = getStoredRoute();
+    return (stored?.coordinates as [number, number][]) ?? [
+      [41.4036, 2.1744],
+      [41.4050, 2.1750],
+      [41.4060, 2.1780],
+      [41.4080, 2.1790],
+      [41.4095, 2.1820],
+      [41.4110, 2.1850],
+    ];
+  }, []);
 
   const [routeIndex, setRouteIndex] = useState(0);
   const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
+  const [displayBearing, setDisplayBearing] = useState(() =>
+    routeCoords.length > 1 ? getBearing(routeCoords[0], routeCoords[1]) : 0
+  );
 
-  // Juan's real route + animated position
+  // Juan's real route + smooth lerp position
   const [juanRoute, setJuanRoute] = useState<[number, number][]>(JUAN_FALLBACK);
-  const [juanIndex, setJuanIndex] = useState(Math.floor(JUAN_FALLBACK.length * 0.4));
-  const juanPosition = juanRoute[juanIndex] ?? JUAN_ORIGIN;
+  const [juanPosition, setJuanPosition] = useState<[number, number]>(
+    JUAN_FALLBACK[Math.floor(JUAN_FALLBACK.length * 0.4)] ?? JUAN_ORIGIN
+  );
+  const juanAnimRef = useRef<number | null>(null);
 
   // Fetch Juan's real street route from OSRM
   useEffect(() => {
@@ -111,83 +119,151 @@ const Navigation: FC = () => {
     fetch(`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
-        console.log('OSRM Juan response:', data?.code);
         if (data?.code === 'Ok' && data.routes?.length) {
           const pts: [number, number][] = data.routes[0].geometry.coordinates.map(
             ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
           );
           setJuanRoute(pts);
-          setJuanIndex(Math.floor(pts.length * 0.4));
         } else {
-          // Fallback route
           setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
-          setJuanIndex(0);
         }
       })
-      .catch(() => {
-        console.log('OSRM Juan fetch failed, using fallback');
-        setJuanRoute([JUAN_ORIGIN, JUAN_DEST]);
-        setJuanIndex(0);
-      });
+      .catch(() => setJuanRoute([JUAN_ORIGIN, JUAN_DEST]));
   }, []);
 
-  // Simulate Juan moving
+  // Smooth LERP animation for Juan along his route (walking speed ~1.4 m/s)
   useEffect(() => {
     if (juanRoute.length < 2) return;
-    const interval = setInterval(() => {
-      setJuanIndex(prev => (prev + 1 < juanRoute.length ? prev + 1 : prev));
-    }, 2000);
-    return () => clearInterval(interval);
+    if (juanAnimRef.current !== null) cancelAnimationFrame(juanAnimRef.current);
+
+    const SPEED_MPS = 1.4;
+    const startIdx = Math.min(Math.floor(juanRoute.length * 0.4), juanRoute.length - 2);
+
+    let segIdx = startIdx;
+    let elapsed = 0;
+    let lastTime = performance.now();
+    let lastStateUpdate = 0;
+
+    function segDurMs(i: number) {
+      const d = haversineM(juanRoute[i], juanRoute[i + 1]);
+      return Math.max((d / SPEED_MPS) * 1000, 50);
+    }
+    let curDur = segDurMs(segIdx);
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - lastTime, 100);
+      lastTime = now;
+      elapsed += dt;
+
+      while (elapsed >= curDur && segIdx < juanRoute.length - 2) {
+        elapsed -= curDur;
+        segIdx += 1;
+        curDur = segDurMs(segIdx);
+      }
+      if (segIdx >= juanRoute.length - 2 && elapsed >= curDur) {
+        setJuanPosition(juanRoute[juanRoute.length - 1]);
+        juanAnimRef.current = null;
+        return;
+      }
+
+      // Throttle React state updates to ~15 fps to avoid excessive marker recreation
+      if (now - lastStateUpdate >= 66) {
+        const tc = Math.min(elapsed / curDur, 1);
+        const A = juanRoute[segIdx];
+        const B = juanRoute[segIdx + 1];
+        setJuanPosition([
+          A[0] + (B[0] - A[0]) * tc,
+          A[1] + (B[1] - A[1]) * tc,
+        ]);
+        lastStateUpdate = now;
+      }
+
+      juanAnimRef.current = requestAnimationFrame(tick);
+    };
+
+    juanAnimRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (juanAnimRef.current !== null) {
+        cancelAnimationFrame(juanAnimRef.current);
+        juanAnimRef.current = null;
+      }
+    };
   }, [juanRoute]);
 
-  // Simulate user movement along the real route + auto-finish
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRouteIndex((prev) => {
-        const next = prev + 1;
-        if (next < routeCoords.length) {
-          setUserPosition(routeCoords[next]);
-          if (next === routeCoords.length - 1) {
-            setTimeout(() => navigate('/navigation-end'), 600);
-          }
-          return next;
-        }
-        return prev;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [routeCoords]);
+  // Fast-forward: smooth LERP through full route in ≤5 s with damped heading-up
+  const handleFastForward = useCallback(() => {
+    if (animRef.current !== null) return; // already animating
 
-  const handleFastForward = () => {
-    if (fastForwardRef.current) return;
-    let idx = 0;
-    fastForwardRef.current = setInterval(() => {
-      idx += 1;
-      if (idx < routeCoords.length) {
-        setRouteIndex(idx);
-        setUserPosition(routeCoords[idx]);
-        if (idx === routeCoords.length - 1) {
-          clearInterval(fastForwardRef.current!);
-          fastForwardRef.current = null;
-          setTimeout(() => navigate('/navigation-end'), 600);
-        }
-      } else {
-        clearInterval(fastForwardRef.current!);
-        fastForwardRef.current = null;
+    const TOTAL_MS = 5000;
+    const DEAD_ZONE_DEG = 3;
+    const DAMPING = 0.12;
+
+    const totalDistM = routeCoords.reduce(
+      (sum, pt, i) => i === 0 ? sum : sum + haversineM(routeCoords[i - 1], pt), 0
+    );
+    // Per-segment duration proportional to segment length so speed is constant
+    const segDurations = routeCoords.slice(0, -1).map((_, i) => {
+      const d = haversineM(routeCoords[i], routeCoords[i + 1]);
+      return totalDistM > 0 ? (d / totalDistM) * TOTAL_MS : TOTAL_MS / (routeCoords.length - 1);
+    });
+
+    let segIdx = 0;
+    let elapsed = 0;
+    let lastTime = performance.now();
+    let smoothBearing = getBearing(routeCoords[0], routeCoords[1]);
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - lastTime, 50);
+      lastTime = now;
+      elapsed += dt;
+
+      // Advance through completed segments
+      while (segIdx < segDurations.length - 1 && elapsed >= segDurations[segIdx]) {
+        elapsed -= segDurations[segIdx];
+        segIdx += 1;
       }
-    }, 80);
-  };
+
+      // Arrived at destination
+      if (segIdx >= segDurations.length - 1 && elapsed >= segDurations[segIdx]) {
+        setUserPosition(routeCoords[routeCoords.length - 1]);
+        setRouteIndex(routeCoords.length - 1);
+        animRef.current = null;
+        setTimeout(() => navigate('/navigation-end'), 300);
+        return;
+      }
+
+      const tc = Math.min(elapsed / segDurations[segIdx], 1);
+      const A = routeCoords[segIdx];
+      const B = routeCoords[segIdx + 1];
+      const pos: [number, number] = [
+        A[0] + (B[0] - A[0]) * tc,
+        A[1] + (B[1] - A[1]) * tc,
+      ];
+
+      // Smooth bearing with dead-zone
+      const target = getBearing(A, B);
+      let diff = target - smoothBearing;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+      if (Math.abs(diff) > DEAD_ZONE_DEG) {
+        smoothBearing = ((smoothBearing + diff * DAMPING) % 360 + 360) % 360;
+      }
+
+      setUserPosition(pos);
+      setRouteIndex(segIdx);
+      setDisplayBearing(smoothBearing);
+
+      animRef.current = requestAnimationFrame(tick);
+    };
+
+    animRef.current = requestAnimationFrame(tick);
+  }, [routeCoords, navigate]);
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
-  // Current heading bearing (degrees from north, clockwise)
-  const bearingIdx = Math.min(routeIndex, routeCoords.length - 2);
-  const currentBearing = routeCoords.length > 1
-    ? getBearing(routeCoords[bearingIdx], routeCoords[bearingIdx + 1])
-    : 0;
-
   const friendRoutes = juanAccepted ? [{
     name: 'Juan',
+    avatar: AVATAR_BY_NAME['Juan'],
     coordinates: juanRoute,
     position: juanPosition,
   }] : [];
@@ -254,8 +330,7 @@ const Navigation: FC = () => {
           userPosition={userPosition}
           fitToRoute={fitAll && !focusJuan}
           focusBounds={focusJuan ? juanRoute : undefined}
-          centerOffsetPx={(!fitAll && !focusJuan) ? [0, 75] : undefined}
-          mapBearing={(!fitAll && !focusJuan) ? currentBearing : undefined}
+          mapBearing={(!fitAll && !focusJuan) ? displayBearing : undefined}
           className="w-full h-full"
         />
       </div>

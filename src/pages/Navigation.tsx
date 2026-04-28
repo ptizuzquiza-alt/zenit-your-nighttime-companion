@@ -12,6 +12,37 @@ import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
 
 
 
+function getBearing(a: [number, number], b: [number, number]): number {
+  const lat1 = a[0] * Math.PI / 180;
+  const lat2 = b[0] * Math.PI / 180;
+  const dLon = (b[1] - a[1]) * Math.PI / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function haversineM(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const dLat = (b[0] - a[0]) * Math.PI / 180;
+  const dLon = (b[1] - a[1]) * Math.PI / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+function getDirection(coords: [number, number][], idx: number): { dir: 'left' | 'right' | 'straight'; distM: number } {
+  const remaining = coords.slice(idx);
+  const distM = remaining.length > 1
+    ? remaining.reduce((sum, pt, i) => i === 0 ? sum : sum + haversineM(remaining[i - 1], pt), 0)
+    : 0;
+  if (idx + 2 >= coords.length) return { dir: 'straight', distM };
+  const b1 = getBearing(coords[idx], coords[idx + 1]);
+  const b2 = getBearing(coords[idx + 1], coords[idx + 2]);
+  let diff = b2 - b1;
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  return { dir: diff > 20 ? 'right' : diff < -20 ? 'left' : 'straight', distM };
+}
+
 const JUAN_ORIGIN: [number, number] = [41.3950, 2.1650];
 const JUAN_DEST: [number, number] = [41.4080, 2.1820];
 const JUAN_FALLBACK: [number, number][] = [
@@ -41,7 +72,6 @@ const Navigation: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_shared_contacts') || '[]');
     } catch { return []; }
   });
-  const [arrived, setArrived] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const sheetCollapsedByUser = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -120,15 +150,8 @@ const Navigation: FC = () => {
     return () => clearInterval(interval);
   }, [routeCoords]);
 
-  // Collapse sheet when arrived popup shows
-  useEffect(() => {
-    if (arrived) {
-      setSheetOffset(getSheetContentHeight());
-    }
-  }, [arrived]);
-
   const handleFastForward = () => {
-    if (fastForwardRef.current) return; // already running
+    if (fastForwardRef.current) return;
     let idx = 0;
     fastForwardRef.current = setInterval(() => {
       idx += 1;
@@ -138,7 +161,7 @@ const Navigation: FC = () => {
         if (idx === routeCoords.length - 1) {
           clearInterval(fastForwardRef.current!);
           fastForwardRef.current = null;
-          setTimeout(() => setArrived(true), 600);
+          setTimeout(() => navigate('/navigation-end'), 600);
         }
       } else {
         clearInterval(fastForwardRef.current!);
@@ -222,15 +245,24 @@ const Navigation: FC = () => {
         />
       </div>
 
-      {/* Direction card */}
-      <div className="fixed top-12 left-4 right-4 z-[1000]">
-        <DirectionCard
-          distance="Siga 900 m y"
-          instruction="gire a la derecha"
-          direction="right"
-          onIconClick={handleFastForward}
-        />
-      </div>
+      {/* Direction card — dynamic based on route progress */}
+      {(() => {
+        const { dir, distM } = getDirection(routeCoords, routeIndex);
+        const distLabel = distM > 1000
+          ? `Siga ${(distM / 1000).toFixed(1)} km y`
+          : `Siga ${Math.round(distM)} m y`;
+        const instrLabel = dir === 'right' ? 'gire a la derecha' : dir === 'left' ? 'gire a la izquierda' : 'continúe recto';
+        return (
+          <div className="fixed top-12 left-4 right-4 z-[1000]">
+            <DirectionCard
+              distance={distLabel}
+              instruction={instrLabel}
+              direction={dir}
+              onIconClick={handleFastForward}
+            />
+          </div>
+        );
+      })()}
 
       {/* Bottom sheet - portal to escape overflow-hidden ancestor */}
       {createPortal(
@@ -407,32 +439,6 @@ const Navigation: FC = () => {
         initialSelected={sharedContacts}
         contacts={CONTACTS}
       />
-
-      {/* Arrived overlay */}
-      {arrived && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md bg-card rounded-t-3xl px-6 pt-8 pb-12 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mb-5">
-              <svg viewBox="0 0 24 24" className="w-8 h-8 text-accent" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                <circle cx="12" cy="9" r="2.5" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-3">¡Has llegado a tu destino!</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-[280px]">
-              Tu ubicación no se volverá a compartir hasta que vuelvas a compartir tu ruta con tus amigos.
-            </p>
-            <button
-              onClick={() => navigate('/navigation-end')}
-              className="w-full py-4 rounded-full font-bold text-base text-background"
-              style={{ background: '#FFEE02' }}
-            >
-              Continuar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Cancel confirmation overlay */}
       {showCancelConfirm && (

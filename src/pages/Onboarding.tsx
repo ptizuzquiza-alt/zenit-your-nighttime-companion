@@ -203,7 +203,7 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
         </div>
       ) : slide.illustration === 'share' ? (
         <div className="flex-1 flex items-start justify-center overflow-hidden relative">
-          <img src="/Navigation - Shared - new.png" alt="Compartir ruta" className="w-full h-full object-cover object-top" />
+          <img src="/amigos.png" alt="Compartir ruta" className="w-full h-full object-cover object-top" />
           <div
             className="absolute inset-x-0 bottom-0 h-80 pointer-events-none"
             style={{ background: 'linear-gradient(to top, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.98) 8%, rgba(15, 23, 42, 0.92) 18%, rgba(15, 23, 42, 0.72) 32%, rgba(15, 23, 42, 0.4) 52%, rgba(15, 23, 42, 0.1) 72%, rgba(15, 23, 42, 0) 100%)' }}
@@ -212,9 +212,10 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
       ) : (
         <div className="w-full flex-1 flex items-center overflow-hidden relative">
           <img
-            src={slide.illustration === 'route' ? '/Navigation - ruta.png' : '/Navigation - Shared - new.png'}
+            src="/Navigation - Shared -NEW.png"
             alt={slide.illustration === 'route' ? 'Ruta segura' : 'Ruta de amigos'}
-            className={`w-full h-full ${slide.illustration === 'route' ? 'object-contain object-center' : 'object-cover object-center'}`}
+            className="w-full h-full object-cover object-center"
+            style={{ transform: 'scale(1.3)' }}
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>

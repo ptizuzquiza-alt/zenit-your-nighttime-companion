@@ -202,7 +202,7 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>
       ) : slide.illustration === 'share' ? (
-        <div className="flex-1 flex items-start justify-center px-4 overflow-hidden">
+        <div className="flex-1 flex items-start justify-center px-6 overflow-hidden">
           <div className="relative w-full h-full rounded-[26px] overflow-hidden">
             <img src="/amigos.png" alt="Compartir ruta" className="w-full h-full object-cover object-top" />
             <div
@@ -212,8 +212,8 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
           </div>
         </div>
       ) : (
-        <div className="w-full flex-1 flex items-center px-4 overflow-hidden">
-          <div className="relative w-full h-full rounded-[26px] overflow-hidden">
+        <div className="w-full flex-1 flex items-center overflow-hidden">
+          <div className="relative w-full h-full overflow-hidden">
             <img
               src={slide.illustration === 'route' ? '/SAFE.png' : '/SHARED.png'}
               alt={slide.illustration === 'route' ? 'Ruta segura' : 'Ruta de amigos'}

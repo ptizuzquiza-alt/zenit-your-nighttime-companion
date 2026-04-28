@@ -180,6 +180,12 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
 
+  // Current heading bearing (degrees from north, clockwise)
+  const bearingIdx = Math.min(routeIndex, routeCoords.length - 2);
+  const currentBearing = routeCoords.length > 1
+    ? getBearing(routeCoords[bearingIdx], routeCoords[bearingIdx + 1])
+    : 0;
+
   const friendRoutes = juanAccepted ? [{
     name: 'Juan',
     coordinates: juanRoute,
@@ -249,6 +255,7 @@ const Navigation: FC = () => {
           fitToRoute={fitAll && !focusJuan}
           focusBounds={focusJuan ? juanRoute : undefined}
           centerOffsetPx={(!fitAll && !focusJuan) ? [0, 75] : undefined}
+          mapBearing={(!fitAll && !focusJuan) ? currentBearing : undefined}
           className="w-full h-full"
         />
       </div>

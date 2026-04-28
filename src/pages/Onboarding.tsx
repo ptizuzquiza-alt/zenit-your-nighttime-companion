@@ -202,20 +202,19 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>
       ) : slide.illustration === 'share' ? (
-        <div className="flex-1 flex items-start justify-center px-6 pb-16 overflow-hidden relative">
-          <img src="/amigos.png" alt="Compartir ruta" className="w-full h-auto block" style={{ transform: 'translateY(0)' }} />
+        <div className="flex-1 flex items-start justify-center overflow-hidden relative">
+          <img src="/Navigation - Shared - new.png" alt="Compartir ruta" className="w-full h-full object-cover object-top" />
           <div
             className="absolute inset-x-0 bottom-0 h-80 pointer-events-none"
             style={{ background: 'linear-gradient(to top, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.98) 8%, rgba(15, 23, 42, 0.92) 18%, rgba(15, 23, 42, 0.72) 32%, rgba(15, 23, 42, 0.4) 52%, rgba(15, 23, 42, 0.1) 72%, rgba(15, 23, 42, 0) 100%)' }}
           />
         </div>
       ) : (
-        <div className="w-full flex-1 flex items-start overflow-hidden relative">
+        <div className="w-full flex-1 flex items-center overflow-hidden relative">
           <img
-            src={slide.illustration === 'route' ? '/Navigation - ruta.png' : '/Navigation - amigos.png'}
+            src={slide.illustration === 'route' ? '/Navigation - ruta.png' : '/Navigation - Shared - new.png'}
             alt={slide.illustration === 'route' ? 'Ruta segura' : 'Ruta de amigos'}
-            className="w-full h-auto block"
-            style={{ transform: 'translateY(0)' }}
+            className={`w-full h-full ${slide.illustration === 'route' ? 'object-contain object-center' : 'object-cover object-center'}`}
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>

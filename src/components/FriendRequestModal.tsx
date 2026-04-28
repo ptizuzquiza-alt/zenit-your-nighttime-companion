@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { AVATAR_BY_NAME } from '@/config/contacts';
 
 interface FriendRequest {
   id: string;
@@ -19,8 +20,12 @@ export const FriendRequestModal: FC<FriendRequestModalProps> = ({ request, onAcc
       <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
         {/* Avatar */}
         <div className="flex justify-center mb-4">
-          <div className="w-14 h-14 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center">
-            <span className="text-xl font-bold text-accent">{request.name[0]}</span>
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden ${request.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : 'bg-accent/20 border-2 border-accent'}`}>
+            {AVATAR_BY_NAME[request.name] ? (
+              <img src={AVATAR_BY_NAME[request.name]} alt={request.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold text-accent">{request.name[0]}</span>
+            )}
           </div>
         </div>
 

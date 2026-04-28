@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { UserPlus, X, Check } from 'lucide-react';
+import { AVATAR_BY_NAME } from '@/config/contacts';
 
 interface PendingRequest {
   id: string;
@@ -26,8 +27,12 @@ export const PendingRequestsList: FC<PendingRequestsListProps> = ({ requests, on
           key={req.id}
           className="flex items-center gap-3 rounded-2xl bg-card/90 backdrop-blur-md border border-border p-3"
         >
-          <div className="w-9 h-9 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-accent">{req.name[0]}</span>
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${req.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} bg-accent/20`}>
+            {AVATAR_BY_NAME[req.name] ? (
+              <img src={AVATAR_BY_NAME[req.name]} alt={req.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold text-accent">{req.name[0]}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground font-medium truncate">{req.name}</p>

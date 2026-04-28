@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { AVATAR_BY_NAME } from '@/config/contacts';
 
 interface Group {
   id: string;
@@ -12,10 +13,11 @@ interface Group {
 const ALL_FRIENDS = [
   { id: 'juan', name: 'Juan' },
   { id: 'marta', name: 'Marta' },
+  { id: 'javier', name: 'Javier' },
 ];
 
 const PENDING_REQUESTS = [
-  { id: 'ana', name: 'Ana' },
+  { id: 'carla', name: 'Carla' },
 ];
 
 const Friends: FC = () => {
@@ -25,6 +27,8 @@ const Friends: FC = () => {
   const [groupName, setGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('zenit_name') || 'Patricia' : 'Patricia';
+  const [friends, setFriends] = useState(ALL_FRIENDS);
   const [showAddToGroup, setShowAddToGroup] = useState(false);
   const [addToGroupMembers, setAddToGroupMembers] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>(() => {
@@ -46,6 +50,10 @@ const Friends: FC = () => {
 
   const handleAccept = (id: string, name: string) => {
     setPendingRequests(prev => prev.filter(r => r.id !== id));
+    setFriends(prev => {
+      if (prev.some(friend => friend.id === id)) return prev;
+      return [...prev, { id, name }];
+    });
     toast.success(`Ahora sigues a ${name}`);
   };
 
@@ -114,9 +122,13 @@ const Friends: FC = () => {
         <h1 className="text-foreground font-semibold text-lg">Amigos</h1>
         <button
           onClick={() => navigate('/profile')}
-          className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center"
+          className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center overflow-hidden"
         >
-          <User className="w-4 h-4 text-primary" />
+          {AVATAR_BY_NAME[currentUserName] ? (
+            <img src={AVATAR_BY_NAME[currentUserName]} alt={currentUserName} className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-4 h-4 text-primary" />
+          )}
         </button>
       </div>
 
@@ -179,11 +191,15 @@ const Friends: FC = () => {
                 key={req.id}
                 className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3"
               >
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${req.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} bg-primary/20`}>
+                {AVATAR_BY_NAME[req.name] ? (
+                  <img src={AVATAR_BY_NAME[req.name]} alt={req.name} className="w-full h-full object-cover" />
+                ) : (
                   <span className="text-primary font-semibold text-sm">
                     {req.name[0]}
                   </span>
-                </div>
+                )}
+              </div>
                 <span className="flex-1 text-foreground text-sm font-medium">{req.name}</span>
                 <button
                   onClick={() => handleAccept(req.id, req.name)}
@@ -207,15 +223,19 @@ const Friends: FC = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Mis amigos
           </p>
-          {ALL_FRIENDS.map(friend => (
+          {friends.map(friend => (
             <div
               key={friend.id}
               className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3"
             >
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-semibold text-sm">
-                  {friend.name[0]}
-                </span>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${friend.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} bg-primary/20`}>
+                {AVATAR_BY_NAME[friend.name] ? (
+                  <img src={AVATAR_BY_NAME[friend.name]} alt={friend.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-primary font-semibold text-sm">
+                    {friend.name[0]}
+                  </span>
+                )}
               </div>
               <span className="flex-1 text-foreground text-sm font-medium">{friend.name}</span>
               <div className="flex items-center gap-1.5">

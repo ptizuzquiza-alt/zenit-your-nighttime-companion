@@ -48,7 +48,7 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
           </div>
         )}
         <div className="flex items-start gap-3 cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick}>
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} ${avatar ? '' : 'bg-secondary'}`}>
             {avatar ? (
               <img src={avatar} alt={name} className="w-full h-full object-cover" />
             ) : (

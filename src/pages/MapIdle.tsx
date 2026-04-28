@@ -6,6 +6,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendRequestModal } from '@/components/FriendRequestModal';
 import { PendingRequestsList } from '@/components/PendingRequestsList';
+import { AVATAR_BY_NAME } from '@/config/contacts';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -51,6 +52,7 @@ const MapIdle: FC = () => {
   const [friendData, setFriendData] = useState<
     { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number }[]
   >([]);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
@@ -146,6 +148,13 @@ const MapIdle: FC = () => {
       sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
       return next;
     });
+  }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('zenit_photo');
+    if (stored) {
+      setProfilePhoto(stored);
+    }
   }, []);
 
   useEffect(() => {
@@ -250,9 +259,17 @@ const MapIdle: FC = () => {
         </div>
         <button
           onClick={() => navigate('/profile')}
-          className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0"
+          className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
-          <User className="w-5 h-5 text-muted-foreground" />
+          {profilePhoto || AVATAR_BY_NAME['Patricia'] ? (
+            <img
+              src={profilePhoto || AVATAR_BY_NAME['Patricia'] || ''}
+              alt="Patricia"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User className="w-5 h-5 text-muted-foreground" />
+          )}
         </button>
       </div>
 
@@ -318,6 +335,7 @@ const MapIdle: FC = () => {
                   <FriendActivityCard
                     key={fr.name}
                     name={fr.name}
+                    avatar={AVATAR_BY_NAME[fr.name]}
                     activity={fr.activity}
                     destination={fr.destination}
                     address={fr.address}

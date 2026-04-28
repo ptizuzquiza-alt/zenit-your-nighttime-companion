@@ -1,7 +1,8 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { AVATAR_BY_NAME } from '@/config/contacts';
 
 type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | null;
 
@@ -17,6 +18,15 @@ const Profile: FC = () => {
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('zenit_photo');
+    if (stored) {
+      setProfilePhoto(stored);
+    }
+  }, []);
   const [showPw, setShowPw] = useState(false);
 
   // Privacy toggles
@@ -64,8 +74,31 @@ const Profile: FC = () => {
     </button>
   );
 
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setProfilePhoto(result);
+      localStorage.setItem('zenit_photo', result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoChange}
+      />
       {/* Back button */}
       <div className="pt-12 px-4">
         <button
@@ -78,9 +111,21 @@ const Profile: FC = () => {
 
       {/* Header */}
       <div className="pt-4 pb-6 px-6 flex flex-col items-center gap-3">
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40">
-          <User className="w-9 h-9 text-primary" />
-        </div>
+        <button
+          type="button"
+          onClick={handlePhotoClick}
+          className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden"
+        >
+          {profilePhoto || AVATAR_BY_NAME[name] ? (
+            <img
+              src={profilePhoto || AVATAR_BY_NAME[name] || ''}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User className="w-9 h-9 text-primary" />
+          )}
+        </button>
         <div className="text-center">
           <h2 className="text-foreground font-semibold text-lg">{name}</h2>
           <p className="text-primary/80 text-sm">{username}</p>
@@ -210,9 +255,21 @@ const Profile: FC = () => {
               </button>
             </div>
             <div className="flex flex-col items-center gap-3 py-2">
-              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40">
-                <User className="w-9 h-9 text-primary" />
-              </div>
+              <button
+                type="button"
+                onClick={handlePhotoClick}
+                className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden"
+              >
+                {profilePhoto || AVATAR_BY_NAME[name] ? (
+                  <img
+                    src={profilePhoto || AVATAR_BY_NAME[name] || ''}
+                    alt={name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-9 h-9 text-primary" />
+                )}
+              </button>
             </div>
             <div className="space-y-3">
               <div>

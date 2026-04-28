@@ -8,7 +8,7 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
-import { CONTACTS } from '@/config/contacts';
+import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
 
 
 
@@ -354,6 +354,7 @@ const Navigation: FC = () => {
                   }
                 }}
                 name="Juan"
+                avatar={AVATAR_BY_NAME['Juan']}
                 activity="ha completado el 50% de su ruta."
                 destination="L'Auditori"
                 address="Carrer de Lepant, 150, Eixample"

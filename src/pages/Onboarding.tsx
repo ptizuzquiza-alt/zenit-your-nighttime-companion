@@ -17,12 +17,12 @@ const SLIDES = [
   {
     id: 'friends-route',
     title: 'Visualiza la ruta de\ntus amigos',
-    subtitle: 'Cuando tus amigos compartan su trayecto contigo, podrás ver su ruta en tiempo real directamente en el mapa.',
+    subtitle: 'Cuando tus amigos compartan su trayecto contigo, podrás ver su ruta en tiempo real directamente en el\u00A0mapa.',
     illustration: 'friends',
   },
   {
     id: 'trust-network',
-    title: 'Tu red de\nconfianza',
+    title: 'Tu red de confianza',
     subtitle: 'Agrega a tus amigos y comparte tu ruta para que puedan seguir tu recorrido en tiempo real.',
     illustration: 'share',
   },
@@ -35,9 +35,9 @@ const SWIPE_THRESHOLD = 60;
 
 const CityIllustration: FC = () => (
   <img
-    src="/bcn.png"
-    alt="Barcelona"
-    className="w-full h-auto block"
+    src="/city.png"
+    alt="Barcelona skyline"
+    className="absolute bottom-0 left-1/2 -translate-x-[42%] h-full w-auto max-w-none block"
     onError={(e) => {
       const target = e.currentTarget;
       target.style.display = 'none';
@@ -161,12 +161,29 @@ const Dots: FC<{ total: number; current: number }> = ({ total, current }) => (
 // ─── Slide content ──────────────────────────────────────────────
 
 const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ slide, onContinue }) => (
-  <div className="flex flex-col h-full w-full flex-shrink-0" style={{ width: '100vw' }}>
+  <div className="flex flex-col h-full flex-shrink-0" style={{ width: `${100 / TOTAL}%` }}>
     <div className="flex flex-col px-6 pt-28 pb-4 items-center text-center">
-      <h1 className="text-3xl font-bold text-foreground leading-tight mb-3 whitespace-pre-line">
-        {slide.title}
+      <h1
+        className={`font-extrabold text-foreground mb-4 whitespace-pre-line w-full ${
+          slide.id === 'welcome' ? 'text-[40px] leading-[54px]' : 'text-[32px] leading-[43px]'
+        }`}
+      >
+        {slide.id === 'welcome' ? (
+          <>
+            <span>Con </span>
+            <img
+              src="/logo.png"
+              alt="Zenit"
+              className="inline-block h-[1.05em] align-bottom mx-1"
+              style={{ transform: 'translateY(-10px)' }}
+            />
+            <span className="block">no vas a ciegas</span>
+          </>
+        ) : (
+          slide.title
+        )}
       </h1>
-      <p className="text-sm text-muted-foreground leading-relaxed mb-10 max-w-[280px]">
+      <p className="text-xl text-muted-foreground leading-[27px] mb-10 max-w-[320px]">
         {slide.subtitle}
       </p>
       <button
@@ -179,21 +196,26 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
 
     <div className="flex-1 flex flex-col min-h-0 justify-end">
       {slide.illustration === 'city' ? (
-        <div className="w-full overflow-hidden relative">
+        <div className="w-full flex-1 min-h-0 overflow-hidden relative">
           <CityIllustration />
           <CityFallback />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>
       ) : slide.illustration === 'share' ? (
-        <div className="flex-1 flex items-center justify-center px-6 pb-16">
-          <img src="/movil-amigos.png" alt="Compartir ruta" className="w-full h-auto block" />
+        <div className="flex-1 flex items-end justify-center px-6 pb-16 overflow-hidden relative">
+          <img src="/amigos.png" alt="Compartir ruta" className="w-full h-auto block" style={{ transform: 'translateY(24px)' }} />
+          <div
+            className="absolute inset-x-0 bottom-0 h-80 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.98) 8%, rgba(15, 23, 42, 0.92) 18%, rgba(15, 23, 42, 0.72) 32%, rgba(15, 23, 42, 0.4) 52%, rgba(15, 23, 42, 0.1) 72%, rgba(15, 23, 42, 0) 100%)' }}
+          />
         </div>
       ) : (
-        <div className="w-full mt-auto overflow-hidden relative">
+        <div className="w-full flex-1 flex items-end overflow-hidden relative">
           <img
-            src={slide.illustration === 'route' ? '/Navigation-ruta.png' : '/Navigation-amigos.png'}
+            src={slide.illustration === 'route' ? '/Navigation - ruta.png' : '/Navigation - amigos.png'}
             alt={slide.illustration === 'route' ? 'Ruta segura' : 'Ruta de amigos'}
             className="w-full h-auto block"
+            style={{ transform: slide.illustration === 'route' ? 'translateY(300px)' : 'translateY(280px)' }}
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
         </div>
@@ -232,7 +254,7 @@ const LocationModal: FC<{ onAllow: () => void; onSkip: () => void }> = ({ onAllo
         </svg>
       </div>
       <h2 className="text-xl font-bold text-foreground mb-2">Acceso a tu ubicación</h2>
-      <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-[260px]">
+      <p className="text-[18px] text-muted-foreground leading-relaxed mb-8 w-full">
         Zenit necesita tu ubicación para mostrarte rutas seguras y que tus amigos puedan seguirte en tiempo real.
       </p>
       <button
@@ -260,7 +282,7 @@ const RegisterScreen: FC<{ onSubmit: () => void; onBack: () => void }> = ({ onSu
   const [password, setPassword] = useState('');
 
   return (
-    <div className="flex flex-col h-full flex-shrink-0 px-6 pt-16 pb-10 overflow-y-auto" style={{ width: '100vw' }}>
+    <div className="flex flex-col h-full flex-shrink-0 px-6 pt-16 pb-10 overflow-y-auto" style={{ width: `${100 / TOTAL}%` }}>
       <button onClick={onBack} className="self-start mb-6 text-muted-foreground flex items-center gap-1 text-sm">
         <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M15 18l-6-6 6-6" />
@@ -268,8 +290,8 @@ const RegisterScreen: FC<{ onSubmit: () => void; onBack: () => void }> = ({ onSu
         Volver
       </button>
 
-      <h1 className="text-2xl font-bold text-foreground mb-1">Crea tu cuenta</h1>
-      <p className="text-sm text-muted-foreground mb-7 leading-relaxed">
+      <h1 className="text-[32px] font-extrabold text-foreground mb-2 leading-[43px] w-full text-center">Crea tu cuenta</h1>
+      <p className="text-xl text-muted-foreground mb-7 leading-[27px] text-center">
         Únete a Zenit y comparte tus rutas con tu círculo de confianza.
       </p>
 
@@ -299,9 +321,9 @@ const LoginScreen: FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLo
   const [password, setPassword] = useState('');
 
   return (
-    <div className="flex flex-col h-full flex-shrink-0 px-6 pt-20 pb-10" style={{ width: '100vw' }}>
-      <h1 className="text-2xl font-bold text-foreground mb-2">Mantente conectado</h1>
-      <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+    <div className="flex flex-col h-full flex-shrink-0 px-6 pt-20 pb-10" style={{ width: `${100 / TOTAL}%` }}>
+      <h1 className="text-[32px] font-extrabold text-foreground mb-2 leading-[43px] w-full text-center">Mantente conectado</h1>
+      <p className="text-xl text-muted-foreground mb-8 leading-[27px] text-center">
         Crea una cuenta o inicia sesión para compartir tus rutas y mantenerte conectado con tu círculo.
       </p>
 
@@ -437,7 +459,7 @@ const Onboarding: FC = () => {
     touchStartX.current = null;
   };
 
-  const translateX = `calc(${-step * 100}vw + ${dragOffset}px)`;
+  const translateX = `calc(${-step * (100 / TOTAL)}% + ${dragOffset}px)`;
 
   return (
     <div className="relative h-screen w-full bg-background overflow-hidden select-none">
@@ -455,7 +477,7 @@ const Onboarding: FC = () => {
       <div
         className="flex h-full touch-pan-y"
         style={{
-          width: `${TOTAL * 100}vw`,
+          width: `${TOTAL * 100}%`,
           transform: `translateX(${translateX})`,
           transition: isAnimating || dragOffset === 0 ? 'transform 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
           willChange: 'transform',

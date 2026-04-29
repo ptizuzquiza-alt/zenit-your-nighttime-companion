@@ -77,6 +77,7 @@ const MapIdle: FC = () => {
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [addFriendInput, setAddFriendInput] = useState('');
   const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
+  const [flyToPoint, setFlyToPoint] = useState<[number, number] | undefined>(undefined);
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show next request from queue with delay
@@ -250,6 +251,7 @@ const MapIdle: FC = () => {
               : acceptedFriendRoutes)
           : []}
         focusBounds={focusBounds}
+        flyToPoint={flyToPoint}
         className="absolute inset-0"
       />
 
@@ -349,7 +351,14 @@ const MapIdle: FC = () => {
                     onClick={() => {
                       const opening = activeFriendLabel !== fr.name;
                       setActiveFriendLabel(opening ? fr.name : null);
-                      if (opening && match) setFocusBounds(match.coordinates);
+                      if (opening && match) {
+                        setFlyToPoint([...match.position] as [number, number]);
+                        setFocusBounds(undefined);
+                      } else {
+                        setFlyToPoint(undefined);
+                        const allCoords = acceptedFriendRoutes.flatMap(r => r.coordinates);
+                        if (allCoords.length >= 2) setFocusBounds(allCoords);
+                      }
                     }}
                     className={`w-11 h-11 rounded-full border-2 overflow-hidden flex-shrink-0 transition-all duration-200 ${
                       isActive ? 'border-white scale-105' : 'border-white/50'

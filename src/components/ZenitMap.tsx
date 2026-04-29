@@ -41,6 +41,7 @@ interface ZenitMapProps {
   userPosition?: [number, number];
   fitToRoute?: boolean;
   focusBounds?: [number, number][];
+  flyToPoint?: [number, number];
   centerOffsetPx?: [number, number];
   mapBearing?: number;
   className?: string;
@@ -70,6 +71,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   userPosition,
   fitToRoute = false,
   focusBounds,
+  flyToPoint,
   centerOffsetPx,
   mapBearing,
   className = '',
@@ -130,6 +132,12 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     const bounds = L.latLngBounds(focusBounds);
     mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 350], maxZoom: 16, animate: true });
   }, [focusBounds]);
+
+  // Fly to a specific point with high zoom
+  useEffect(() => {
+    if (!mapRef.current || !flyToPoint) return;
+    mapRef.current.flyTo(flyToPoint, 18, { animate: true, duration: 0.8 });
+  }, [flyToPoint]);
 
   // Update markers and routes
   useEffect(() => {

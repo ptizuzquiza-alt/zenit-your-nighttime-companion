@@ -382,10 +382,15 @@ const MapIdle: FC = () => {
         <button
           onClick={() => {
             setFocusBounds(undefined);
+            setActiveFriendLabel(null);
             if ('geolocation' in navigator) {
               navigator.geolocation.getCurrentPosition((position) => {
-                setUserLocation([position.coords.latitude, position.coords.longitude]);
+                const loc: [number, number] = [position.coords.latitude, position.coords.longitude];
+                setUserLocation(loc);
+                setFlyToPoint([...loc]);
               });
+            } else {
+              setFlyToPoint([...userLocation]);
             }
           }}
           className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"

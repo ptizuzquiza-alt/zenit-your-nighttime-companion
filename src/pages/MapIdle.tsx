@@ -76,6 +76,7 @@ const MapIdle: FC = () => {
   });
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [addFriendInput, setAddFriendInput] = useState('');
+  const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show next request from queue with delay
@@ -243,7 +244,11 @@ const MapIdle: FC = () => {
         center={userLocation}
         zoom={15}
         origin={userLocation}
-        friendRoutes={showFriends ? acceptedFriendRoutes : []}
+        friendRoutes={showFriends
+          ? (activeFriendLabel
+              ? acceptedFriendRoutes.filter(r => r.name === activeFriendLabel)
+              : acceptedFriendRoutes)
+          : []}
         focusBounds={focusBounds}
         className="absolute inset-0"
       />
@@ -273,23 +278,94 @@ const MapIdle: FC = () => {
         </button>
       </div>
 
-      {/* Friends FAB with badge */}
-      <div className="absolute bottom-20 left-4 z-[1000]">
-        <button
-          onClick={() => setShowFriends((p) => !p)}
-          className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-            showFriends
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-card/90 text-muted-foreground border border-border'
-          }`}
-        >
-          <Users className="w-5 h-5" />
-          {badgeCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
-              {badgeCount}
-            </span>
+      {/* Friends speed-dial */}
+      <div className="absolute bottom-20 left-4 right-4 z-[1000] flex flex-col items-start gap-2">
+        {/* Label card above the row */}
+        {showFriends && activeFriendLabel && (() => {
+          const fr = acceptedFriendData.find(f => f.name === activeFriendLabel);
+          const times = friendTimes.find(t => t.name === activeFriendLabel);
+          const match = acceptedFriendRoutes.find(r => r.name === activeFriendLabel);
+          if (!fr) return null;
+          return (
+            <div className="w-full" style={{ animation: 'slideUpFade 0.15s ease both' }}>
+              <FriendActivityCard
+                name={fr.name}
+                avatar={AVATAR_BY_NAME[fr.name]}
+                activity={fr.activity}
+                destination={fr.destination}
+                address={fr.address}
+                time={times?.time ?? `Hace ${fr.minutesAgo} min`}
+                departureTime={times?.departureTime}
+                estimatedArrival={times?.estimatedArrival}
+                tracking={!hiddenFriends.includes(fr.id)}
+                onToggleTracking={() => toggleFriendVisibility(fr.id)}
+                onClick={() => { if (match) setFocusBounds(match.coordinates); }}
+              />
+            </div>
+          );
+        })()}
+
+        {/* Pending requests above row */}
+        {showFriends && pendingRequests.length > 0 && (
+          <PendingRequestsList
+            requests={pendingRequests}
+            onAccept={handleAcceptRequest}
+            onReject={handlePendingReject}
+          />
+        )}
+
+        {/* Horizontal row: FAB first, then avatar pill */}
+        <div className="flex flex-row items-center gap-2">
+          {/* Main FAB */}
+          <button
+            onClick={() => { setShowFriends((p) => !p); setActiveFriendLabel(null); }}
+            className={`relative w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center shadow-lg transition-colors ${
+              showFriends
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card/90 text-muted-foreground border border-border'
+            }`}
+          >
+            <Users className="w-7 h-7" />
+            {badgeCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
+                {badgeCount}
+              </span>
+            )}
+          </button>
+
+          {/* Avatar pill expanding to the right */}
+          {showFriends && (
+            <div
+              className="flex flex-row gap-3 px-3 py-2 bg-primary/90 backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
+              style={{ maxWidth: 'calc(100vw - 5rem)', transformOrigin: 'left center', animation: 'pillExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+            >
+              {acceptedFriendData.map((fr, i) => {
+                const match = acceptedFriendRoutes.find((r) => r.name === fr.name);
+                const isActive = activeFriendLabel === fr.name;
+                const isDimmed = activeFriendLabel !== null && !isActive;
+                return (
+                  <button
+                    key={fr.name}
+                    onClick={() => {
+                      const opening = activeFriendLabel !== fr.name;
+                      setActiveFriendLabel(opening ? fr.name : null);
+                      if (opening && match) setFocusBounds(match.coordinates);
+                    }}
+                    className={`w-11 h-11 rounded-full border-2 overflow-hidden flex-shrink-0 transition-all duration-200 ${
+                      isActive ? 'border-white scale-105' : 'border-white/50'
+                    }`}
+                    style={{
+                      opacity: isDimmed ? 0.35 : 1,
+                      animation: `avatarPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${80 + i * 60}ms both`,
+                    }}
+                  >
+                    <img src={AVATAR_BY_NAME[fr.name]} alt={fr.name} className="w-full h-full object-cover" />
+                  </button>
+                );
+              })}
+            </div>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Locate me FAB */}
@@ -312,56 +388,7 @@ const MapIdle: FC = () => {
         </button>
       </div>
 
-      {/* Friends panel */}
-      {showFriends && (
-        <div className="absolute bottom-36 left-4 right-4 z-[1000] space-y-2 max-h-[55vh] overflow-y-auto pb-2">
-          {/* Pending requests */}
-          <PendingRequestsList
-            requests={pendingRequests}
-            onAccept={handleAcceptRequest}
-            onReject={handlePendingReject}
-          />
 
-          {/* Active friends */}
-          {acceptedFriendData.length > 0 && (
-            <>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                Amigos activos
-              </p>
-              {acceptedFriendData.map((fr) => {
-                const match = acceptedFriendRoutes.find((r) => r.name === fr.name);
-                const times = friendTimes.find((t) => t.name === fr.name);
-                return (
-                  <FriendActivityCard
-                    key={fr.name}
-                    name={fr.name}
-                    avatar={AVATAR_BY_NAME[fr.name]}
-                    activity={fr.activity}
-                    destination={fr.destination}
-                    address={fr.address}
-                    time={times?.time ?? `Hace ${fr.minutesAgo} min`}
-                    departureTime={times?.departureTime}
-                    estimatedArrival={times?.estimatedArrival}
-                    tracking={!hiddenFriends.includes(fr.id)}
-                    onToggleTracking={() => toggleFriendVisibility(fr.id)}
-                    onClick={() => {
-                      if (match) {
-                        setFocusBounds(match.coordinates);
-                      }
-                    }}
-                  />
-                );
-              })}
-            </>
-          )}
-
-          {acceptedFriendData.length === 0 && pendingRequests.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              Ningún amigo activo ahora mismo
-            </p>
-          )}
-        </div>
-      )}
 
       {/* Add friend modal */}
       {showAddFriend && (

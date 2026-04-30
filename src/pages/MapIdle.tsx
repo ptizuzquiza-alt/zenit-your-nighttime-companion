@@ -1,11 +1,9 @@
-import { FC, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Map, User, UserPlus, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
-import { FriendRequestModal } from '@/components/FriendRequestModal';
-import { PendingRequestsList } from '@/components/PendingRequestsList';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 
 const formatTime = (date: Date) =>
@@ -56,14 +54,6 @@ const MapIdle: FC = () => {
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
-  // Friend request system
-  const [notificationQueue, setNotificationQueue] = useState<{ id: string; name: string }[]>([]);
-  const [currentRequest, setCurrentRequest] = useState<{ id: string; name: string } | null>(null);
-  const [pendingRequests, setPendingRequests] = useState<{ id: string; name: string }[]>(() => {
-    try {
-      return JSON.parse(sessionStorage.getItem('zenit_pending_requests') || '[]');
-    } catch { return []; }
-  });
   const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
     try {
       return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]');
@@ -78,78 +68,20 @@ const MapIdle: FC = () => {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
   const [flyToPoint, setFlyToPoint] = useState<[number, number] | undefined>(undefined);
-  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Show next request from queue with delay
-  const showNextFromQueue = useCallback((queue: { id: string; name: string }[]) => {
-    if (queue.length === 0) {
-      setCurrentRequest(null);
-      return;
-    }
-    queueTimerRef.current = setTimeout(() => {
-      setCurrentRequest(queue[0]);
-      setNotificationQueue(queue.slice(1));
-    }, 2500);
-  }, []);
-
-  // Simulate incoming friend requests after a delay
+  // Auto-accept all friends when they share their location
   useEffect(() => {
-    const alreadyHandled = [...acceptedFriends, ...pendingRequests.map(r => r.id)];
-    const incoming = FRIEND_ROUTES
-      .filter(fr => !alreadyHandled.includes(fr.id))
-      .map(fr => ({ id: fr.id, name: fr.name }));
-
+    const incoming = FRIEND_ROUTES.filter(fr => !acceptedFriends.includes(fr.id));
     if (incoming.length > 0) {
       const timer = setTimeout(() => {
-        setCurrentRequest(incoming[0]);
-        setNotificationQueue(incoming.slice(1));
-      }, 2000);
+        setAcceptedFriends(prev => {
+          const next = [...new Set([...prev, ...incoming.map(fr => fr.id)])];
+          sessionStorage.setItem('zenit_accepted_friends', JSON.stringify(next));
+          return next;
+        });
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
-
-  // Cleanup timer
-  useEffect(() => {
-    return () => { if (queueTimerRef.current) clearTimeout(queueTimerRef.current); };
-  }, []);
-
-  const handleAcceptRequest = useCallback((id: string) => {
-    setAcceptedFriends(prev => {
-      const next = [...prev, id];
-      sessionStorage.setItem('zenit_accepted_friends', JSON.stringify(next));
-      return next;
-    });
-    // Remove from pending if it was there
-    setPendingRequests(prev => {
-      const next = prev.filter(r => r.id !== id);
-      sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
-      return next;
-    });
-    setCurrentRequest(null);
-    showNextFromQueue(notificationQueue);
-  }, [notificationQueue, showNextFromQueue]);
-
-  const handleRejectRequest = useCallback((id: string) => {
-    const request = currentRequest || pendingRequests.find(r => r.id === id);
-    if (request) {
-      // Move to pending (dismissed) state
-      setPendingRequests(prev => {
-        if (prev.some(r => r.id === id)) return prev;
-        const next = [...prev, { id: request.id, name: request.name }];
-        sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
-        return next;
-      });
-    }
-    setCurrentRequest(null);
-    showNextFromQueue(notificationQueue);
-  }, [currentRequest, notificationQueue, pendingRequests, showNextFromQueue]);
-
-  const handlePendingReject = useCallback((id: string) => {
-    setPendingRequests(prev => {
-      const next = prev.filter(r => r.id !== id);
-      sessionStorage.setItem('zenit_pending_requests', JSON.stringify(next));
-      return next;
-    });
   }, []);
 
   useEffect(() => {
@@ -217,7 +149,7 @@ const MapIdle: FC = () => {
       return { name, avatar: AVATAR_BY_NAME[name], coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
     });
 
-  const badgeCount = acceptedFriends.length + pendingRequests.length;
+  const badgeCount = acceptedFriends.length;
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
@@ -306,15 +238,6 @@ const MapIdle: FC = () => {
             </div>
           );
         })()}
-
-        {/* Pending requests above row */}
-        {showFriends && pendingRequests.length > 0 && (
-          <PendingRequestsList
-            requests={pendingRequests}
-            onAccept={handleAcceptRequest}
-            onReject={handlePendingReject}
-          />
-        )}
 
         {/* Horizontal row: FAB first, then avatar pill */}
         <div className="flex flex-row items-center gap-2">
@@ -436,13 +359,6 @@ const MapIdle: FC = () => {
           </div>
         </div>
       )}
-
-      {/* Friend request modal */}
-      <FriendRequestModal
-        request={currentRequest}
-        onAccept={handleAcceptRequest}
-        onReject={handleRejectRequest}
-      />
 
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">

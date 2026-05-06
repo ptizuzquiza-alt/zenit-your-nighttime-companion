@@ -109,9 +109,11 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  body, html {
+    @apply text-foreground font-sans antialiased;
+    background: #08051a;
     font-family: 'Satoshi', sans-serif;
+    overscroll-behavior: none;
   }
 }
 

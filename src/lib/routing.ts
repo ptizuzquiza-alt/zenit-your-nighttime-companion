@@ -1,6 +1,8 @@
 // OSRM public routing API (CORS enabled)
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
+import { fetchStreetLamps, scoreLighting, getBoundingBox } from './streetlamps';
+
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;
 
@@ -120,8 +122,33 @@ async function fetchNudged(
   return parseOSRMRoute(res.routes[0]);
 }
 
+/** Turns per km metric (fewer = main avenues) */
+function turnsPerKm(r: RouteResult): number {
+  let turns = 0;
+  for (let i = 2; i < r.coordinates.length; i++) {
+    const [p, c, n] = [r.coordinates[i - 2], r.coordinates[i - 1], r.coordinates[i]];
+    const a1 = Math.atan2(c[0] - p[0], c[1] - p[1]);
+    const a2 = Math.atan2(n[0] - c[0], n[1] - c[1]);
+    let diff = Math.abs(a2 - a1) * (180 / Math.PI);
+    if (diff > 180) diff = 360 - diff;
+    if (diff > 25) turns++;
+  }
+  return r.distance > 0 ? turns / (r.distance / 1000) : 0;
+}
+
 /**
- * Returns one Zenit route optimized for safety/main avenues.
+ * Combined safety score: 70% illumination (real Supabase data) + 30% main avenues.
+ * Higher = safer/better lit.
+ */
+function safetyScore(r: RouteResult, lightScore: number): number {
+  const tpk = turnsPerKm(r);
+  const straightScore = 1 / (1 + tpk / 10); // normalise turns into 0-1
+  return lightScore * 0.7 + straightScore * 0.3;
+}
+
+/**
+ * Returns one Zenit route optimized for illumination + main avenues.
+ * Uses real Barcelona street lamp data from Supabase.
  */
 export async function fetchZenitRoute(
   origin: [number, number],
@@ -139,23 +166,8 @@ export async function fetchZenitRoute(
     fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2&steps=true`),
   ]);
 
-  const hasExcessiveBacktracking = (coords: [number, number][]) => {
-    if (coords.length < 2) return false;
-    return backtrackRatio(coords, destination) > 0.3;
-  };
-
-  const turnsPerKm = (r: RouteResult) => {
-    let turns = 0;
-    for (let i = 2; i < r.coordinates.length; i++) {
-      const [p, c, n] = [r.coordinates[i - 2], r.coordinates[i - 1], r.coordinates[i]];
-      const a1 = Math.atan2(c[0] - p[0], c[1] - p[1]);
-      const a2 = Math.atan2(n[0] - c[0], n[1] - c[1]);
-      let diff = Math.abs(a2 - a1) * (180 / Math.PI);
-      if (diff > 180) diff = 360 - diff;
-      if (diff > 25) turns++;
-    }
-    return r.distance > 0 ? (turns / (r.distance / 1000)) : 0;
-  };
+  const hasExcessiveBacktracking = (coords: [number, number][]) =>
+    coords.length >= 2 && backtrackRatio(coords, destination) > 0.3;
 
   const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
     ? carRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates))
@@ -165,23 +177,28 @@ export async function fetchZenitRoute(
     carCandidates.push(nudgedRes);
   }
 
-  if (carCandidates.length > 0) {
-    return [...carCandidates].sort((a, b) => turnsPerKm(a) - turnsPerKm(b))[0];
-  }
+  const allCandidates = carCandidates.length > 0 ? carCandidates : (
+    footRes?.code === 'Ok' && footRes.routes?.length
+      ? footRes.routes.map(parseOSRMRoute)
+      : []
+  );
 
-  if (footRes?.code === 'Ok' && footRes.routes?.length) {
-    return parseOSRMRoute(
-      footRes.routes.sort((a: any, b: any) => a.distance - b.distance)[0]
-    );
-  }
+  if (allCandidates.length === 0) return null;
 
-  return null;
+  // Fetch real illumination data for bounding box of all candidates
+  const bbox = getBoundingBox(allCandidates.map(r => r.coordinates));
+  const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
+
+  // Score each candidate and pick the best lit + straightest
+  return allCandidates
+    .map(r => ({ r, score: safetyScore(r, scoreLighting(r.coordinates, lamps)) }))
+    .sort((a, b) => b.score - a.score)[0].r;
 }
 
 /**
  * Returns two walking routes:
- * - Standard (fast): shortest OSRM path
- * - Zenit (safe): different corridor, clean (no hooks), max 60% longer
+ * - Fast: shortest OSRM path
+ * - Safe (Zenit): best lit route using real Supabase illumination data, max 60% longer
  */
 export async function fetchSafeAndFastRoutes(
   origin: [number, number],
@@ -189,7 +206,6 @@ export async function fetchSafeAndFastRoutes(
 ): Promise<{ safe: RouteResult | null; fast: RouteResult | null }> {
   const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
 
-  // Nudge waypoints to force different corridors
   const dist = Math.sqrt(
     Math.pow(destination[0] - origin[0], 2) + Math.pow(destination[1] - origin[1], 2)
   );
@@ -201,7 +217,7 @@ export async function fetchSafeAndFastRoutes(
     fetchNudged(origin, destination, nudgeOffset),
   ]);
 
-  // --- Fast route: shortest foot path ---
+  // Fast route: shortest foot path
   let fast: RouteResult | null = null;
   if (footRes?.code === 'Ok' && footRes.routes?.length) {
     fast = parseOSRMRoute(
@@ -209,69 +225,46 @@ export async function fetchSafeAndFastRoutes(
     );
   }
   if (!fast) {
-    // Fallback to car direct
-    if (carRes?.code === 'Ok' && carRes.routes?.length) {
-      fast = parseOSRMRoute(carRes.routes[0]);
-    }
+    if (carRes?.code === 'Ok' && carRes.routes?.length) fast = parseOSRMRoute(carRes.routes[0]);
     return { safe: fast, fast };
   }
 
-  // --- Backtracking filter helper ---
-  const hasExcessiveBacktracking = (coords: [number, number][]) => {
-    if (coords.length < 2) return false;
-    let backward = 0, total = 0;
-    for (let i = 1; i < coords.length; i++) {
-      const seg = Math.hypot(coords[i][0] - coords[i-1][0], coords[i][1] - coords[i-1][1]);
-      total += seg;
-      const prevD = Math.hypot(coords[i-1][0] - destination[0], coords[i-1][1] - destination[1]);
-      const currD = Math.hypot(coords[i][0] - destination[0], coords[i][1] - destination[1]);
-      if (currD > prevD) backward += seg;
-    }
-    return total > 0 && backward / total > 0.3;
-  };
+  const hasExcessiveBacktracking = (coords: [number, number][]) =>
+    coords.length >= 2 && backtrackRatio(coords, destination) > 0.3;
 
-  // Turns per km metric (fewer turns = main avenues)
-  const turnsPerKm = (r: RouteResult) => {
-    let turns = 0;
-    for (let i = 2; i < r.coordinates.length; i++) {
-      const [p, c, n] = [r.coordinates[i-2], r.coordinates[i-1], r.coordinates[i]];
-      const a1 = Math.atan2(c[0] - p[0], c[1] - p[1]);
-      const a2 = Math.atan2(n[0] - c[0], n[1] - c[1]);
-      let diff = Math.abs(a2 - a1) * (180 / Math.PI);
-      if (diff > 180) diff = 360 - diff;
-      if (diff > 25) turns++;
-    }
-    return r.distance > 0 ? (turns / (r.distance / 1000)) : 0;
-  };
-
-  // --- Zenit (safe) route: prefer car-profile (main avenues), fewest turns ---
   const maxDist = fast.distance * 1.6;
 
-  // Collect car-profile candidates
+  // Collect safe-route candidates (car-profile = main avenues)
   const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
-    ? carRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates) && r.distance <= maxDist)
+    ? carRes.routes.map(parseOSRMRoute).filter(
+        (r: RouteResult) => !hasExcessiveBacktracking(r.coordinates) && r.distance <= maxDist
+      )
     : [];
 
-  // Add nudged route if valid
   if (nudgedRes && !hasExcessiveBacktracking(nudgedRes.coordinates) && nudgedRes.distance <= maxDist) {
     carCandidates.push(nudgedRes);
   }
 
-  // Pick the straightest (fewest turns) that is distinct from fast
-  const distinctCandidates = carCandidates
-    .filter(r => areDistinct(r, fast!))
-    .sort((a, b) => turnsPerKm(a) - turnsPerKm(b));
+  if (carCandidates.length === 0) return { safe: fast, fast };
 
-  let safe: RouteResult | null = distinctCandidates[0] ?? carCandidates[0] ?? null;
+  // Fetch real illumination data covering all candidates + fast route
+  const allCoords = [...carCandidates.map(r => r.coordinates), fast.coordinates];
+  const bbox = getBoundingBox(allCoords);
+  const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
 
-  if (!safe) {
-    return { safe: fast, fast };
-  }
+  // Score candidates: 70% illumination + 30% straightness
+  const scored = carCandidates
+    .map(r => ({ r, score: safetyScore(r, scoreLighting(r.coordinates, lamps)) }))
+    .sort((a, b) => b.score - a.score);
 
-  // Ensure safe is always the longer one
-  if (safe.distance < fast.distance) {
-    return { safe: fast, fast: safe };
-  }
+  // Prefer a route distinct from fast; fallback to best scored
+  const distinct = scored.find(({ r }) => areDistinct(r, fast!));
+  let safe: RouteResult | null = (distinct ?? scored[0])?.r ?? null;
+
+  if (!safe) return { safe: fast, fast };
+
+  // safe should be the longer one (illuminated routes can be slightly longer)
+  if (safe.distance < fast.distance) return { safe: fast, fast: safe };
   return { safe, fast };
 }
 

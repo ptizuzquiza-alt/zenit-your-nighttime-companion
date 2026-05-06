@@ -1,5 +1,5 @@
-// Overpass API — fetches street lamp nodes from OpenStreetMap
-const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 export interface StreetLamp {
   lat: number;
@@ -7,8 +7,8 @@ export interface StreetLamp {
 }
 
 /**
- * Fetch all street lamp positions within a bounding box from OpenStreetMap.
- * Uses highway=street_lamp tag.
+ * Fetch street lamp positions within a bounding box from the Supabase
+ * light_points table (real Barcelona illumination data).
  */
 export async function fetchStreetLamps(
   minLat: number,
@@ -16,22 +16,33 @@ export async function fetchStreetLamps(
   maxLat: number,
   maxLon: number
 ): Promise<StreetLamp[]> {
-  const query = `
-    [out:json][timeout:10];
-    node["highway"="street_lamp"](${minLat},${minLon},${maxLat},${maxLon});
-    out body;
-  `;
-
   try {
-    const res = await fetch(OVERPASS_API, {
-      method: 'POST',
-      body: `data=${encodeURIComponent(query)}`,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    const params = new URLSearchParams({
+      select: 'latitude,longitude',
+      latitude: `gte.${minLat}`,
+      longitude: `gte.${minLon}`,
     });
-    const data = await res.json();
-    return (data.elements || []).map((el: any) => ({ lat: el.lat, lon: el.lon }));
-  } catch {
-    console.warn('Street lamp fetch failed, proceeding without lighting data');
+
+    // Supabase REST API supports multiple filters via query params
+    const url =
+      `${SUPABASE_URL}/rest/v1/light_points` +
+      `?select=latitude,longitude` +
+      `&latitude=gte.${minLat}&latitude=lte.${maxLat}` +
+      `&longitude=gte.${minLon}&longitude=lte.${maxLon}` +
+      `&limit=3000`;
+
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+
+    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const data: { latitude: number; longitude: number }[] = await res.json();
+    return data.map((d) => ({ lat: d.latitude, lon: d.longitude }));
+  } catch (err) {
+    console.warn('Light points fetch failed, proceeding without lighting data', err);
     return [];
   }
 }
@@ -66,7 +77,6 @@ export function scoreLighting(
     }
   }
 
-  // Return percentage of route points near a lamp
   return count / sampled.length;
 }
 

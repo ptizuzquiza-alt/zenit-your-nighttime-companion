@@ -160,37 +160,30 @@ export async function fetchZenitRoute(
   );
   const nudgeOffset = Math.max(0.002, dist * 0.15);
 
-  const [carRes, nudgedRes, footRes] = await Promise.all([
-    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
+  const [footRes, nudgedRes] = await Promise.all([
+    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
     fetchNudged(origin, destination, nudgeOffset),
-    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2&steps=true`),
   ]);
 
   const hasExcessiveBacktracking = (coords: [number, number][]) =>
     coords.length >= 2 && backtrackRatio(coords, destination) > 0.3;
 
-  const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
-    ? carRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates))
+  const candidates: RouteResult[] = footRes?.code === 'Ok' && footRes.routes?.length
+    ? footRes.routes.map(parseOSRMRoute).filter((r: RouteResult) => !hasExcessiveBacktracking(r.coordinates))
     : [];
 
   if (nudgedRes && !hasExcessiveBacktracking(nudgedRes.coordinates)) {
-    carCandidates.push(nudgedRes);
+    candidates.push(nudgedRes);
   }
 
-  const allCandidates = carCandidates.length > 0 ? carCandidates : (
-    footRes?.code === 'Ok' && footRes.routes?.length
-      ? footRes.routes.map(parseOSRMRoute)
-      : []
-  );
-
-  if (allCandidates.length === 0) return null;
+  if (candidates.length === 0) return null;
 
   // Fetch real illumination data for bounding box of all candidates
-  const bbox = getBoundingBox(allCandidates.map(r => r.coordinates));
+  const bbox = getBoundingBox(candidates.map(r => r.coordinates));
   const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
 
   // Score each candidate and pick the best lit + straightest
-  return allCandidates
+  return candidates
     .map(r => ({ r, score: safetyScore(r, scoreLighting(r.coordinates, lamps)) }))
     .sort((a, b) => b.score - a.score)[0].r;
 }
@@ -211,59 +204,49 @@ export async function fetchSafeAndFastRoutes(
   );
   const nudgeOffset = Math.max(0.002, dist * 0.15);
 
-  const [carRes, footRes, nudgedRes] = await Promise.all([
-    fetchWithTimeout(`car/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
-    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=2&steps=true`),
+  const [footRes, nudgedRes] = await Promise.all([
+    fetchWithTimeout(`foot/${directCoords}?overview=full&geometries=geojson&alternatives=3&steps=true`),
     fetchNudged(origin, destination, nudgeOffset),
   ]);
 
-  // Fast route: shortest foot path
-  let fast: RouteResult | null = null;
-  if (footRes?.code === 'Ok' && footRes.routes?.length) {
-    fast = parseOSRMRoute(
-      footRes.routes.sort((a: any, b: any) => a.distance - b.distance)[0]
-    );
+  if (!footRes || footRes.code !== 'Ok' || !footRes.routes?.length) {
+    return { safe: null, fast: null };
   }
-  if (!fast) {
-    if (carRes?.code === 'Ok' && carRes.routes?.length) fast = parseOSRMRoute(carRes.routes[0]);
-    return { safe: fast, fast };
-  }
+
+  const allFoot: RouteResult[] = footRes.routes.map(parseOSRMRoute);
+
+  // Fast route: shortest walking path
+  const fast: RouteResult = allFoot.sort((a, b) => a.distance - b.distance)[0];
 
   const hasExcessiveBacktracking = (coords: [number, number][]) =>
     coords.length >= 2 && backtrackRatio(coords, destination) > 0.3;
 
   const maxDist = fast.distance * 1.6;
 
-  // Collect safe-route candidates (car-profile = main avenues)
-  const carCandidates: RouteResult[] = carRes?.code === 'Ok' && carRes.routes?.length
-    ? carRes.routes.map(parseOSRMRoute).filter(
-        (r: RouteResult) => !hasExcessiveBacktracking(r.coordinates) && r.distance <= maxDist
-      )
-    : [];
+  // Safe-route candidates: all foot alternatives + nudged, within 60% extra distance
+  const candidates: RouteResult[] = allFoot.filter(
+    r => !hasExcessiveBacktracking(r.coordinates) && r.distance <= maxDist
+  );
 
   if (nudgedRes && !hasExcessiveBacktracking(nudgedRes.coordinates) && nudgedRes.distance <= maxDist) {
-    carCandidates.push(nudgedRes);
+    candidates.push(nudgedRes);
   }
 
-  if (carCandidates.length === 0) return { safe: fast, fast };
+  if (candidates.length === 0) return { safe: fast, fast };
 
-  // Fetch real illumination data covering all candidates + fast route
-  const allCoords = [...carCandidates.map(r => r.coordinates), fast.coordinates];
-  const bbox = getBoundingBox(allCoords);
+  // Fetch real illumination data covering all candidates
+  const bbox = getBoundingBox([...candidates.map(r => r.coordinates), fast.coordinates]);
   const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
 
   // Score candidates: 70% illumination + 30% straightness
-  const scored = carCandidates
+  const scored = candidates
     .map(r => ({ r, score: safetyScore(r, scoreLighting(r.coordinates, lamps)) }))
     .sort((a, b) => b.score - a.score);
 
   // Prefer a route distinct from fast; fallback to best scored
-  const distinct = scored.find(({ r }) => areDistinct(r, fast!));
-  let safe: RouteResult | null = (distinct ?? scored[0])?.r ?? null;
+  const distinct = scored.find(({ r }) => areDistinct(r, fast));
+  const safe: RouteResult = (distinct ?? scored[0]).r;
 
-  if (!safe) return { safe: fast, fast };
-
-  // safe should be the longer one (illuminated routes can be slightly longer)
   if (safe.distance < fast.distance) return { safe: fast, fast: safe };
   return { safe, fast };
 }

@@ -1,7 +1,7 @@
+import { fetchStreetLamps, scoreLighting, getBoundingBox } from './streetlamps';
+
 // OSRM public routing API (CORS enabled)
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
-
-import { fetchStreetLamps, scoreLighting, getBoundingBox } from './streetlamps';
 
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;

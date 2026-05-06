@@ -1,7 +1,8 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus } from 'lucide-react';
+import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus, Link, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { toDataURL } from 'qrcode';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 
 interface Group {
@@ -40,6 +41,27 @@ const Friends: FC = () => {
   });
   const [pendingRequests, setPendingRequests] = useState(PENDING_REQUESTS);
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+
+  const profileUrl = `https://zenit.app/u/${currentUserName.toLowerCase()}`;
+
+  useEffect(() => {
+    if (showShareModal) {
+      toDataURL(profileUrl, { width: 240, errorCorrectionLevel: 'H', color: { dark: '#1a0a2e', light: '#ffffff' }, margin: 2 })
+        .then(setQrDataUrl);
+    }
+  }, [showShareModal, profileUrl]);
+
+  const handleShareLink = () => {
+    const msg = `¡Únete a Zenit, la app para caminar seguro de noche! Añádeme como amigo: @${currentUserName.toLowerCase()}\n${profileUrl}`;
+    if (navigator.share) {
+      navigator.share({ text: msg });
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      toast.success('Enlace copiado al portapapeles');
+    }
+  };
 
   const handleSendRequest = () => {
     const name = searchQuery.trim();
@@ -137,15 +159,7 @@ const Friends: FC = () => {
 
         {/* Share profile */}
         <button
-          onClick={() => {
-            const msg = '¡Únete a Zenit, la app para caminar seguro de noche! Añádeme como amigo: @patricia\nhttps://zenit.app';
-            if (navigator.share) {
-              navigator.share({ text: msg });
-            } else {
-              navigator.clipboard.writeText(msg);
-              toast.success('Enlace copiado al portapapeles');
-            }
-          }}
+          onClick={() => setShowShareModal(true)}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20 text-left"
         >
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -489,6 +503,82 @@ const Friends: FC = () => {
                 className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-sm"
               >
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share profile modal */}
+      {showShareModal && (
+        <div
+          className="absolute inset-0 z-[2000] flex flex-col bg-[#0e0a1f]"
+          onClick={() => setShowShareModal(false)}
+        >
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-5 pt-12 pb-4" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowShareModal(false)} className="w-9 h-9 flex items-center justify-center">
+              <X className="w-5 h-5 text-white" />
+            </button>
+            <span className="text-white text-sm font-semibold tracking-wide">MI CÓDIGO QR</span>
+            <div className="w-9" />
+          </div>
+
+          {/* Main content */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-3xl p-6 flex flex-col items-center gap-4 w-full max-w-xs shadow-2xl">
+              <div className="relative">
+                {qrDataUrl
+                  ? <img src={qrDataUrl} alt="QR de perfil" width={220} height={220} className="rounded-lg" />
+                  : <div className="w-[220px] h-[220px] bg-gray-100 rounded-lg animate-pulse" />
+                }
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-white rounded-full p-1.5 shadow">
+                    <div className="w-10 h-10 rounded-full bg-[#1a0a2e] flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">Z</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[#1a0a2e] font-bold text-lg tracking-wide">
+                @{currentUserName.toLowerCase()}
+              </p>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="px-6 pb-12" onClick={e => e.stopPropagation()}>
+            <div className="flex gap-3">
+              <button
+                onClick={handleShareLink}
+                className="flex-1 flex flex-col items-center gap-2 bg-white/10 border border-white/10 rounded-2xl py-4"
+              >
+                <Share2 className="w-5 h-5 text-white" />
+                <span className="text-white text-xs font-medium">Compartir</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(profileUrl);
+                  toast.success('Enlace copiado');
+                }}
+                className="flex-1 flex flex-col items-center gap-2 bg-white/10 border border-white/10 rounded-2xl py-4"
+              >
+                <Link className="w-5 h-5 text-white" />
+                <span className="text-white text-xs font-medium">Copiar enlace</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (qrDataUrl) {
+                    const a = document.createElement('a');
+                    a.href = qrDataUrl;
+                    a.download = 'zenit-qr.png';
+                    a.click();
+                  }
+                }}
+                className="flex-1 flex flex-col items-center gap-2 bg-white/10 border border-white/10 rounded-2xl py-4"
+              >
+                <Download className="w-5 h-5 text-white" />
+                <span className="text-white text-xs font-medium">Descargar</span>
               </button>
             </div>
           </div>

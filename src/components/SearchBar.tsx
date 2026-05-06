@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Search } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -9,20 +9,20 @@ interface SearchBarProps {
   readOnly?: boolean;
 }
 
-export const SearchBar: FC<SearchBarProps> = ({ 
-  placeholder = 'Buscar', 
+export const SearchBar: FC<SearchBarProps> = ({
+  placeholder = 'Buscar',
   onClick,
   value,
   onChange,
   readOnly = false
 }) => {
   return (
-    <div 
-      className="relative w-full cursor-pointer"
+    <div
+      className="flex items-center gap-2 w-full bg-secondary/90 backdrop-blur-md rounded-xl px-3 py-3 cursor-pointer"
       onClick={readOnly ? onClick : undefined}
     >
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-        <Search className="w-5 h-5" />
+      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+        <MapPin className="w-4 h-4 text-primary" />
       </div>
       <input
         type="text"
@@ -30,7 +30,7 @@ export const SearchBar: FC<SearchBarProps> = ({
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={readOnly}
-        className="zenit-input pl-12 cursor-pointer"
+        className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none cursor-pointer text-sm"
         onClick={onClick}
       />
     </div>

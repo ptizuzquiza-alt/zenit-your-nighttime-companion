@@ -409,6 +409,7 @@ const MapRoutes: FC = () => {
                 </div>
               </div>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDismissBanner();

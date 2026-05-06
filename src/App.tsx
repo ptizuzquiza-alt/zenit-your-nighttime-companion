@@ -32,9 +32,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         {/* Outer shell: fills viewport with branded dark bg on tablet/desktop */}
-        <div className="min-h-screen w-full flex items-start justify-center" style={{ background: '#08051a' }}>
-          {/* Phone-width container */}
-          <div className="w-full max-w-md bg-background min-h-screen relative overflow-hidden shadow-2xl" style={{ boxShadow: '0 0 80px rgba(138,61,245,0.15)' }}>
+        <div className="min-h-screen w-full flex items-start justify-center">
+          <div className="w-full max-w-md bg-background min-h-screen relative overflow-hidden">
             <Routes>
               <Route path="/" element={<HomeRoute />} />
               <Route path="/onboarding" element={<Onboarding />} />

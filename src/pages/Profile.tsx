@@ -111,11 +111,7 @@ const Profile: FC = () => {
 
       {/* Header */}
       <div className="pt-4 pb-6 px-6 flex flex-col items-center gap-3">
-        <button
-          type="button"
-          onClick={handlePhotoClick}
-          className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden"
-        >
+        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden">
           {profilePhoto || AVATAR_BY_NAME[name] ? (
             <img
               src={profilePhoto || AVATAR_BY_NAME[name] || ''}
@@ -125,7 +121,7 @@ const Profile: FC = () => {
           ) : (
             <User className="w-9 h-9 text-primary" />
           )}
-        </button>
+        </div>
         <div className="text-center">
           <h2 className="text-foreground font-semibold text-lg">{name}</h2>
           <p className="text-primary/80 text-sm">{username}</p>

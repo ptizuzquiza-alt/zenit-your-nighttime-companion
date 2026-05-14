@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Map, Navigation2, Share2, Eye, X } from 'lucide-react';
+import { LocateFixed, Navigation2, Share2, Eye, X, Users } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -71,6 +71,8 @@ const Navigation: FC = () => {
   const [showFriendActivity, setShowFriendActivity] = useState(juanAccepted);
   const [fitAll, setFitAll] = useState(false);
   const [focusJuan, setFocusJuan] = useState(false);
+  const [followUser, setFollowUser] = useState(true);
+  const [showFriendsPopup, setShowFriendsPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
@@ -330,7 +332,8 @@ const Navigation: FC = () => {
           userPosition={userPosition}
           fitToRoute={fitAll && !focusJuan}
           focusBounds={focusJuan ? juanRoute : undefined}
-          mapBearing={(!fitAll && !focusJuan) ? displayBearing : undefined}
+          lockCenter={followUser && !fitAll && !focusJuan}
+          onDragStart={() => { setFollowUser(false); setShowFriendsPopup(false); }}
           className="w-full h-full"
         />
       </div>
@@ -367,29 +370,65 @@ const Navigation: FC = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-      {/* FAB floating above the sheet */}
+      {/* FABs floating above the sheet */}
+          {/* Friends button — left */}
+          <div className="absolute -top-16 left-4">
+            {showFriendsPopup && (
+              <div className="absolute bottom-14 left-0 bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl overflow-hidden min-w-[180px]">
+                {juanAccepted ? (
+                  <>
+                    <div className="flex items-center gap-2.5 px-3 py-2.5">
+                      {AVATAR_BY_NAME['Juan'] ? (
+                        <img src={AVATAR_BY_NAME['Juan']} className="w-7 h-7 rounded-full object-cover border border-primary/40" alt="Juan" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">J</div>
+                      )}
+                      <p className="text-xs font-semibold text-foreground">Juan</p>
+                    </div>
+                    <div className="h-px bg-border/40 mx-3" />
+                    <button
+                      onClick={() => { setFitAll(prev => !prev); setFocusJuan(false); setFollowUser(false); setShowFriendsPopup(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-secondary/60 transition-colors"
+                    >
+                      <Navigation2 className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-xs text-foreground">{fitAll ? 'Mi ruta' : 'Ver todas las rutas'}</p>
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-4 py-3">
+                    <p className="text-xs text-muted-foreground">Ningún amigo en ruta</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              onClick={() => setShowFriendsPopup(prev => !prev)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+                showFriendsPopup || focusJuan || fitAll
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card/80 backdrop-blur-sm text-foreground'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Center/locate button — right */}
           <button
             onClick={() => {
-              if (fitAll || focusJuan) {
-                // Re-center on user
-                setFitAll(false);
-                setFocusJuan(false);
-                restoreSheetState();
-              } else {
-                setFitAll(prev => !prev);
-              }
+              setFollowUser(true);
+              setFitAll(false);
+              setFocusJuan(false);
+              setShowFriendsPopup(false);
+              restoreSheetState();
             }}
             className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-              fitAll || focusJuan
-                ? 'bg-primary text-primary-foreground' 
+              !followUser || fitAll || focusJuan
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-card/80 backdrop-blur-sm text-foreground'
             }`}
           >
-            {fitAll || focusJuan ? (
-              <Navigation2 className="w-5 h-5" />
-            ) : (
-              <Map className="w-5 h-5" />
-            )}
+            <LocateFixed className="w-5 h-5" />
           </button>
 
           <div 

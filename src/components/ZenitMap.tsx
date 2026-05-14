@@ -44,6 +44,8 @@ interface ZenitMapProps {
   flyToPoint?: [number, number];
   centerOffsetPx?: [number, number];
   mapBearing?: number;
+  lockCenter?: boolean;
+  onDragStart?: () => void;
   className?: string;
 }
 
@@ -74,6 +76,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   flyToPoint,
   centerOffsetPx,
   mapBearing,
+  lockCenter = true,
+  onDragStart,
   className = '',
 }) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -83,6 +87,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   // Keep a ref so markers effect can read the latest bearing without re-running
   const bearingRef = useRef<number>(0);
   bearingRef.current = mapBearing ?? 0;
+  const onDragStartRef = useRef<(() => void) | undefined>(undefined);
+  onDragStartRef.current = onDragStart;
 
   // Initialize map
   useEffect(() => {
@@ -97,6 +103,8 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     L.tileLayer(DARK_TILE_URL, { opacity: 1 }).addTo(mapRef.current);
     L.tileLayer(LABELS_TILE_URL, { opacity: 0.7 }).addTo(mapRef.current);
+
+    mapRef.current.on('dragstart', () => onDragStartRef.current?.());
 
     return () => {
       if (mapRef.current) {
@@ -118,13 +126,13 @@ export const ZenitMap: FC<ZenitMapProps> = ({
       if (origin) bounds.extend(origin);
       if (destination) bounds.extend(destination);
       mapRef.current.fitBounds(bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [40, 450], maxZoom: 15, animate: true });
-    } else if (!fitToRoute) {
+    } else if (!fitToRoute && lockCenter) {
       mapRef.current.setView(center, zoom, { animate: false });
       if (centerOffsetPx && (centerOffsetPx[0] !== 0 || centerOffsetPx[1] !== 0)) {
         mapRef.current.panBy(centerOffsetPx, { animate: false });
       }
     }
-  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds, centerOffsetPx, mapBearing]);
+  }, [center, zoom, route, alternativeRoute, fitToRoute, origin, destination, focusBounds, centerOffsetPx, mapBearing, lockCenter]);
 
   // Focus on specific bounds
   useEffect(() => {

@@ -254,7 +254,7 @@ const Profile: FC = () => {
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-            <div className="flex flex-col items-center gap-3 py-2">
+            <div className="flex flex-col items-center gap-2 py-2">
               <button
                 type="button"
                 onClick={handlePhotoClick}
@@ -269,6 +269,13 @@ const Profile: FC = () => {
                 ) : (
                   <User className="w-9 h-9 text-primary" />
                 )}
+              </button>
+              <button
+                type="button"
+                onClick={handlePhotoClick}
+                className="text-xs text-primary font-medium underline underline-offset-2"
+              >
+                Editar foto
               </button>
             </div>
             <div className="space-y-3">

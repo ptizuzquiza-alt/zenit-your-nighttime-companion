@@ -332,6 +332,7 @@ const Navigation: FC = () => {
           userPosition={userPosition}
           fitToRoute={fitAll && !focusJuan}
           focusBounds={focusJuan ? juanRoute : undefined}
+          mapBearing={(followUser && !fitAll && !focusJuan) ? displayBearing : undefined}
           lockCenter={followUser && !fitAll && !focusJuan}
           onDragStart={() => { setFollowUser(false); setShowFriendsPopup(false); }}
           className="w-full h-full"

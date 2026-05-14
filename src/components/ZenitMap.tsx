@@ -104,9 +104,70 @@ export const ZenitMap: FC<ZenitMapProps> = ({
     L.tileLayer(DARK_TILE_URL, { opacity: 1 }).addTo(mapRef.current);
     L.tileLayer(LABELS_TILE_URL, { opacity: 0.7 }).addTo(mapRef.current);
 
-    mapRef.current.on('dragstart', () => onDragStartRef.current?.());
+    // Disable Leaflet's native drag — we replace it with a bearing-aware custom drag
+    // so that finger direction matches the visually rotated map.
+    mapRef.current.dragging.disable();
+
+    const state = { active: false, lastX: 0, lastY: 0 };
+
+    const pan = (dx: number, dy: number) => {
+      if (!mapRef.current) return;
+      const b = (bearingRef.current ?? 0) * (Math.PI / 180);
+      const dlx = -Math.cos(b) * dx + Math.sin(b) * dy;
+      const dly = -Math.sin(b) * dx - Math.cos(b) * dy;
+      mapRef.current.panBy([dlx, dly] as L.PointExpression, { animate: false });
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) { state.active = false; return; }
+      if (e.touches.length === 1) {
+        state.active = true;
+        state.lastX = e.touches[0].clientX;
+        state.lastY = e.touches[0].clientY;
+        onDragStartRef.current?.();
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!state.active || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - state.lastX;
+      const dy = e.touches[0].clientY - state.lastY;
+      state.lastX = e.touches[0].clientX;
+      state.lastY = e.touches[0].clientY;
+      pan(dx, dy);
+    };
+    const onTouchEnd = () => { state.active = false; };
+
+    const onMouseDown = (e: MouseEvent) => {
+      state.active = true;
+      state.lastX = e.clientX;
+      state.lastY = e.clientY;
+      onDragStartRef.current?.();
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!state.active) return;
+      const dx = e.clientX - state.lastX;
+      const dy = e.clientY - state.lastY;
+      state.lastX = e.clientX;
+      state.lastY = e.clientY;
+      pan(dx, dy);
+    };
+    const onMouseUp = () => { state.active = false; };
+
+    const container = containerRef.current!;
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: true });
+    container.addEventListener('touchend', onTouchEnd);
+    container.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 
     return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;

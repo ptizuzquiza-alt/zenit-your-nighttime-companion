@@ -6,6 +6,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
+import { FriendsFab } from '../components/FriendsFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
 import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
@@ -402,16 +403,13 @@ const Navigation: FC = () => {
                 )}
               </div>
             )}
-            <button
+            <FriendsFab
+              active={showFriendsPopup || focusJuan || fitAll}
               onClick={() => setShowFriendsPopup(prev => !prev)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                showFriendsPopup || focusJuan || fitAll
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card/80 backdrop-blur-sm text-foreground'
-              }`}
-            >
-              <Users className="w-5 h-5" />
-            </button>
+              className="w-12 h-12"
+              iconClassName="w-5 h-5"
+              inactiveClassName="bg-card/80 backdrop-blur-sm text-foreground"
+            />
           </div>
 
           {/* Center/locate button — right */}

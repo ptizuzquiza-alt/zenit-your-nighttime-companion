@@ -430,7 +430,7 @@ const Navigation: FC = () => {
                     return next;
                   });
                 }}
-                className="w-16 h-16"
+                className="w-14 h-14"
                 iconClassName="w-7 h-7"
                 inactiveClassName="bg-card/80 backdrop-blur-sm text-foreground"
               />
@@ -477,13 +477,13 @@ const Navigation: FC = () => {
               setShowFriendsPopup(false);
               restoreSheetState();
             }}
-            className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
               !followUser || fitAll || !!focusedFriend
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-card/80 backdrop-blur-sm text-foreground'
             }`}
           >
-            <LocateFixed className="w-5 h-5" />
+            <LocateFixed className="w-6 h-6" />
           </button>
 
           <div 

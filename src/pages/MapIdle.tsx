@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, UserPlus, Users, X } from 'lucide-react';
+import { LocateFixed, Map, User, UserPlus, Users, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -199,7 +199,7 @@ const MapIdle: FC = () => {
         </div>
         <button
           onClick={() => navigate('/profile')}
-          className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
+          className="w-14 h-14 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
           {profilePhoto || AVATAR_BY_NAME['Patricia'] ? (
             <img
@@ -208,7 +208,7 @@ const MapIdle: FC = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <User className="w-5 h-5 text-muted-foreground" />
+            <User className="w-8 h-8 text-muted-foreground" />
           )}
         </button>
       </div>
@@ -247,7 +247,7 @@ const MapIdle: FC = () => {
             active={showFriends}
             badgeCount={badgeCount}
             onClick={() => { setShowFriends((p) => !p); setActiveFriendLabel(null); }}
-            className="w-16 h-16 flex-shrink-0"
+            className="w-14 h-14 flex-shrink-0"
           />
 
           {/* Avatar pill expanding to the right */}
@@ -308,11 +308,10 @@ const MapIdle: FC = () => {
               setFlyToPoint([...userLocation]);
             }
           }}
-          className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
+          className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
         >
           <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+            <LocateFixed className="w-6 h-6" />
           </svg>
         </button>
       </div>

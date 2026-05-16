@@ -22,7 +22,7 @@ export const SearchBar: FC<SearchBarProps> = ({
       onClick={readOnly ? onClick : undefined}
     >
       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-        <Search className="w-5 h-5" />
+        <Search className="w-6 h-6" />
       </div>
       <input
         type="text"

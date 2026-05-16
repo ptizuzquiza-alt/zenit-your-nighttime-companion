@@ -416,7 +416,7 @@ const Navigation: FC = () => {
         >
       {/* FABs floating above the sheet */}
           {/* Friends button — left */}
-          <div className="absolute -top-16 left-4 flex flex-col items-start gap-2">
+          <div className="absolute -top-20 left-4 flex flex-col items-start gap-2">
             <div className="flex flex-row items-center gap-2">
               <FriendsFab
                 active={showFriendsPopup}
@@ -430,8 +430,8 @@ const Navigation: FC = () => {
                     return next;
                   });
                 }}
-                className="w-12 h-12"
-                iconClassName="w-5 h-5"
+                className="w-16 h-16"
+                iconClassName="w-7 h-7"
                 inactiveClassName="bg-card/80 backdrop-blur-sm text-foreground"
               />
 

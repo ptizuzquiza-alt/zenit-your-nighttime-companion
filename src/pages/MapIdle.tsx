@@ -189,7 +189,7 @@ const MapIdle: FC = () => {
       />
 
       {/* Search bar + profile icon */}
-      <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-2">
+      <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-4">
         <div className="flex-1">
           <SearchBar
             placeholder="Buscar"

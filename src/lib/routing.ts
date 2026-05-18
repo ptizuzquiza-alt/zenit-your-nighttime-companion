@@ -251,6 +251,92 @@ export async function fetchSafeAndFastRoutes(
   return { safe, fast };
 }
 
+export interface TransitLeg {
+  type: 'walk' | 'bus' | 'metro';
+  line?: string;
+  headsign?: string;
+  fromStop?: string;
+  toStop?: string;
+  coordinates: [number, number][];
+  distance: number;
+  duration: number; // seconds (ride time, not wait)
+  waitTime?: number; // seconds waiting at stop
+}
+
+export interface TransitRoute {
+  legs: TransitLeg[];
+  totalDistance: number;
+  totalDuration: number; // including walks + wait + ride
+  coordinates: [number, number][];
+}
+
+/**
+ * Builds a transit route by fetching the OSRM walking geometry and splitting it
+ * into walk → bus/metro → walk legs with realistic durations.
+ */
+export async function fetchTransitRoute(
+  origin: [number, number],
+  destination: [number, number]
+): Promise<TransitRoute | null> {
+  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
+  const res = await fetchWithTimeout(
+    `foot/${directCoords}?overview=full&geometries=geojson&steps=false`
+  );
+  if (!res || res.code !== 'Ok' || !res.routes?.length) return null;
+
+  const route = res.routes[0];
+  const fullCoords: [number, number][] = route.geometry.coordinates.map(
+    ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+  );
+  const totalDist: number = route.distance;
+
+  const n = fullCoords.length;
+  const splitA = Math.max(2, Math.floor(n * 0.18));
+  const splitB = Math.max(splitA + 2, n - Math.floor(n * 0.18));
+
+  const walkToDist  = totalDist * 0.18;
+  const transitDist = totalDist * 0.64;
+  const walkFromDist = totalDist * 0.18;
+
+  const WAIT = 180; // 3 min average wait
+  const isMetro = totalDist > 1800;
+  const transitSpeed = isMetro ? 11.0 : 7.0; // metro ~40 km/h, bus ~25 km/h
+
+  const legs: TransitLeg[] = [
+    {
+      type: 'walk',
+      coordinates: fullCoords.slice(0, splitA + 1),
+      distance: walkToDist,
+      duration: walkToDist / WALKING_SPEED,
+      toStop: isMetro ? 'Estación de metro' : 'Parada de bus',
+    },
+    {
+      type: isMetro ? 'metro' : 'bus',
+      line: isMetro ? 'L3' : '7',
+      headsign: isMetro ? 'Zona Universitaria' : 'Estació del Nord',
+      fromStop: isMetro ? 'Estación de metro' : 'Parada de bus',
+      toStop: isMetro ? 'Estación destino' : 'Parada destino',
+      coordinates: fullCoords.slice(splitA, splitB + 1),
+      distance: transitDist,
+      duration: transitDist / transitSpeed,
+      waitTime: WAIT,
+    },
+    {
+      type: 'walk',
+      coordinates: fullCoords.slice(splitB),
+      distance: walkFromDist,
+      duration: walkFromDist / WALKING_SPEED,
+    },
+  ];
+
+  return {
+    legs,
+    totalDistance: totalDist,
+    totalDuration: walkToDist / WALKING_SPEED + WAIT + transitDist / transitSpeed + walkFromDist / WALKING_SPEED,
+    coordinates: fullCoords,
+  };
+}
+
 /** Store the selected route in sessionStorage for cross-page use */
 export function storeSelectedRoute(route: RouteResult) {
   sessionStorage.setItem('zenit_selected_route', JSON.stringify(route));

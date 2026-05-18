@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
-import { LocateFixed, Navigation2, Share2, Eye, X, Users } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LocateFixed, Navigation2, Share2, Eye, X, Users, Bell, AlertTriangle, Check } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
@@ -64,6 +64,7 @@ const JUAN_FALLBACK: [number, number][] = [
 
 const Navigation: FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const acceptedFriends: string[] = (() => {
     try { return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]'); } catch { return []; }
   })();
@@ -75,6 +76,8 @@ const Navigation: FC = () => {
   const [showFriendsPopup, setShowFriendsPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showProblemModal, setShowProblemModal] = useState(() => !!(location.state as { showProblemModal?: boolean })?.showProblemModal);
+  const [problemAlerted, setProblemAlerted] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [sharedContacts, setSharedContacts] = useState<string[]>(() => {
@@ -569,6 +572,46 @@ const Navigation: FC = () => {
         initialSelected={sharedContacts}
         contacts={CONTACTS}
       />
+
+      {/* Problem modal — shown when coming back from NavigationEnd via "Aún no he llegado" */}
+      {showProblemModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-zenit-purple/20 flex items-center justify-center mb-1">
+                <AlertTriangle className="w-6 h-6 text-zenit-purple" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">¿Ha habido algún problema?</h3>
+            </div>
+            {problemAlerted ? (
+              <div className="flex flex-col items-center gap-4 text-center py-2">
+                <p className="text-sm text-muted-foreground">Ubicación enviada a tus contactos.</p>
+                <button
+                  onClick={() => { setShowProblemModal(false); setProblemAlerted(false); }}
+                  className="zenit-btn-secondary flex items-center justify-center w-full"
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setProblemAlerted(true)}
+                  className="zenit-btn-primary flex items-center justify-center"
+                >
+                  Avisar a mis contactos
+                </button>
+                <button
+                  onClick={() => setShowProblemModal(false)}
+                  className="zenit-btn-secondary flex items-center justify-center"
+                >
+                  No, estoy bien
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cancel confirmation overlay */}
       {showCancelConfirm && (

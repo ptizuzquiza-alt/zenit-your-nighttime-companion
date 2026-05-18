@@ -33,6 +33,7 @@ interface ZenitMapProps {
   origin?: [number, number];
   destination?: [number, number];
   route?: [number, number][];
+  routeColor?: string;
   alternativeRoute?: [number, number][];
   selectedRoute?: 'safe' | 'fast';
   friendLocations?: [number, number][];
@@ -65,6 +66,7 @@ export const ZenitMap: FC<ZenitMapProps> = ({
   origin,
   destination,
   route,
+  routeColor,
   alternativeRoute,
   selectedRoute = 'safe',
   friendLocations = [],
@@ -236,13 +238,14 @@ export const ZenitMap: FC<ZenitMapProps> = ({
 
     const drawZenit = () => {
       if (!route || route.length < 2) return;
+      const activeColor = routeColor ?? MAP_ROUTE_SAFE_COLOR;
       if (safeSelected) {
-        const glow = L.polyline(route, { color: MAP_ROUTE_SAFE_COLOR, weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
+        const glow = L.polyline(route, { color: activeColor, weight: 12, opacity: 0.25, lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
         polylinesRef.current.push(glow);
-        const main = L.polyline(route, { color: MAP_ROUTE_SAFE_COLOR, weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
+        const main = L.polyline(route, { color: activeColor, weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
         polylinesRef.current.push(main);
       } else {
-        const dashed = L.polyline(route, { color: MAP_ROUTE_SAFE_COLOR, weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
+        const dashed = L.polyline(route, { color: activeColor, weight: 3, opacity: 0.5, dashArray: '8, 8', lineCap: 'round', lineJoin: 'round' }).addTo(mapRef.current!);
         polylinesRef.current.push(dashed);
       }
     };

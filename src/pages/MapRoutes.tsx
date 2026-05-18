@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef, type PointerEvent, type TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Info, X } from 'lucide-react';
+import { ChevronLeft, Info, X, Footprints, Bus } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
@@ -10,7 +10,7 @@ import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
 import { ShareIcon } from '@/components/icons/ShareIcon';
 import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
-import { fetchZenitRoute, storeSelectedRoute, RouteResult } from '@/lib/routing';
+import { fetchZenitRoute, fetchTransitRoute, storeSelectedRoute, RouteResult, TransitRoute } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 import { CONTACTS } from '@/config/contacts';
 import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
@@ -30,6 +30,9 @@ const MapRoutes: FC = () => {
   const [bannerDismissed, setBannerDismissed] = useState(
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
+  const [transportMode, setTransportMode] = useState<'walk' | 'transit'>('walk');
+  const [transitRoute, setTransitRoute] = useState<TransitRoute | null>(null);
+  const [loadingTransit, setLoadingTransit] = useState(false);
 
   // Panel state: 'minimized' | 'half-expanded' | 'fully-expanded'
   const [panelState, setPanelState] = useState<'minimized' | 'half-expanded' | 'fully-expanded'>('minimized');
@@ -83,6 +86,18 @@ const MapRoutes: FC = () => {
     return () => { cancelled = true; };
   }, [userLocation[0], userLocation[1], destination[0], destination[1]]);
 
+  useEffect(() => {
+    if (transportMode !== 'transit' || transitRoute) return;
+    let cancelled = false;
+    setLoadingTransit(true);
+    fetchTransitRoute(userLocation, destination).then((result) => {
+      if (cancelled) return;
+      setTransitRoute(result);
+      setLoadingTransit(false);
+    });
+    return () => { cancelled = true; };
+  }, [transportMode]);
+
   const currentRouteData = route;
 
   const formatDistance = (m: number) => `${(m / 1000).toFixed(1)} km`;
@@ -105,10 +120,13 @@ const MapRoutes: FC = () => {
   const formatNow = () => new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
   const handleStartNavigation = () => {
-    if (currentRouteData) {
+    if (transportMode === 'transit' && transitRoute) {
+      storeSelectedRoute({ coordinates: transitRoute.coordinates, distance: transitRoute.totalDistance, duration: transitRoute.totalDuration, steps: [] });
+      sessionStorage.setItem('zenit_selected_route_type', 'transit');
+    } else if (currentRouteData) {
       storeSelectedRoute(currentRouteData);
+      sessionStorage.setItem('zenit_selected_route_type', 'safe');
     }
-    sessionStorage.setItem('zenit_selected_route_type', 'safe');
     sessionStorage.setItem('zenit_shared_contacts', JSON.stringify(sharedContacts));
     navigate('/navigation');
   };
@@ -279,7 +297,8 @@ const MapRoutes: FC = () => {
         zoom={14}
         origin={userLocation}
         destination={destination}
-        route={route?.coordinates}
+        route={transportMode === 'transit' ? (transitRoute?.coordinates ?? route?.coordinates) : route?.coordinates}
+        routeColor={transportMode === 'transit' ? MAP_ROUTE_SAFE_COLOR : undefined}
         fitToRoute
         className="absolute inset-0"
       />
@@ -334,6 +353,26 @@ const MapRoutes: FC = () => {
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
+        {/* Mode selector */}
+        <div className="px-6 pb-3 shrink-0">
+          <div className="flex rounded-full bg-secondary/60 p-1 gap-1">
+            <button
+              onClick={() => setTransportMode('walk')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-all ${transportMode === 'walk' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+            >
+              <Footprints className="w-4 h-4" />
+              A pie
+            </button>
+            <button
+              onClick={() => setTransportMode('transit')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-all ${transportMode === 'transit' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+            >
+              <Bus className="w-4 h-4" />
+              Transporte público
+            </button>
+          </div>
+        </div>
+
         <div
           className="px-6 pb-4 flex items-center justify-between cursor-pointer"
           onPointerDown={handleHandlePointerDown}
@@ -360,11 +399,18 @@ const MapRoutes: FC = () => {
               </span>
               <h3 className="font-semibold">Ruta Zenit</h3>
             </div>
-            {panelState === 'minimized' && currentRouteData && (
+            {panelState === 'minimized' && transportMode === 'walk' && currentRouteData && (
               <div className="flex items-center gap-2 text-sm font-medium text-white">
                 <span>{formatDuration(currentRouteData.duration)}</span>
                 <span>·</span>
                 <span>{formatDistance(currentRouteData.distance)}</span>
+              </div>
+            )}
+            {panelState === 'minimized' && transportMode === 'transit' && transitRoute && (
+              <div className="flex items-center gap-2 text-sm font-medium text-white">
+                <span>{formatDuration(transitRoute.totalDuration)}</span>
+                <span>·</span>
+                <span>{formatDistance(transitRoute.totalDistance)}</span>
               </div>
             )}
           </div>
@@ -424,42 +470,86 @@ const MapRoutes: FC = () => {
 
         {(panelState === 'half-expanded' || panelState === 'fully-expanded') && (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px`, WebkitOverflowScrolling: 'touch' }}>
-            {loading ? (
-              <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
-            ) : currentRouteData ? (
-              <>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-sm font-medium text-foreground">
-                    {formatDuration(currentRouteData.duration)}
-                  </span>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {formatDistance(currentRouteData.distance)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Llegada a las {formatETA(currentRouteData.duration)}
-                </p>
-
-                <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
-
-                <div className="pb-4">
-                  <RouteTimeline
-                    originLabel={storedOriginName}
-                    destinationLabel={storedDestName || 'Destino'}
-                    startTimeLabel={formatNow()}
-                    endTimeLabel={formatETA(currentRouteData.duration)}
-                    steps={steps}
-                  />
-                  {steps.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">
-                      No se encontraron pasos detallados para esta ruta.
-                    </p>
-                  )}
-                </div>
-              </>
+            {transportMode === 'walk' ? (
+              loading ? (
+                <p className="text-muted-foreground text-sm">Calculando ruta segura…</p>
+              ) : currentRouteData ? (
+                <>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-sm font-medium text-foreground">{formatDuration(currentRouteData.duration)}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-sm font-medium text-foreground">{formatDistance(currentRouteData.distance)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">Llegada a las {formatETA(currentRouteData.duration)}</p>
+                  <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+                  <div className="pb-4">
+                    <RouteTimeline
+                      originLabel={storedOriginName}
+                      destinationLabel={storedDestName || 'Destino'}
+                      startTimeLabel={formatNow()}
+                      endTimeLabel={formatETA(currentRouteData.duration)}
+                      steps={steps}
+                    />
+                    {steps.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No se encontraron pasos detallados.</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-sm">Esperando ruta segura…</p>
+              )
             ) : (
-              <p className="text-muted-foreground text-sm">Esperando ruta segura…</p>
+              loadingTransit ? (
+                <p className="text-muted-foreground text-sm">Calculando ruta de transporte…</p>
+              ) : transitRoute ? (
+                <>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-sm font-medium text-foreground">{formatDuration(transitRoute.totalDuration)}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-sm font-medium text-foreground">{formatDistance(transitRoute.totalDistance)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">Llegada a las {formatETA(transitRoute.totalDuration)}</p>
+                  <h4 className="text-foreground text-lg font-medium mb-4">Tramos</h4>
+                  <div className="flex flex-col gap-1 pb-4">
+                    {transitRoute.legs.map((leg, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-0 pt-1">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${leg.type === 'walk' ? 'bg-secondary' : leg.type === 'metro' ? 'bg-red-500' : 'bg-blue-500'}`}>
+                            {leg.type === 'walk'
+                              ? <Footprints className="w-4 h-4 text-foreground" />
+                              : leg.type === 'metro'
+                                ? <span className="text-xs font-bold text-white">{leg.line}</span>
+                                : <Bus className="w-4 h-4 text-white" />
+                            }
+                          </div>
+                          {i < transitRoute.legs.length - 1 && <div className="w-px h-8 bg-border mt-1" />}
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <p className="text-sm font-medium text-foreground">
+                            {leg.type === 'walk'
+                              ? `Caminar ${formatDuration(leg.duration)}`
+                              : leg.type === 'metro'
+                                ? `Metro ${leg.line} · ${leg.headsign}`
+                                : `Bus ${leg.line} · ${leg.headsign}`
+                            }
+                          </p>
+                          {leg.type !== 'walk' && leg.waitTime && (
+                            <p className="text-xs text-muted-foreground">Espera ~{Math.round(leg.waitTime / 60)} min · Trayecto {formatDuration(leg.duration)}</p>
+                          )}
+                          {leg.toStop && leg.type === 'walk' && (
+                            <p className="text-xs text-muted-foreground">Hasta: {leg.toStop}</p>
+                          )}
+                          {leg.fromStop && leg.type !== 'walk' && (
+                            <p className="text-xs text-muted-foreground">{leg.fromStop} → {leg.toStop}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-sm">No se encontró ruta de transporte.</p>
+              )
             )}
           </div>
         )}
@@ -476,8 +566,8 @@ const MapRoutes: FC = () => {
         </button>
         <button
           onClick={handleStartNavigation}
-          className={loading || !route ? 'zenit-btn-primary inline-flex items-center justify-center gap-2 opacity-50 cursor-not-allowed' : 'zenit-btn-primary inline-flex items-center justify-center gap-2'}
-          disabled={loading || !route}
+          className={(transportMode === 'walk' ? (loading || !route) : (loadingTransit || !transitRoute)) ? 'zenit-btn-primary inline-flex items-center justify-center gap-2 opacity-50 cursor-not-allowed' : 'zenit-btn-primary inline-flex items-center justify-center gap-2'}
+          disabled={transportMode === 'walk' ? (loading || !route) : (loadingTransit || !transitRoute)}
           style={{ background: '#FFEE02', color: '#333000' }}
         >
           <ArrowDiagonalIcon className="w-5 h-5" />

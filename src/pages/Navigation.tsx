@@ -502,46 +502,56 @@ const Navigation: FC = () => {
             <LocateFixed className="w-6 h-6" />
           </button>
 
+          {/* Lower bar's handle */}
           <div 
-            className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4 cursor-pointer" 
+            className="w-10 h-1 bg-muted-foreground/60 rounded-full mx-auto mb-4 cursor-pointer" 
             onClick={toggleSheet}
           />
           
+          {/* Lower bar contents */}
+
+          {/* FIRST ROW */}
           <div className="flex flex-col gap-8 mb-6">
             <div className="flex items-center justify-between">
+              {/* Remaining time */}
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Tiempo restante</span>
-                <span className="text-2xl font-semibold text-foreground">{remainingTimeLabel}</span>
+                <span className="text-sm text-foreground">Tiempo restante</span>
+                <span className="text-3xl font-semibold text-foreground">{remainingTimeLabel}</span>
               </div>
+              {/* Buttons flexbox */}
               <div className="flex items-center gap-4">
+                {/* Viewers button */}
                 <button
-                  onClick={() => sharedContacts.length > 0 && setShowViewers(prev => !prev)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full bg-secondary/60 transition-colors ${
-                    sharedContacts.length > 0 ? 'text-muted-foreground hover:text-foreground cursor-pointer' : 'text-muted-foreground/50 cursor-default'
-                  }`}
+                  onClick={() => setShowViewers(prev => !prev)}
+                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary text-foreground hover:text-muted-foreground cursor-pointer transition-colors"
                 >
-                  <Eye className="w-5 h-5" />
-                  <span className="text-sm font-semibold">{sharedContacts.length}</span>
+                  <Eye className="w-5.2 h-5.2" />
+                  <span className="text-md">{sharedContacts.length}</span>
                 </button>
+                {/* Cancel button */}
                 <button
                   onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
-                  className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-colors"
+                  className="px-4 py-4 rounded-full bg-destructive/85 flex items-center justify-center text-destructive hover:bg-destructive/65 transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-6 h-6 text-white" />
                 </button>
               </div>
             </div>
+            {/* SECOND ROW */}
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-8">
+                {/* Remaining distance */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground">Distancia</span>
-                  <span className="text-lg font-semibold text-foreground">{remainingDistanceLabel}</span>
+                  <span className="text-sm text-foreground">Distancia</span>
+                  <span className="text-2xl text-foreground">{remainingDistanceLabel}</span>
                 </div>
+                {/* Estimate arrival time */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground">Prevision</span>
-                  <span className="text-lg font-semibold text-foreground">{arrivalLabel}</span>
+                  <span className="text-sm text-foreground">Previsión</span>
+                  <span className="text-2xl text-foreground">{arrivalLabel}</span>
                 </div>
               </div>
+              {/* Share button */}
               <button
                 onClick={() => {
                   setShowShareModal(true);
@@ -549,66 +559,70 @@ const Navigation: FC = () => {
                   const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                   setSheetOffset(h);
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary hover:text-muted-foreground transition-colors cursor-pointer"
               >
                 <Share2 className="w-5 h-5" />
-                <span className="text-sm font-semibold">Compartir</span>
+                <span className="text-md">Compartir</span>
               </button>
             </div>
           </div>
 
           {/* Viewers list */}
-          {showViewers && sharedContacts.length > 0 && (
+          {showViewers && (
             <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
               <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
-              <div className="space-y-2">
-                {sharedContacts.map(id => {
-                  const contact = CONTACTS.find(c => c.id === id);
-                  if (!contact) return null;
+              {sharedContacts.length > 0 ? (
+                <div className="space-y-2">
+                  {sharedContacts.map(id => {
+                    const contact = CONTACTS.find(c => c.id === id);
+                    if (!contact) return null;
 
-                  if (confirmRemoveId === id) {
-                    return (
-                      <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
-                        <p className="text-sm text-foreground mb-3">
-                          ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSharedContacts(prev => prev.filter(x => x !== id));
-                              setConfirmRemoveId(null);
-                            }}
-                            className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
-                          >
-                            Sí, dejar de compartir
-                          </button>
-                          <button
-                            onClick={() => setConfirmRemoveId(null)}
-                            className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
-                          >
-                            Cancelar
-                          </button>
+                    if (confirmRemoveId === id) {
+                      return (
+                        <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                          <p className="text-sm text-foreground mb-3">
+                            ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setSharedContacts(prev => prev.filter(x => x !== id));
+                                setConfirmRemoveId(null);
+                              }}
+                              className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
+                            >
+                              Sí, dejar de compartir
+                            </button>
+                            <button
+                              onClick={() => setConfirmRemoveId(null)}
+                              className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
                         </div>
+                      );
+                    }
+
+                    return (
+                      <div key={id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                          <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
+                        </div>
+                        <span className="text-sm text-foreground flex-1">{contact.name}</span>
+                        <button
+                          onClick={() => setConfirmRemoveId(id)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     );
-                  }
-
-                  return (
-                    <div key={id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                        <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
-                      </div>
-                      <span className="text-sm text-foreground flex-1">{contact.name}</span>
-                      <button
-                        onClick={() => setConfirmRemoveId(id)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">Aún no hay nadie visualizando tu ruta.</div>
+              )}
             </div>
           )}
         </div>,

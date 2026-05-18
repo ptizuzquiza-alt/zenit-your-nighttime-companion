@@ -1,12 +1,7 @@
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-<<<<<<< HEAD
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LocateFixed, Navigation2, Share2, Eye, X, Users, Bell, AlertTriangle, Check } from 'lucide-react';
-=======
-import { useNavigate } from 'react-router-dom';
-import { LocateFixed, Share2, Eye, X, Users } from 'lucide-react';
->>>>>>> dec26202c223aba2bf6afe5313667ad884b59713
+import { LocateFixed, Share2, Eye, X, Users, AlertTriangle } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';

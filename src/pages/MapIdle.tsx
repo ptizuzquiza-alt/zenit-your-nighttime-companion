@@ -1,9 +1,10 @@
 import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Map, User, UserPlus, X } from 'lucide-react';
+import { LocateFixed, Map, User, UserPlus, Users, X } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
+import { FriendsFab } from '../components/FriendsFab';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 
 const formatTime = (date: Date) =>
@@ -188,7 +189,7 @@ const MapIdle: FC = () => {
       />
 
       {/* Search bar + profile icon */}
-      <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-2">
+      <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-4">
         <div className="flex-1">
           <SearchBar
             placeholder="Buscar"
@@ -198,7 +199,7 @@ const MapIdle: FC = () => {
         </div>
         <button
           onClick={() => navigate('/profile')}
-          className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
+          className="w-14 h-14 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
           {profilePhoto || AVATAR_BY_NAME['Patricia'] ? (
             <img
@@ -207,7 +208,7 @@ const MapIdle: FC = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <User className="w-5 h-5 text-muted-foreground" />
+            <User className="w-8 h-8 text-muted-foreground" />
           )}
         </button>
       </div>
@@ -242,21 +243,12 @@ const MapIdle: FC = () => {
         {/* Horizontal row: FAB first, then avatar pill */}
         <div className="flex flex-row items-center gap-2">
           {/* Main FAB */}
-          <button
+          <FriendsFab
+            active={showFriends}
+            badgeCount={badgeCount}
             onClick={() => { setShowFriends((p) => !p); setActiveFriendLabel(null); }}
-            className={`relative w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center shadow-lg transition-colors ${
-              showFriends
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-card/90 text-muted-foreground border border-border'
-            }`}
-          >
-            <Users className="w-7 h-7" />
-            {badgeCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
-                {badgeCount}
-              </span>
-            )}
-          </button>
+            className="w-14 h-14 flex-shrink-0"
+          />
 
           {/* Avatar pill expanding to the right */}
           {showFriends && (
@@ -316,11 +308,10 @@ const MapIdle: FC = () => {
               setFlyToPoint([...userLocation]);
             }
           }}
-          className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
+          className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
         >
           <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+            <LocateFixed className="w-6 h-6" />
           </svg>
         </button>
       </div>

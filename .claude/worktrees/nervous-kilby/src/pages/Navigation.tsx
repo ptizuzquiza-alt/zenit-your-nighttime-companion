@@ -223,16 +223,16 @@ const Navigation: FC = () => {
                 setFitAll(prev => !prev);
               }
             }}
-            className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            className={`absolute -top-16 right-4 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all ${
               fitAll || focusJuan
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-card/80 backdrop-blur-sm text-foreground'
             }`}
           >
             {fitAll || focusJuan ? (
-              <Navigation2 className="w-5 h-5" />
+              <Navigation2 className="w-7 h-7" />
             ) : (
-              <Users className="w-5 h-5" />
+              <Users className="w-7 h-7" />
             )}
           </button>
 

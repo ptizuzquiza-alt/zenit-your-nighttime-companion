@@ -1,11 +1,17 @@
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+<<<<<<< HEAD
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LocateFixed, Navigation2, Share2, Eye, X, Users, Bell, AlertTriangle, Check } from 'lucide-react';
+=======
+import { useNavigate } from 'react-router-dom';
+import { LocateFixed, Share2, Eye, X, Users } from 'lucide-react';
+>>>>>>> dec26202c223aba2bf6afe5313667ad884b59713
 import { ZenitMap } from '@/components/ZenitMap';
 import { DirectionCard } from '@/components/DirectionCard';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
+import { FriendsFab } from '../components/FriendsFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { getStoredRoute } from '@/lib/routing';
 import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
@@ -62,16 +68,38 @@ const JUAN_FALLBACK: [number, number][] = [
   JUAN_DEST,
 ];
 
+const MARTA_ORIGIN: [number, number] = [41.3890, 2.1590];
+const MARTA_DEST: [number, number] = [41.3980, 2.1780];
+const MARTA_FALLBACK: [number, number][] = [
+  MARTA_ORIGIN,
+  [41.3910, 2.1630],
+  [41.3940, 2.1700],
+  [41.3960, 2.1740],
+  MARTA_DEST,
+];
+
+const FRIEND_SUMMARIES: Record<string, { activity: string; destination: string; address: string }> = {
+  Juan: {
+    activity: 'ha completado el 50% de su ruta.',
+    destination: "L'Auditori",
+    address: 'Carrer de Lepant, 150, Eixample',
+  },
+  Marta: {
+    activity: 'está caminando hacia su destino.',
+    destination: 'Trabajo',
+    address: 'Gràcia',
+  },
+};
+
 const Navigation: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const acceptedFriends: string[] = (() => {
     try { return JSON.parse(sessionStorage.getItem('zenit_accepted_friends') || '[]'); } catch { return []; }
   })();
-  const juanAccepted = acceptedFriends.includes('juan');
-  const [showFriendActivity, setShowFriendActivity] = useState(juanAccepted);
+  const [showFriendActivity, setShowFriendActivity] = useState(acceptedFriends.length > 0);
   const [fitAll, setFitAll] = useState(false);
-  const [focusJuan, setFocusJuan] = useState(false);
+  const [focusedFriend, setFocusedFriend] = useState<string | null>(null);
   const [followUser, setFollowUser] = useState(true);
   const [showFriendsPopup, setShowFriendsPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -265,13 +293,33 @@ const Navigation: FC = () => {
   }, [routeCoords, navigate]);
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
+  const martaPosition: [number, number] = MARTA_FALLBACK[Math.floor(MARTA_FALLBACK.length * 0.6)] ?? MARTA_ORIGIN;
 
-  const friendRoutes = juanAccepted ? [{
-    name: 'Juan',
-    avatar: AVATAR_BY_NAME['Juan'],
-    coordinates: juanRoute,
-    position: juanPosition,
-  }] : [];
+  const friendRoutes = acceptedFriends
+    .map(id => {
+      if (id === 'juan') {
+        return {
+          id: 'juan',
+          name: 'Juan',
+          avatar: AVATAR_BY_NAME['Juan'],
+          coordinates: juanRoute,
+          position: juanPosition,
+        };
+      }
+      if (id === 'marta') {
+        return {
+          id: 'marta',
+          name: 'Marta',
+          avatar: AVATAR_BY_NAME['Marta'],
+          coordinates: MARTA_FALLBACK,
+          position: martaPosition,
+        };
+      }
+      return null;
+    })
+    .filter((route): route is { id: string; name: string; avatar: string; coordinates: [number, number][]; position: [number, number] } => route !== null);
+
+  const focusedFriendRoute = focusedFriend ? friendRoutes.find(fr => fr.id === focusedFriend) : undefined;
   // Get the full height of the sheet content (minus handle area)
   const getSheetContentHeight = () => {
     if (!sheetRef.current) return 300;
@@ -328,15 +376,15 @@ const Navigation: FC = () => {
           zoom={17}
           destination={destination}
           route={routeCoords.slice(routeIndex)}
-          alternativeRoute={fitAll ? juanRoute : undefined}
+          alternativeRoute={fitAll ? friendRoutes[0]?.coordinates : undefined}
           friendRoutes={friendRoutes}
-          friendLocations={juanRoute.length > 0 ? [juanPosition] : []}
+          friendLocations={friendRoutes.map(fr => fr.position)}
           showUserArrow
           userPosition={userPosition}
-          fitToRoute={fitAll && !focusJuan}
-          focusBounds={focusJuan ? juanRoute : undefined}
-          mapBearing={(!fitAll && !focusJuan) ? displayBearing : undefined}
-          lockCenter={followUser && !fitAll && !focusJuan}
+          fitToRoute={fitAll && !focusedFriend}
+          focusBounds={focusedFriendRoute?.coordinates}
+          mapBearing={(!fitAll && !focusedFriend) ? displayBearing : undefined}
+          lockCenter={followUser && !fitAll && !focusedFriend}
           onDragStart={() => { setFollowUser(false); setShowFriendsPopup(false); }}
           className="w-full h-full"
         />
@@ -376,45 +424,56 @@ const Navigation: FC = () => {
         >
       {/* FABs floating above the sheet */}
           {/* Friends button — left */}
-          <div className="absolute -top-16 left-4">
-            {showFriendsPopup && (
-              <div className="absolute bottom-14 left-0 bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl overflow-hidden min-w-[180px]">
-                {juanAccepted ? (
-                  <>
-                    <div className="flex items-center gap-2.5 px-3 py-2.5">
-                      {AVATAR_BY_NAME['Juan'] ? (
-                        <img src={AVATAR_BY_NAME['Juan']} className="w-7 h-7 rounded-full object-cover border border-primary/40" alt="Juan" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">J</div>
-                      )}
-                      <p className="text-xs font-semibold text-foreground">Juan</p>
-                    </div>
-                    <div className="h-px bg-border/40 mx-3" />
-                    <button
-                      onClick={() => { setFitAll(prev => !prev); setFocusJuan(false); setFollowUser(false); setShowFriendsPopup(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-secondary/60 transition-colors"
-                    >
-                      <Navigation2 className="w-4 h-4 text-muted-foreground" />
-                      <p className="text-xs text-foreground">{fitAll ? 'Mi ruta' : 'Ver todas las rutas'}</p>
-                    </button>
-                  </>
-                ) : (
-                  <div className="px-4 py-3">
-                    <p className="text-xs text-muted-foreground">Ningún amigo en ruta</p>
-                  </div>
-                )}
-              </div>
-            )}
-            <button
-              onClick={() => setShowFriendsPopup(prev => !prev)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                showFriendsPopup || focusJuan || fitAll
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card/80 backdrop-blur-sm text-foreground'
-              }`}
-            >
-              <Users className="w-5 h-5" />
-            </button>
+          <div className="absolute -top-20 left-4 flex flex-col items-start gap-2">
+            <div className="flex flex-row items-center gap-2">
+              <FriendsFab
+                active={showFriendsPopup}
+                onClick={() => {
+                  setShowFriendsPopup(prev => {
+                    const next = !prev;
+                    if (!next) {
+                      setFocusedFriend(null);
+                      setFitAll(false);
+                    }
+                    return next;
+                  });
+                }}
+                className="w-14 h-14"
+                iconClassName="w-7 h-7"
+                inactiveClassName="bg-card/80 backdrop-blur-sm text-foreground"
+              />
+
+              {showFriendsPopup && friendRoutes.length > 0 && (
+                <div
+                  className="flex flex-row gap-3 px-3 py-2 bg-primary/90 backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
+                  style={{ maxWidth: 'calc(100vw - 5rem)', transformOrigin: 'left center', animation: 'pillExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+                >
+                  {friendRoutes.map((friend) => {
+                    const active = focusedFriend === friend.id;
+                    return (
+                      <button
+                        key={friend.id}
+                        onClick={() => {
+                          const opening = focusedFriend !== friend.id;
+                          setFocusedFriend(opening ? friend.id : null);
+                          setFitAll(false);
+                          setFollowUser(false);
+                        }}
+                        className={`w-11 h-11 rounded-full border-2 overflow-hidden flex-shrink-0 transition-all duration-200 ${
+                          active ? 'border-white scale-105' : 'border-white/50'
+                        }`}
+                      >
+                        {friend.avatar ? (
+                          <img src={friend.avatar} className="w-full h-full object-cover" alt={friend.name} />
+                        ) : (
+                          <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">{friend.name[0]}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Center/locate button — right */}
@@ -422,17 +481,17 @@ const Navigation: FC = () => {
             onClick={() => {
               setFollowUser(true);
               setFitAll(false);
-              setFocusJuan(false);
+              setFocusedFriend(null);
               setShowFriendsPopup(false);
               restoreSheetState();
             }}
-            className={`absolute -top-16 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-              !followUser || fitAll || focusJuan
+            className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
+              !followUser || fitAll || !!focusedFriend
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-card/80 backdrop-blur-sm text-foreground'
             }`}
           >
-            <LocateFixed className="w-5 h-5" />
+            <LocateFixed className="w-6 h-6" />
           </button>
 
           <div 
@@ -534,6 +593,13 @@ const Navigation: FC = () => {
           )}
           
           {showFriendActivity && (() => {
+            const activeFriend = focusedFriendRoute ?? friendRoutes[0];
+            if (!activeFriend) return null;
+            const summary = FRIEND_SUMMARIES[activeFriend.name] ?? {
+              activity: 'está en camino.',
+              destination: 'Destino',
+              address: 'Dirección desconocida',
+            };
             const now = new Date();
             const departure = new Date(now.getTime() - 2 * 60_000);
             const arrival = new Date(departure.getTime() + 25 * 60_000);
@@ -541,18 +607,19 @@ const Navigation: FC = () => {
             return (
               <FriendActivityCard
                 onClick={() => {
-                  setFocusJuan(prev => !prev);
+                  const opening = focusedFriend !== activeFriend.id;
+                  setFocusedFriend(opening ? activeFriend.id : null);
                   setFitAll(false);
-                  if (!focusJuan) {
+                  if (!opening) {
                     const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                     setSheetOffset(h);
                   }
                 }}
-                name="Juan"
-                avatar={AVATAR_BY_NAME['Juan']}
-                activity="ha completado el 50% de su ruta."
-                destination="L'Auditori"
-                address="Carrer de Lepant, 150, Eixample"
+                name={activeFriend.name}
+                avatar={activeFriend.avatar}
+                activity={summary.activity}
+                destination={summary.destination}
+                address={summary.address}
                 time="Hace 2 min"
                 departureTime={fmt(departure)}
                 estimatedArrival={fmt(arrival)}

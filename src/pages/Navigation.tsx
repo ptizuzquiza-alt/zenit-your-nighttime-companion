@@ -286,6 +286,22 @@ const Navigation: FC = () => {
 
   const destination: [number, number] = routeCoords[routeCoords.length - 1];
   const martaPosition: [number, number] = MARTA_FALLBACK[Math.floor(MARTA_FALLBACK.length * 0.6)] ?? MARTA_ORIGIN;
+  const remainingDistanceM = useMemo(() => {
+    if (routeCoords.length < 2) return 0;
+    return routeCoords.slice(routeIndex).reduce((sum, pt, i, arr) => {
+      if (i === 0) return sum;
+      return sum + haversineM(arr[i - 1], pt);
+    }, 0);
+  }, [routeCoords, routeIndex]);
+  const remainingDistanceLabel = remainingDistanceM > 1000
+    ? `${(remainingDistanceM / 1000).toFixed(1)} km`
+    : `${Math.round(remainingDistanceM)} m`;
+  const remainingTimeMin = Math.max(1, Math.round(remainingDistanceM / 1.4 / 60));
+  const remainingTimeLabel = `${remainingTimeMin} min`;
+  const arrivalLabel = new Date(Date.now() + remainingTimeMin * 60_000).toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const friendRoutes = acceptedFriends
     .map(id => {
@@ -491,23 +507,41 @@ const Navigation: FC = () => {
             onClick={toggleSheet}
           />
           
-          {/* Header with title + action buttons */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-foreground font-semibold">
-              Actividades de tus amigos
-            </h3>
-            <div className="flex items-center gap-2">
-              {/* Viewers count */}
-              <button
-                onClick={() => sharedContacts.length > 0 && setShowViewers(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 transition-colors ${
-                  sharedContacts.length > 0 ? 'text-muted-foreground hover:text-foreground cursor-pointer' : 'text-muted-foreground/50 cursor-default'
-                }`}
-              >
-                <Eye className="w-4 h-4" />
-                <span className="text-xs font-medium">{sharedContacts.length}</span>
-              </button>
-              {/* Share button */}
+          <div className="flex flex-col gap-8 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Tiempo restante</span>
+                <span className="text-2xl font-semibold text-foreground">{remainingTimeLabel}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => sharedContacts.length > 0 && setShowViewers(prev => !prev)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full bg-secondary/60 transition-colors ${
+                    sharedContacts.length > 0 ? 'text-muted-foreground hover:text-foreground cursor-pointer' : 'text-muted-foreground/50 cursor-default'
+                  }`}
+                >
+                  <Eye className="w-5 h-5" />
+                  <span className="text-sm font-semibold">{sharedContacts.length}</span>
+                </button>
+                <button
+                  onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
+                  className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">Distancia</span>
+                  <span className="text-lg font-semibold text-foreground">{remainingDistanceLabel}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">Prevision</span>
+                  <span className="text-lg font-semibold text-foreground">{arrivalLabel}</span>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowShareModal(true);
@@ -515,16 +549,10 @@ const Navigation: FC = () => {
                   const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
                   setSheetOffset(h);
                 }}
-                className="w-9 h-9 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Share2 className="w-4 h-4" />
-              </button>
-              {/* Cancel route button */}
-              <button
-                onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
-                className="w-9 h-9 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-colors"
-              >
-                <X className="w-4 h-4" />
+                <Share2 className="w-5 h-5" />
+                <span className="text-sm font-semibold">Compartir</span>
               </button>
             </div>
           </div>
@@ -583,42 +611,6 @@ const Navigation: FC = () => {
               </div>
             </div>
           )}
-          
-          {showFriendActivity && (() => {
-            const activeFriend = focusedFriendRoute ?? friendRoutes[0];
-            if (!activeFriend) return null;
-            const summary = FRIEND_SUMMARIES[activeFriend.name] ?? {
-              activity: 'está en camino.',
-              destination: 'Destino',
-              address: 'Dirección desconocida',
-            };
-            const now = new Date();
-            const departure = new Date(now.getTime() - 2 * 60_000);
-            const arrival = new Date(departure.getTime() + 25 * 60_000);
-            const fmt = (d: Date) => d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            return (
-              <FriendActivityCard
-                onClick={() => {
-                  const opening = focusedFriend !== activeFriend.id;
-                  setFocusedFriend(opening ? activeFriend.id : null);
-                  setFitAll(false);
-                  if (!opening) {
-                    const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
-                    setSheetOffset(h);
-                  }
-                }}
-                name={activeFriend.name}
-                avatar={activeFriend.avatar}
-                activity={summary.activity}
-                destination={summary.destination}
-                address={summary.address}
-                time="Hace 2 min"
-                departureTime={fmt(departure)}
-                estimatedArrival={fmt(arrival)}
-              />
-            );
-          })()}
-          
         </div>,
         document.body
       )}

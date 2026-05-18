@@ -298,7 +298,7 @@ const MapRoutes: FC = () => {
         origin={userLocation}
         destination={destination}
         route={transportMode === 'transit' ? (transitRoute?.coordinates ?? route?.coordinates) : route?.coordinates}
-        routeColor={transportMode === 'transit' ? '#3B82F6' : undefined}
+        routeColor={transportMode === 'transit' ? MAP_ROUTE_SAFE_COLOR : undefined}
         fitToRoute
         className="absolute inset-0"
       />

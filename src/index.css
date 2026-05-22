@@ -260,3 +260,9 @@
   85%  { transform: scale(0.95); }
   100% { opacity: 1; transform: scale(1); }
 }
+
+/* Push sonner toasts above the bottom nav bar (64px) */
+[data-sonner-toaster] {
+  --offset: 80px !important;
+  --mobile-offset: 80px !important;
+}

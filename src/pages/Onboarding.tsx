@@ -1,5 +1,6 @@
 import { FC, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SLIDES = [
   {
@@ -279,11 +280,33 @@ const LocationModal: FC<{ onAllow: () => void; onSkip: () => void }> = ({ onAllo
 
 // ─── Register screen ────────────────────────────────────────────
 
-const RegisterScreen: FC<{ onSubmit: () => void; onBack: () => void }> = ({ onSubmit, onBack }) => {
+const RegisterScreen: FC<{ onBack: () => void; onSuccess: () => void }> = ({ onBack, onSuccess }) => {
+  const { signUp } = useAuth();
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !email.trim() || !password.trim()) return;
+    setLoading(true);
+    setError('');
+    const { error: err } = await signUp(email.trim(), password.trim(), name.trim(), username.trim());
+    setLoading(false);
+    if (err) {
+      const msg = err.includes('schema cache') || err.includes('profiles')
+        ? 'La base de datos no está configurada aún. Ejecuta la migración SQL en Supabase.'
+        : err.includes('already registered')
+        ? 'Este email ya tiene cuenta. Inicia sesión.'
+        : err;
+      setError(msg);
+      return;
+    }
+    onSuccess();
+  };
 
   return (
     <div className="flex flex-col h-full flex-shrink-0 px-6 pt-16 pb-10 overflow-y-auto" style={{ width: `${100 / TOTAL}%` }}>
@@ -301,13 +324,22 @@ const RegisterScreen: FC<{ onSubmit: () => void; onBack: () => void }> = ({ onSu
 
       <div className="space-y-3 mb-6">
         <input type="text" placeholder="Nombre" value={name} onChange={e => setName(e.target.value)} className={INPUT_CLS} />
+        <input type="text" placeholder="Nombre de usuario (ej. @laura)" value={username} onChange={e => setUsername(e.target.value)} className={INPUT_CLS} />
         <input type="tel" placeholder="Número de teléfono" value={phone} onChange={e => setPhone(e.target.value)} className={INPUT_CLS} />
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className={INPUT_CLS} />
         <input type="password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} className={INPUT_CLS} />
       </div>
 
-      <button onClick={onSubmit} className="w-full py-4 rounded-full bg-accent text-background font-bold text-base mb-4">
-        Crear cuenta
+      {error && (
+        <p className="text-sm text-destructive mb-4 text-center">{error}</p>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={!name.trim() || !email.trim() || !password.trim() || loading}
+        className="w-full py-4 rounded-full bg-accent text-background font-bold text-base mb-4 disabled:opacity-50"
+      >
+        {loading ? 'Creando cuenta…' : 'Crear cuenta'}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
@@ -320,9 +352,23 @@ const RegisterScreen: FC<{ onSubmit: () => void; onBack: () => void }> = ({ onSu
 
 // ─── Login screen ───────────────────────────────────────────────
 
-const LoginScreen: FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLogin, onRegister }) => {
+const LoginScreen: FC<{ onDemoLogin: () => void; onRegister: () => void; demoLoading?: boolean }> = ({ onDemoLogin, onRegister, demoLoading }) => {
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true);
+    setError('');
+    const { error: err } = await signIn(email.trim(), password.trim());
+    setLoading(false);
+    if (err) { setError('Email o contraseña incorrectos'); return; }
+    navigate('/', { replace: true });
+  };
 
   return (
     <div className="flex flex-col h-full flex-shrink-0 px-6 pt-20 pb-10" style={{ width: `${100 / TOTAL}%` }}>
@@ -336,8 +382,16 @@ const LoginScreen: FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLo
         <input type="password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} className={INPUT_CLS} />
       </div>
 
-      <button onClick={onLogin} className="w-full py-4 rounded-full bg-accent text-background font-bold text-base mb-4">
-        Iniciar sesión
+      {error && (
+        <p className="text-sm text-destructive mb-4 text-center">{error}</p>
+      )}
+
+      <button
+        onClick={handleLogin}
+        disabled={!email.trim() || !password.trim() || loading}
+        className="w-full py-4 rounded-full bg-accent text-background font-bold text-base mb-4 disabled:opacity-50"
+      >
+        {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
       </button>
 
       <p className="text-center text-sm text-muted-foreground mb-6">
@@ -352,11 +406,11 @@ const LoginScreen: FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLo
       </div>
 
       <div className="flex gap-3">
-        <button onClick={onLogin} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium">
-          <GoogleIcon /> Google
+        <button onClick={onDemoLogin} disabled={demoLoading} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium disabled:opacity-50">
+          {demoLoading ? '…' : <><GoogleIcon /> Google</>}
         </button>
-        <button onClick={onLogin} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium">
-          <AppleIcon /> Apple
+        <button onClick={onDemoLogin} disabled={demoLoading} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium disabled:opacity-50">
+          {demoLoading ? '…' : <><AppleIcon /> Apple</>}
         </button>
       </div>
     </div>
@@ -367,8 +421,10 @@ const LoginScreen: FC<{ onLogin: () => void; onRegister: () => void }> = ({ onLo
 
 const Onboarding: FC = () => {
   const navigate = useNavigate();
+  const { signInAsDemo } = useAuth();
   const [step, setStep] = useState(0);
   const [subScreen, setSubScreen] = useState<'login' | 'register' | 'location'>('login');
+  const [demoLoading, setDemoLoading] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -382,6 +438,14 @@ const Onboarding: FC = () => {
     setSubScreen('login');
     setTimeout(() => setIsAnimating(false), 400);
   }, []);
+
+  // Demo path — authenticates as Patricia via Supabase, then shows location modal
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    await signInAsDemo();
+    setDemoLoading(false);
+    setSubScreen('location');
+  };
 
   const handleRequestLocation = () => {
     setSubScreen('location');
@@ -502,9 +566,12 @@ const Onboarding: FC = () => {
           />
         ))}
         {subScreen === 'register' ? (
-          <RegisterScreen onSubmit={handleRequestLocation} onBack={() => setSubScreen('login')} />
+          <RegisterScreen
+            onBack={() => setSubScreen('login')}
+            onSuccess={handleRequestLocation}
+          />
         ) : (
-          <LoginScreen onLogin={handleRequestLocation} onRegister={() => setSubScreen('register')} />
+          <LoginScreen onDemoLogin={handleDemoLogin} onRegister={() => setSubScreen('register')} demoLoading={demoLoading} />
         )}
       </div>
 

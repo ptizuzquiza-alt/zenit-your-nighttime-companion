@@ -3,17 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { AVATAR_BY_NAME } from '@/config/contacts';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | null;
 
 const Profile: FC = () => {
   const navigate = useNavigate();
+  const { user, profile, signOut, updateProfile, uploadAvatar } = useAuth();
   const [activeSheet, setActiveSheet] = useState<Sheet>(null);
 
-  // Edit profile state — persisted in localStorage
-  const [name, setName] = useState(() => localStorage.getItem('zenit_name') || 'Patricia');
-  const [username, setUsername] = useState(() => localStorage.getItem('zenit_username') || '@patricia');
-  const [email, setEmail] = useState(() => localStorage.getItem('zenit_email') || 'patricia@email.com');
+  // Edit profile state — reads from auth profile when available, falls back to localStorage (demo)
+  const [name, setName] = useState(() => profile?.name ?? localStorage.getItem('zenit_name') ?? 'Patricia');
+  const [username, setUsername] = useState(() => profile?.username ? `@${profile.username}` : (localStorage.getItem('zenit_username') ?? '@patricia'));
+  const [email, setEmail] = useState(() => localStorage.getItem('zenit_email') ?? 'patricia@email.com');
   const [editName, setEditName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -21,12 +23,21 @@ const Profile: FC = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Sync displayed values when auth profile loads
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name);
+      setUsername(`@${profile.username}`);
+      if (profile.avatar_url) setProfilePhoto(profile.avatar_url);
+    }
+  }, [profile]);
+
   useEffect(() => {
     const stored = localStorage.getItem('zenit_photo');
-    if (stored) {
+    if (stored && !profile?.avatar_url) {
       setProfilePhoto(stored);
     }
-  }, []);
+  }, [profile]);
   const [showPw, setShowPw] = useState(false);
 
   // Privacy toggles
@@ -50,17 +61,25 @@ const Profile: FC = () => {
     setActiveSheet(sheet);
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!editName.trim()) return;
     const n = editName.trim();
-    const u = editUsername.trim();
+    const u = editUsername.trim().replace(/^@/, '');
     const em = editEmail.trim();
+
+    if (user) {
+      const { error } = await updateProfile({ name: n, username: u });
+      if (error) { toast.error('Error al guardar: ' + error); return; }
+    } else {
+      // Demo mode — localStorage only
+      localStorage.setItem('zenit_name', n);
+      localStorage.setItem('zenit_username', editUsername.trim());
+      localStorage.setItem('zenit_email', em);
+    }
+
     setName(n);
-    setUsername(u);
+    setUsername(u ? `@${u}` : editUsername.trim());
     setEmail(em);
-    localStorage.setItem('zenit_name', n);
-    localStorage.setItem('zenit_username', u);
-    localStorage.setItem('zenit_email', em);
     setActiveSheet(null);
     toast.success('Perfil actualizado');
   };
@@ -78,16 +97,33 @@ const Profile: FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setProfilePhoto(result);
-      localStorage.setItem('zenit_photo', result);
-    };
-    reader.readAsDataURL(file);
+
+    if (user) {
+      setUploadingPhoto(true);
+      const { url, error } = await uploadAvatar(file);
+      setUploadingPhoto(false);
+      if (error) { toast.error('Error al subir la foto: ' + error); return; }
+      if (url) {
+        setProfilePhoto(url);
+        localStorage.setItem('zenit_photo', url);
+        toast.success('Foto actualizada');
+      }
+    } else {
+      // Demo mode — base64 in localStorage
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        setProfilePhoto(result);
+        localStorage.setItem('zenit_photo', result);
+        toast.success('Foto actualizada');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -254,24 +290,31 @@ const Profile: FC = () => {
               <button
                 type="button"
                 onClick={handlePhotoClick}
-                className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden"
+                disabled={uploadingPhoto}
+                className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/40 overflow-hidden relative"
               >
                 {profilePhoto || AVATAR_BY_NAME[name] ? (
                   <img
                     src={profilePhoto || AVATAR_BY_NAME[name] || ''}
                     alt={name}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover transition-opacity ${uploadingPhoto ? 'opacity-40' : ''}`}
                   />
                 ) : (
                   <User className="w-9 h-9 text-primary" />
+                )}
+                {uploadingPhoto && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
                 )}
               </button>
               <button
                 type="button"
                 onClick={handlePhotoClick}
-                className="text-xs text-primary font-medium underline underline-offset-2"
+                disabled={uploadingPhoto}
+                className="text-xs text-primary font-medium underline underline-offset-2 disabled:opacity-50"
               >
-                Editar foto
+                {uploadingPhoto ? 'Subiendo...' : 'Editar foto'}
               </button>
             </div>
             <div className="space-y-3">
@@ -354,8 +397,12 @@ const Profile: FC = () => {
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  localStorage.removeItem('zenit_onboarded');
+                onClick={async () => {
+                  if (user) {
+                    await signOut();
+                  } else {
+                    localStorage.removeItem('zenit_onboarded');
+                  }
                   navigate('/onboarding', { replace: true });
                 }}
                 className="flex-1 py-3.5 rounded-2xl bg-destructive text-white font-semibold text-sm"

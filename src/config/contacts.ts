@@ -1,3 +1,6 @@
+// IDs of friends currently broadcasting an active route
+export const SHARING_ROUTE_IDS = new Set(['juan', 'marta']);
+
 export const CONTACTS = [
   { id: '1', name: 'Juan', avatar: '/juan.png' },
   { id: '2', name: 'Marta', avatar: '/marta.png' },

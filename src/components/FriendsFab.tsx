@@ -23,7 +23,7 @@ export const FriendsFab: FC<FriendsFabProps> = ({
   activeClassName = 'bg-primary text-primary-foreground',
   inactiveClassName = 'bg-card/90 text-muted-foreground border border-border',
   iconClassName = 'w-7 h-7',
-  badgeClassName = 'absolute -top-1 left-10 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md',
+  badgeClassName = 'absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md',
   children,
 }) => {
   const stateClasses = active ? activeClassName : inactiveClassName;
@@ -33,7 +33,7 @@ export const FriendsFab: FC<FriendsFabProps> = ({
       type="button"
       aria-label={ariaLabel}
       onClick={onClick}
-      className={`rounded-full flex items-center justify-center shadow-lg transition-all ${stateClasses} ${className}`}
+      className={`relative rounded-full flex items-center justify-center shadow-lg transition-all ${stateClasses} ${className}`}
     >
       {children ?? <Users className={iconClassName} />}
       {badgeCount > 0 && (

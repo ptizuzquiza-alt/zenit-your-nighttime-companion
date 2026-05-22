@@ -28,9 +28,10 @@ export interface RouteResult {
   distance: number; // meters
   duration: number; // seconds
   steps: RouteStep[];
+  lightingScore?: number; // 0–1, fraction of route within 30m of a street lamp
 }
 
-function mapManeuverDirection(modifier?: string): 'left' | 'right' | 'straight' {
+export function mapManeuverDirection(modifier?: string): 'left' | 'right' | 'straight' {
   if (!modifier) return 'straight';
   if (modifier.includes('left')) return 'left';
   if (modifier.includes('right')) return 'right';
@@ -62,7 +63,7 @@ function parseOSRMRoute(route: any): RouteResult {
 }
 
 /** Fraction of route that moves away from destination (0=direct, >0.3=hook) */
-function backtrackRatio(
+export function backtrackRatio(
   coords: [number, number][],
   destination: [number, number]
 ): number {
@@ -123,7 +124,7 @@ async function fetchNudged(
 }
 
 /** Turns per km metric (fewer = main avenues) */
-function turnsPerKm(r: RouteResult): number {
+export function turnsPerKm(r: RouteResult): number {
   let turns = 0;
   for (let i = 2; i < r.coordinates.length; i++) {
     const [p, c, n] = [r.coordinates[i - 2], r.coordinates[i - 1], r.coordinates[i]];
@@ -183,9 +184,18 @@ export async function fetchZenitRoute(
   const lamps = await fetchStreetLamps(bbox.minLat, bbox.minLon, bbox.maxLat, bbox.maxLon);
 
   // Score each candidate and pick the best lit + straightest
-  return candidates
-    .map(r => ({ r, score: safetyScore(r, scoreLighting(r.coordinates, lamps)) }))
-    .sort((a, b) => b.score - a.score)[0].r;
+  const scored = candidates
+    .map(r => {
+      const lightScore = scoreLighting(r.coordinates, lamps);
+      return { r, lightScore, score: safetyScore(r, lightScore) };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const best = scored[0];
+  if (lamps.length > 0) {
+    return { ...best.r, lightingScore: best.lightScore };
+  }
+  return best.r;
 }
 
 /**

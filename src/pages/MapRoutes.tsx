@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef, type PointerEvent, type TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Info, X, Footprints, Bus } from 'lucide-react';
+import { ChevronLeft, Info, X, Footprints, Bus, Lightbulb } from 'lucide-react';
 import { ZenitMap } from '@/components/ZenitMap';
 import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
@@ -386,33 +386,35 @@ const MapRoutes: FC = () => {
           onClick={handleHandleClick}
           style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
         >
-          <div className="flex items-center justify-between shrink-0 gap-6">
-            <div
-              className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
-              style={{ borderColor: MAP_ROUTE_SAFE_COLOR, color: MAP_ROUTE_SAFE_COLOR }}
-            >
-              <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: MAP_ROUTE_SAFE_COLOR }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
-                  <path d="M6 14.6459V4.95C6 4.70147 6.20147 4.5 6.45 4.5H17.55C17.7985 4.5 18 4.70147 18 4.95V14.6459C18 15.7822 17.358 16.821 16.3416 17.3292L12.2012 19.3994C12.0746 19.4627 11.9254 19.4627 11.7988 19.3994L7.65836 17.3292C6.64201 16.821 6 15.7822 6 14.6459Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M9.375 10.875L11.625 13.125L15.375 9.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <h3 className="font-semibold">Ruta Zenit</h3>
+          <div className="flex flex-col gap-1.5 shrink-0">
+            <div className="flex items-center gap-6">
+              <div
+                className="inline-flex items-center gap-3 rounded-full border-2 p-0 pr-6"
+                style={{ borderColor: MAP_ROUTE_SAFE_COLOR, color: MAP_ROUTE_SAFE_COLOR }}
+              >
+                <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: MAP_ROUTE_SAFE_COLOR }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
+                    <path d="M6 14.6459V4.95C6 4.70147 6.20147 4.5 6.45 4.5H17.55C17.7985 4.5 18 4.70147 18 4.95V14.6459C18 15.7822 17.358 16.821 16.3416 17.3292L12.2012 19.3994C12.0746 19.4627 11.9254 19.4627 11.7988 19.3994L7.65836 17.3292C6.64201 16.821 6 15.7822 6 14.6459Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M9.375 10.875L11.625 13.125L15.375 9.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <h3 className="font-semibold">Ruta Zenit</h3>
+              </div>
+              {panelState === 'minimized' && transportMode === 'walk' && currentRouteData && (
+                <div className="flex items-center gap-2 text-sm font-medium text-white">
+                  <span>{formatDuration(currentRouteData.duration)}</span>
+                  <span>·</span>
+                  <span>{formatDistance(currentRouteData.distance)}</span>
+                </div>
+              )}
+              {panelState === 'minimized' && transportMode === 'transit' && transitRoute && (
+                <div className="flex items-center gap-2 text-sm font-medium text-white">
+                  <span>{formatDuration(transitRoute.totalDuration)}</span>
+                  <span>·</span>
+                  <span>{formatDistance(transitRoute.totalDistance)}</span>
+                </div>
+              )}
             </div>
-            {panelState === 'minimized' && transportMode === 'walk' && currentRouteData && (
-              <div className="flex items-center gap-2 text-sm font-medium text-white">
-                <span>{formatDuration(currentRouteData.duration)}</span>
-                <span>·</span>
-                <span>{formatDistance(currentRouteData.distance)}</span>
-              </div>
-            )}
-            {panelState === 'minimized' && transportMode === 'transit' && transitRoute && (
-              <div className="flex items-center gap-2 text-sm font-medium text-white">
-                <span>{formatDuration(transitRoute.totalDuration)}</span>
-                <span>·</span>
-                <span>{formatDistance(transitRoute.totalDistance)}</span>
-              </div>
-            )}
           </div>
 
           <div className="ml-3 flex-shrink-0 flex items-center">

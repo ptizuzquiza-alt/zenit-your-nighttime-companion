@@ -5,7 +5,7 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendsFab } from '../components/FriendsFab';
-import { AVATAR_BY_NAME } from '@/config/contacts';
+import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -52,6 +52,23 @@ const MapIdle: FC = () => {
     { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number }[]
   >([]);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+
+  const isDemo = localStorage.getItem('zenit_friends') === null;
+  const currentUserName = localStorage.getItem('zenit_name') || (isDemo ? 'Patricia' : '');
+
+  // Filter simulated routes to only friends the current user actually has.
+  // If zenit_friends key is absent the account is Patricia's demo → show all.
+  const [myFriendRoutes] = useState<typeof FRIEND_ROUTES>(() => {
+    const stored = localStorage.getItem('zenit_friends');
+    if (stored === null) {
+      if (!localStorage.getItem('zenit_name')) localStorage.setItem('zenit_name', 'Patricia');
+      return FRIEND_ROUTES;
+    }
+    try {
+      const ids = (JSON.parse(stored) as { id: string }[]).map(f => f.id);
+      return FRIEND_ROUTES.filter(fr => ids.includes(fr.id));
+    } catch { return FRIEND_ROUTES; }
+  });
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
 
@@ -72,7 +89,7 @@ const MapIdle: FC = () => {
 
   // Auto-accept all friends when they share their location
   useEffect(() => {
-    const incoming = FRIEND_ROUTES.filter(fr => !acceptedFriends.includes(fr.id));
+    const incoming = myFriendRoutes.filter(fr => !acceptedFriends.includes(fr.id));
     if (incoming.length > 0) {
       const timer = setTimeout(() => {
         setAcceptedFriends(prev => {
@@ -109,7 +126,7 @@ const MapIdle: FC = () => {
   // Fetch friend routes from OSRM
   useEffect(() => {
     Promise.all(
-      FRIEND_ROUTES.map(async (fr) => {
+      myFriendRoutes.map(async (fr) => {
         try {
           const coords = `${fr.origin[1]},${fr.origin[0]};${fr.dest[1]},${fr.dest[0]}`;
           const res = await fetch(
@@ -150,12 +167,12 @@ const MapIdle: FC = () => {
       return { name, avatar: AVATAR_BY_NAME[name], coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
     });
 
-  const badgeCount = acceptedFriends.length;
+  const badgeCount = myFriendRoutes.filter(fr => SHARING_ROUTE_IDS.has(fr.id)).length;
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
     const now = new Date();
-    return FRIEND_ROUTES.map((fr) => {
+    return myFriendRoutes.map((fr) => {
       const match = friendData.find((d) => d.name === fr.name);
       const departureDate = new Date(now.getTime() - fr.minutesAgo * 60_000);
       const totalSec = match?.durationSec ?? fr.totalDurationMin * 60;
@@ -170,7 +187,7 @@ const MapIdle: FC = () => {
   }, [friendData]);
 
   // Only show accepted friends in cards
-  const acceptedFriendData = FRIEND_ROUTES.filter(fr => acceptedFriends.includes(fr.id));
+  const acceptedFriendData = myFriendRoutes.filter(fr => acceptedFriends.includes(fr.id));
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -201,10 +218,10 @@ const MapIdle: FC = () => {
           onClick={() => navigate('/profile')}
           className="w-14 h-14 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
-          {profilePhoto || AVATAR_BY_NAME['Patricia'] ? (
+          {profilePhoto || AVATAR_BY_NAME[currentUserName] ? (
             <img
-              src={profilePhoto || AVATAR_BY_NAME['Patricia'] || ''}
-              alt="Patricia"
+              src={profilePhoto || AVATAR_BY_NAME[currentUserName] || ''}
+              alt={currentUserName}
               className="w-full h-full object-cover"
             />
           ) : (

@@ -523,12 +523,17 @@ const Navigation: FC = () => {
               </div>
               {/* Buttons flexbox */}
               <div className="flex items-center gap-4">
-                {/* Viewers button */}
+                {/* Share button */}
                 <button
-                  onClick={() => setShowViewers(prev => !prev)}
-                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary text-foreground hover:text-muted-foreground cursor-pointer transition-colors"
+                  onClick={() => {
+                    setShowShareModal(true);
+                    setShowViewers(false);
+                    const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
+                    setSheetOffset(h);
+                  }}
+                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary hover:text-muted-foreground transition-colors cursor-pointer"
                 >
-                  <Eye className="w-5.2 h-5.2" />
+                  <Share2 className="w-5 h-5" />
                   <span className="text-md">{sharedContacts.length}</span>
                 </button>
                 {/* Cancel button */}
@@ -554,19 +559,6 @@ const Navigation: FC = () => {
                   <span className="text-2xl text-foreground">{arrivalLabel}</span>
                 </div>
               </div>
-              {/* Share button */}
-              <button
-                onClick={() => {
-                  setShowShareModal(true);
-                  setShowViewers(false);
-                  const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
-                  setSheetOffset(h);
-                }}
-                className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary hover:text-muted-foreground transition-colors cursor-pointer"
-              >
-                <Share2 className="w-5 h-5" />
-                <span className="text-md">Compartir</span>
-              </button>
             </div>
           </div>
 

@@ -78,46 +78,40 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       return;
     }
     if (status === 'pending') {
-      setConfirm({ id: contact.id, name: contact.name, action: 'cancel' });
+      setPending(prev => prev.filter(x => x !== contact.id));
       return;
     }
-    setConfirm({ id: contact.id, name: contact.name, action: 'share' });
+    setSelected(prev => (prev.includes(contact.id) ? prev : [...prev, contact.id]));
   };
 
   const handleConfirm = () => {
     if (!confirm) return;
-    if (confirm.action === 'unshare') {
-      setSelected(prev => prev.filter(x => x !== confirm.id));
-    }
-    if (confirm.action === 'cancel') {
-      setPending(prev => prev.filter(x => x !== confirm.id));
-    }
-    if (confirm.action === 'share') {
-      setSelected(prev => (prev.includes(confirm.id) ? prev : [...prev, confirm.id]));
-    }
+    setSelected(prev => prev.filter(x => x !== confirm.id));
     setConfirm(null);
   };
 
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center px-4 py-6">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-card rounded-3xl p-6 animate-slide-up">
-        <div className="mb-4">
+        <div className="mb-4 text-center">
           <h2 className="text-xl font-semibold text-foreground">Compartir tu ruta</h2>
         </div>
 
+        {/* Count banner */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#5B568A] px-4 py-3 mb-4">
-          <div className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-white">
-            <Share2 className="w-4 h-4" />
-            <span className="text-sm font-semibold">{shareCount}</span>
+          <div className="flex items-center gap-2 rounded-full border border-white px-4 py-3 text-white">
+            <Share2 className="w-5 h-5" />
+            <span className="text-lg">{shareCount}</span>
           </div>
           <p className="text-sm text-white/90">
             Amigos que pueden ver tu ubicacion en directo hasta el final del trayecto actual.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 rounded-full bg-secondary/50 px-4 py-2.5 mb-4">
-          <Search className="w-4 h-4 text-muted-foreground" />
+        {/* Search bar */}
+        <div className="flex items-center gap-3 rounded-full bg-muted px-4 py-2.5 mb-4">
+          <Search className="w-4 h-4" />
           <input
             type="text"
             placeholder="Buscar"
@@ -129,6 +123,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         
         <p className="text-sm font-medium text-muted-foreground mb-3">Recientes</p>
         
+        {/* Contacts list */}
         <div className="space-y-2 max-h-64 overflow-y-auto mb-6">
           {filteredContacts.map(contact => {
             const status = getStatus(contact);
@@ -169,6 +164,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           })}
         </div>
 
+        {/* Action buttons */}
         <button onClick={onClose} className="zenit-btn-secondary">
           Cancelar
         </button>

@@ -15,10 +15,10 @@
     --background: 249 42% 12%;
     --foreground: 0 0% 98%;
 
-    --card: 249 40% 15%;
+    --card: 249 30% 25%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 249 38% 17%;
+    --popover: 250 23% 47%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 265 90% 60%;
@@ -27,8 +27,8 @@
     --secondary: 249 35% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 249 35% 18%;
-    --muted-foreground: 249 20% 55%;
+    --muted: 250 21% 33%;
+    --muted-foreground: 249 20% 65%;
 
     --accent: 58 100% 50%;
     --accent-foreground: 249 42% 12%;
@@ -85,7 +85,7 @@
     --secondary: 240 15% 20%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 15% 18%;
-    --muted-foreground: 240 10% 60%;
+    --muted-foreground: 250 21% 33%;
     --accent: 56 100% 50%;
     --accent-foreground: 240 25% 8%;
     --destructive: 0 62.8% 30.6%;
@@ -160,7 +160,7 @@
   }
 
   .zenit-btn-secondary {
-    @apply w-full py-3.5 rounded-3xl font-semibold bg-secondary/80 text-foreground border border-border/50 transition-all duration-200;
+    @apply w-full py-3.5 rounded-3xl font-semibold bg-muted text-foreground border border-border/50 transition-all duration-200;
   }
 
   .zenit-btn-secondary:hover {

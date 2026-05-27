@@ -420,7 +420,7 @@ const Navigation: FC = () => {
         );
       })()}
 
-      {/* Bottom sheet - portal to escape overflow-hidden ancestor */}
+      {/* Bottom sheet */}
       {createPortal(
         <div 
           ref={sheetRef}
@@ -451,7 +451,7 @@ const Navigation: FC = () => {
                 }}
                 className="w-14 h-14"
                 iconClassName="w-7 h-7"
-                inactiveClassName="bg-card/80 backdrop-blur-sm text-foreground"
+                inactiveClassName="bg-popover backdrop-blur-sm text-foreground"
               />
 
               {showFriendsPopup && friendRoutes.length > 0 && (
@@ -487,7 +487,7 @@ const Navigation: FC = () => {
             </div>
           </div>
 
-          {/* Center/locate button — right */}
+          {/* Center button — Right */}
           <button
             onClick={() => {
               setFollowUser(true);
@@ -499,7 +499,7 @@ const Navigation: FC = () => {
             className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
               !followUser || fitAll || !!focusedFriend
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-card/80 backdrop-blur-sm text-foreground'
+                : 'bg-popover backdrop-blur-sm text-foreground'
             }`}
           >
             <LocateFixed className="w-6 h-6" />
@@ -529,10 +529,10 @@ const Navigation: FC = () => {
                     setShowShareModal(true);
                     setShowViewers(false);
                   }}
-                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary hover:text-muted-foreground transition-colors cursor-pointer"
+                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
                 >
                   <Share2 className="w-5 h-5" />
-                  <span className="text-md">{sharedContacts.length}</span>
+                  <span className="text-lg">{sharedContacts.length}</span>
                 </button>
                 {/* Cancel button */}
                 <button

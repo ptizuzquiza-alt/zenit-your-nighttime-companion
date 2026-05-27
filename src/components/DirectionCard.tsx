@@ -14,18 +14,18 @@ export const DirectionCard: FC<DirectionCardProps> = ({
   onIconClick,
 }) => {
   return (
-    <div className="zenit-direction-card">
+    <div className="zenit-direction-card bg-card p-5">
       <button
         onClick={onIconClick}
-        className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform"
+        className="w-12 h-12 rounded-xl bg-popover flex items-center justify-center active:scale-95 transition-transform"
       >
-        {direction === 'right' && <TurnRightIcon className="w-6 h-6 text-white" />}
-        {direction === 'left' && <TurnLeftIcon className="w-6 h-6 text-white" />}
-        {direction === 'straight' && <ArrowUpIcon className="w-6 h-6 text-white" />}
+        {direction === 'right' && <TurnRightIcon className="w-8 h-8 text-white" />}
+        {direction === 'left' && <TurnLeftIcon className="w-8 h-8 text-white" />}
+        {direction === 'straight' && <ArrowUpIcon className="w-8 h-8 text-white" />}
       </button>
       <div className="flex flex-col">
-        <span className="text-white/90 text-lg font-semibold">{distance}</span>
-        <span className="text-white/70 text-sm">{instruction}</span>
+        <span className="text-xl font-semibold">{distance}</span>
+        <span className="text-xl font-semibold">{instruction}</span>
       </div>
     </div>
   );

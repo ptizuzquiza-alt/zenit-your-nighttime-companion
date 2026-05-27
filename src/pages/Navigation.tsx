@@ -528,8 +528,6 @@ const Navigation: FC = () => {
                   onClick={() => {
                     setShowShareModal(true);
                     setShowViewers(false);
-                    const h = sheetRef.current ? sheetRef.current.offsetHeight - 40 : 300;
-                    setSheetOffset(h);
                   }}
                   className="flex items-center gap-2 px-5 py-4 rounded-full bg-secondary hover:text-muted-foreground transition-colors cursor-pointer"
                 >

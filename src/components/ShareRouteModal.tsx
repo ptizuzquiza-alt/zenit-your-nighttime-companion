@@ -86,6 +86,11 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
 
   const handleConfirm = () => {
     if (!confirm) return;
+    if (confirm.action === 'cancel') {
+      setConfirm(null);
+      onClose();
+      return;
+    }
     setSelected(prev => prev.filter(x => x !== confirm.id));
     setConfirm(null);
   };
@@ -165,7 +170,16 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         </div>
 
         {/* Action buttons */}
-        <button onClick={onClose} className="zenit-btn-secondary">
+        <button
+          onClick={() => {
+            if (hasShareChanges) {
+              setConfirm({ id: '', name: '', action: 'cancel' });
+              return;
+            }
+            onClose();
+          }}
+          className="zenit-btn-secondary"
+        >
           Cancelar
         </button>
 
@@ -187,14 +201,14 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
               {confirm.action === 'unshare'
                 ? 'Dejar de compartir'
                 : confirm.action === 'cancel'
-                  ? 'Deshacer invitacion'
+                  ? '¿Salir sin guardar tus cambios?'
                   : 'Compartir ruta'}
             </p>
-            <p className="text-sm text-center mb-5 leading-relaxed">
+            <p className="text-sm text-center mb-5">
               {confirm.action === 'unshare'
                 ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
                 : confirm.action === 'cancel'
-                  ? `Vas a deshacer la invitacion de ${confirm.name}. ¿Quieres continuar?`
+                  ? 'Todos los cambios que has hecho no serán aplicados.'
                   : `Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
             </p>
             <div className="flex gap-3">
@@ -206,9 +220,9 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
               </button>
               <button
                 onClick={handleConfirm}
-                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-primary'}`}
+                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-destructive'}`}
               >
-                Dejar de compartir
+                {confirm.action === 'cancel' ? 'Salir sin guardar' : 'Dejar de compartir'}
               </button>
             </div>
           </div>

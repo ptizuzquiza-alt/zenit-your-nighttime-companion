@@ -196,31 +196,24 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       {confirm && (
         <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/50 rounded-t-3xl" onClick={() => setConfirm(null)} />
-          <div className="relative bg-card border border-border rounded-2xl p-5 w-full shadow-xl">
-            <p className="text-foreground font-semibold text-center text-base mb-2">
+          <div className="relative bg-card border border-border rounded-2xl p-6 w-full shadow-xl">
+            <p className="text-foreground font-semibold text-center text-base mb-4">
               {confirm.action === 'unshare'
-                ? 'Dejar de compartir'
+                ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
                 : confirm.action === 'cancel'
                   ? '¿Salir sin guardar tus cambios?'
                   : 'Compartir ruta'}
             </p>
-            <p className="text-sm text-center mb-5">
-              {confirm.action === 'unshare'
-                ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
-                : confirm.action === 'cancel'
-                  ? 'Todos los cambios que has hecho no serán aplicados.'
-                  : `Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
-            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-3 rounded-xl bg-popover text-foreground font-medium text-sm"
+                className="flex-1 py-3 rounded-3xl bg-popover text-foreground font-medium text-sm"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
-                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-destructive'}`}
+                className={`flex-1 py-3 rounded-3xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-destructive'}`}
               >
                 {confirm.action === 'cancel' ? 'Salir sin guardar' : 'Dejar de compartir'}
               </button>

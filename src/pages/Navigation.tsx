@@ -331,9 +331,9 @@ const Navigation: FC = () => {
 
   const focusedFriendRoute = focusedFriend ? friendRoutes.find(fr => fr.id === focusedFriend) : undefined;
   const sheetHeight = sheetState === 'collapsed'
-    ? '290px'
+    ? '250px'
     : sheetState === 'middle'
-      ? '395px'
+      ? '250px'
       : 'calc(100vh - 40px)';
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -432,76 +432,80 @@ const Navigation: FC = () => {
           onTouchEnd={handleTouchEnd}
         >
           {/* FABs floating above the sheet */}
-          {/* Friends button — left */}
-          <div className="absolute -top-20 left-4 flex flex-col items-start gap-2">
-            <div className="flex flex-row items-center gap-2">
-              <FriendsFab
-                active={showFriendsPopup}
-                onClick={() => {
-                  setShowFriendsPopup(prev => {
-                    const next = !prev;
-                    if (!next) {
-                      setFocusedFriend(null);
-                      setFitAll(false);
-                    }
-                    return next;
-                  });
-                }}
-                className="w-14 h-14"
-                iconClassName="w-7 h-7"
-                inactiveClassName="bg-popover backdrop-blur-sm text-foreground"
-              />
-
-              {showFriendsPopup && friendRoutes.length > 0 && (
-                <div
-                  className="flex flex-row gap-3 px-3 py-2 bg-primary/90 backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
-                  style={{ maxWidth: 'calc(100vw - 5rem)', transformOrigin: 'left center', animation: 'pillExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
-                >
-                  {friendRoutes.map((friend) => {
-                    const active = focusedFriend === friend.id;
-                    return (
-                      <button
-                        key={friend.id}
-                        onClick={() => {
-                          const opening = focusedFriend !== friend.id;
-                          setFocusedFriend(opening ? friend.id : null);
+          {sheetState !== 'expanded' && (
+            <>
+              {/* Friends button — left */}
+              <div className="absolute -top-20 left-4 flex flex-col items-start gap-2">
+                <div className="flex flex-row items-center gap-2">
+                  <FriendsFab
+                    active={showFriendsPopup}
+                    onClick={() => {
+                      setShowFriendsPopup(prev => {
+                        const next = !prev;
+                        if (!next) {
+                          setFocusedFriend(null);
                           setFitAll(false);
-                          setFollowUser(false);
-                        }}
-                        className={`w-11 h-11 rounded-full border-2 overflow-hidden flex-shrink-0 transition-all duration-200 ${
-                          active ? 'border-white scale-105' : 'border-white/50'
-                        }`}
-                      >
-                        {friend.avatar ? (
-                          <img src={friend.avatar} className="w-full h-full object-cover" alt={friend.name} />
-                        ) : (
-                          <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">{friend.name[0]}</div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+                        }
+                        return next;
+                      });
+                    }}
+                    className="w-14 h-14"
+                    iconClassName="w-7 h-7"
+                    inactiveClassName="bg-popover backdrop-blur-sm text-foreground"
+                  />
 
-          {/* Center button — Right */}
-          <button
-            onClick={() => {
-              setFollowUser(true);
-              setFitAll(false);
-              setFocusedFriend(null);
-              setShowFriendsPopup(false);
-              setSheetState('middle');
-            }}
-            className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
-              !followUser || fitAll || !!focusedFriend
-                ? 'bg-popover text-primary-foreground'
-                : 'bg-popover backdrop-blur-sm text-foreground'
-            }`}
-          >
-            <LocateFixed className="w-6 h-6" />
-          </button>
+                  {showFriendsPopup && friendRoutes.length > 0 && (
+                    <div
+                      className="flex flex-row gap-3 px-3 py-2 bg-primary/90 backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
+                      style={{ maxWidth: 'calc(100vw - 5rem)', transformOrigin: 'left center', animation: 'pillExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+                    >
+                      {friendRoutes.map((friend) => {
+                        const active = focusedFriend === friend.id;
+                        return (
+                          <button
+                            key={friend.id}
+                            onClick={() => {
+                              const opening = focusedFriend !== friend.id;
+                              setFocusedFriend(opening ? friend.id : null);
+                              setFitAll(false);
+                              setFollowUser(false);
+                            }}
+                            className={`w-11 h-11 rounded-full border-2 overflow-hidden flex-shrink-0 transition-all duration-200 ${
+                              active ? 'border-white scale-105' : 'border-white/50'
+                            }`}
+                          >
+                            {friend.avatar ? (
+                              <img src={friend.avatar} className="w-full h-full object-cover" alt={friend.name} />
+                            ) : (
+                              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">{friend.name[0]}</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Center button — Right */}
+              <button
+                onClick={() => {
+                  setFollowUser(true);
+                  setFitAll(false);
+                  setFocusedFriend(null);
+                  setShowFriendsPopup(false);
+                  setSheetState('middle');
+                }}
+                className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
+                  !followUser || fitAll || !!focusedFriend
+                    ? 'bg-popover text-primary-foreground'
+                    : 'bg-popover backdrop-blur-sm text-foreground'
+                }`}
+              >
+                <LocateFixed className="w-7 h-7" />
+              </button>
+            </>
+          )}
 
           {/* Lower bar's handle */}
           <div
@@ -511,108 +515,112 @@ const Navigation: FC = () => {
             <div className="w-10 h-1 bg-muted-foreground/60 rounded-full cursor-pointer" />
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-            {/* Lower bar contents */}
-            <div className="flex flex-col gap-8 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-foreground">Tiempo restante</span>
-                  <span className="text-3xl font-semibold text-foreground">{remainingTimeLabel}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      setShowShareModal(true);
-                      setShowViewers(false);
-                    }}
-                    className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    <span className="text-lg">{sharedContacts.length}</span>
-                  </button>
-                  <button
-                    onClick={() => { setShowCancelConfirm(true); }}
-                    className="px-4 py-4 rounded-full bg-destructive/85 flex items-center justify-center text-destructive hover:bg-destructive/65 transition-colors"
-                  >
-                    <X className="w-6 h-6 text-white" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-8">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex-shrink-0">
+              {/* Lower bar contents */}
+              <div className="flex flex-col gap-8 mb-6">
+                <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1">
-                    <span className="text-sm text-foreground">Distancia</span>
-                    <span className="text-2xl text-foreground">{remainingDistanceLabel}</span>
+                    <span className="text-sm text-foreground">Tiempo restante</span>
+                    <span className="text-3xl font-semibold text-foreground">{remainingTimeLabel}</span>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-foreground">Previsión</span>
-                    <span className="text-2xl text-foreground">{arrivalLabel}</span>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => {
+                        setShowShareModal(true);
+                        setShowViewers(false);
+                      }}
+                      className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
+                    >
+                      <Share2 className="w-5 h-5" />
+                      <span className="text-lg">{sharedContacts.length}</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowCancelConfirm(true); }}
+                      className="px-4 py-4 rounded-full bg-destructive/85 flex items-center justify-center text-destructive hover:bg-destructive/65 transition-colors"
+                    >
+                      <X className="w-6 h-6 text-white" />
+                    </button>
                   </div>
                 </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-8">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-foreground">Distancia</span>
+                      <span className="text-2xl text-foreground">{remainingDistanceLabel}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-foreground">Previsión</span>
+                      <span className="text-2xl text-foreground">{arrivalLabel}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {showViewers && (
-              <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
-                <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
-                {sharedContacts.length > 0 ? (
-                  <div className="space-y-2">
-                    {sharedContacts.map(id => {
-                      const contact = CONTACTS.find(c => c.id === id);
-                      if (!contact) return null;
+              {showViewers && (
+                <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
+                  <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
+                  {sharedContacts.length > 0 ? (
+                    <div className="space-y-2">
+                      {sharedContacts.map(id => {
+                        const contact = CONTACTS.find(c => c.id === id);
+                        if (!contact) return null;
 
-                      if (confirmRemoveId === id) {
-                        return (
-                          <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
-                            <p className="text-sm text-foreground mb-3">
-                              ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
-                            </p>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => {
-                                  setSharedContacts(prev => prev.filter(x => x !== id));
-                                  setConfirmRemoveId(null);
-                                }}
-                                className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
-                              >
-                                Sí, dejar de compartir
-                              </button>
-                              <button
-                                onClick={() => setConfirmRemoveId(null)}
-                                className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
-                              >
-                                Cancelar
-                              </button>
+                        if (confirmRemoveId === id) {
+                          return (
+                            <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                              <p className="text-sm text-foreground mb-3">
+                                ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
+                              </p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setSharedContacts(prev => prev.filter(x => x !== id));
+                                    setConfirmRemoveId(null);
+                                  }}
+                                  className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
+                                >
+                                  Sí, dejar de compartir
+                                </button>
+                                <button
+                                  onClick={() => setConfirmRemoveId(null)}
+                                  className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
                             </div>
+                          );
+                        }
+
+                        return (
+                          <div key={id} className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                              <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
+                            </div>
+                            <span className="text-sm text-foreground flex-1">{contact.name}</span>
+                            <button
+                              onClick={() => setConfirmRemoveId(id)}
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         );
-                      }
-
-                      return (
-                        <div key={id} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
-                          </div>
-                          <span className="text-sm text-foreground flex-1">{contact.name}</span>
-                          <button
-                            onClick={() => setConfirmRemoveId(id)}
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">Aún no hay nadie visualizando tu ruta.</div>
-                )}
-              </div>
-            )}
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Aún no hay nadie visualizando tu ruta.</div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {sheetState === 'expanded' && (
-              <div className="mt-2 pb-2">
-                <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain mt-2 pb-2">
+                <div className="pt-2">
+                  <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+                </div>
                 <div className="pb-4">
                   <RouteTimeline
                     originLabel="Tu ubicación"

@@ -151,7 +151,7 @@
   }
 
   .zenit-btn-primary {
-    @apply w-full py-3.5 rounded-xl font-semibold text-primary-foreground transition-all duration-200;
+    @apply w-full py-3.5 rounded-3xl font-semibold text-primary-foreground transition-all duration-200;
     background: var(--gradient-primary);
   }
 
@@ -160,7 +160,7 @@
   }
 
   .zenit-btn-secondary {
-    @apply w-full py-3.5 rounded-xl font-semibold bg-secondary/80 text-foreground border border-border/50 transition-all duration-200;
+    @apply w-full py-3.5 rounded-3xl font-semibold bg-secondary/80 text-foreground border border-border/50 transition-all duration-200;
   }
 
   .zenit-btn-secondary:hover {

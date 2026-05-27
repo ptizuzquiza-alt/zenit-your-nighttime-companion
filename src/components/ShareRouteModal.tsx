@@ -26,6 +26,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [pending, setPending] = useState<string[]>([]);
   const [search, setSearch] = useState('');
+  const [initialShareCount, setInitialShareCount] = useState(0);
   const [confirm, setConfirm] = useState<{
     id: string;
     name: string;
@@ -41,7 +42,11 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       const pendingFromContacts = contacts
         .filter(contact => contact.status === 'pending')
         .map(contact => contact.id);
-      setSelected(Array.from(new Set([...initialSelected, ...sharingFromContacts])));
+      const initialShareSet = Array.from(
+        new Set([...initialSelected, ...sharingFromContacts])
+      );
+      setSelected(initialShareSet);
+      setInitialShareCount(initialShareSet.length);
       setPending(pendingFromContacts);
       setConfirm(null);
     }
@@ -132,7 +137,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                   : 'Compartir tu ruta';
             const actionClass =
               status === 'sharing'
-                ? 'bg-[#FF6A00] text-white'
+                ? 'bg-destructive text-destructive-foreground'
                 : status === 'pending'
                   ? 'bg-[#6B63A5] text-white'
                   : 'bg-primary text-white';
@@ -167,10 +172,10 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
 
         <button
           onClick={() => onShare(selected)}
-          disabled={selected.length === 0}
+          disabled={selected.length === initialShareCount}
           className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
-          Compartir con {selected.length} personas
+          Salvar cambios
         </button>
       </div>
 

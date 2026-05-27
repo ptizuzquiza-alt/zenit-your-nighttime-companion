@@ -183,24 +183,24 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/50 rounded-t-3xl" onClick={() => setConfirm(null)} />
           <div className="relative bg-card border border-border rounded-2xl p-5 w-full shadow-xl">
-            <p className="text-foreground font-semibold text-base mb-2">
+            <p className="text-foreground font-semibold text-center text-base mb-2">
               {confirm.action === 'unshare'
                 ? 'Dejar de compartir'
                 : confirm.action === 'cancel'
                   ? 'Deshacer invitacion'
                   : 'Compartir ruta'}
             </p>
-            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            <p className="text-sm text-center mb-5 leading-relaxed">
               {confirm.action === 'unshare'
-                ? `¿Vas a dejar de compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`
+                ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
                 : confirm.action === 'cancel'
-                  ? `¿Vas a deshacer la invitacion de ${confirm.name}. ¿Quieres continuar?`
-                  : `¿Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
+                  ? `Vas a deshacer la invitacion de ${confirm.name}. ¿Quieres continuar?`
+                  : `Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-medium text-sm"
+                className="flex-1 py-3 rounded-xl bg-popover text-foreground font-medium text-sm"
               >
                 Cancelar
               </button>
@@ -208,7 +208,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                 onClick={handleConfirm}
                 className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-primary'}`}
               >
-                Continuar
+                Dejar de compartir
               </button>
             </div>
           </div>

@@ -1,10 +1,11 @@
 import { FC, useState, useEffect } from 'react';
-import { X, Search, Check } from 'lucide-react';
+import { Search, Share2 } from 'lucide-react';
 
 interface Contact {
   id: string;
   name: string;
   avatar?: string;
+  status?: 'idle' | 'pending' | 'sharing';
 }
 
 interface ShareRouteModalProps {
@@ -23,13 +24,25 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   initialSelected = [],
 }) => {
   const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [pending, setPending] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [confirm, setConfirm] = useState<{ id: string; name: string; removing: boolean } | null>(null);
+  const [confirm, setConfirm] = useState<{
+    id: string;
+    name: string;
+    action: 'share' | 'unshare' | 'cancel';
+  } | null>(null);
 
   // Sync with external state only when modal opens
   useEffect(() => {
     if (isOpen) {
-      setSelected(initialSelected);
+      const sharingFromContacts = contacts
+        .filter(contact => contact.status === 'sharing')
+        .map(contact => contact.id);
+      const pendingFromContacts = contacts
+        .filter(contact => contact.status === 'pending')
+        .map(contact => contact.id);
+      setSelected(Array.from(new Set([...initialSelected, ...sharingFromContacts])));
+      setPending(pendingFromContacts);
       setConfirm(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -41,16 +54,39 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleContact = (id: string, name: string) => {
-    const removing = selected.includes(id);
-    setConfirm({ id, name, removing });
+  const shareCount = selected.length;
+
+  const getStatus = (contact: Contact) => {
+    if (contact.status) return contact.status;
+    if (selected.includes(contact.id)) return 'sharing';
+    if (pending.includes(contact.id)) return 'pending';
+    return 'idle';
+  };
+
+  const handleActionClick = (contact: Contact) => {
+    const status = getStatus(contact);
+    if (status === 'sharing') {
+      setConfirm({ id: contact.id, name: contact.name, action: 'unshare' });
+      return;
+    }
+    if (status === 'pending') {
+      setConfirm({ id: contact.id, name: contact.name, action: 'cancel' });
+      return;
+    }
+    setConfirm({ id: contact.id, name: contact.name, action: 'share' });
   };
 
   const handleConfirm = () => {
     if (!confirm) return;
-    setSelected(prev =>
-      confirm.removing ? prev.filter(x => x !== confirm.id) : [...prev, confirm.id]
-    );
+    if (confirm.action === 'unshare') {
+      setSelected(prev => prev.filter(x => x !== confirm.id));
+    }
+    if (confirm.action === 'cancel') {
+      setPending(prev => prev.filter(x => x !== confirm.id));
+    }
+    if (confirm.action === 'share') {
+      setSelected(prev => (prev.includes(confirm.id) ? prev : [...prev, confirm.id]));
+    }
     setConfirm(null);
   };
 
@@ -58,59 +94,71 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
     <div className="fixed inset-0 z-[10001] flex items-center justify-center px-4 py-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-card rounded-3xl p-6 animate-slide-up">
-        <div className="flex items-center gap-4 mb-4">
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 rounded-full bg-secondary/60 flex items-center justify-center"
-          >
-            <X className="w-5 h-5 text-foreground" />
-          </button>
+        <div className="mb-4">
           <h2 className="text-xl font-semibold text-foreground">Compartir tu ruta</h2>
         </div>
-        
-        <p className="text-muted-foreground text-sm mb-4">
-          Selecciona las personas que podrán acompañar tu ruta hasta que llegues a tu destino.
-        </p>
-        
-        <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+
+        <div className="flex items-center gap-4 rounded-2xl bg-[#5B568A] px-4 py-3 mb-4">
+          <div className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-white">
+            <Share2 className="w-4 h-4" />
+            <span className="text-sm font-semibold">{shareCount}</span>
+          </div>
+          <p className="text-sm text-white/90">
+            Amigos que pueden ver tu ubicacion en directo hasta el final del trayecto actual.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-full bg-secondary/50 px-4 py-2.5 mb-4">
+          <Search className="w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="zenit-input pl-12"
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
         
         <p className="text-sm font-medium text-muted-foreground mb-3">Recientes</p>
         
         <div className="space-y-2 max-h-64 overflow-y-auto mb-6">
-          {filteredContacts.map(contact => (
-            <button
-              key={contact.id}
-              onClick={() => toggleContact(contact.id, contact.name)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors"
-            >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${contact.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} bg-secondary`}>
-                {contact.avatar ? (
-                  <img src={contact.avatar} alt={contact.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-sm font-medium text-muted-foreground">{contact.name[0]}</span>
-                )}
+          {filteredContacts.map(contact => {
+            const status = getStatus(contact);
+            const actionLabel =
+              status === 'sharing'
+                ? 'Dejar de compartir'
+                : status === 'pending'
+                  ? 'Deshacer invitacion'
+                  : 'Compartir tu ruta';
+            const actionClass =
+              status === 'sharing'
+                ? 'bg-[#FF6A00] text-white'
+                : status === 'pending'
+                  ? 'bg-[#6B63A5] text-white'
+                  : 'bg-primary text-white';
+
+            return (
+              <div
+                key={contact.id}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors"
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden ${contact.name !== 'Patricia' ? 'border-2 border-[#9E9AB3]' : ''} bg-secondary`}>
+                  {contact.avatar ? (
+                    <img src={contact.avatar} alt={contact.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-medium text-muted-foreground">{contact.name[0]}</span>
+                  )}
+                </div>
+                <span className="flex-1 text-left font-medium text-foreground">{contact.name}</span>
+                <button
+                  onClick={() => handleActionClick(contact)}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${actionClass}`}
+                >
+                  {actionLabel}
+                </button>
               </div>
-              <span className="flex-1 text-left font-medium text-foreground">{contact.name}</span>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                selected.includes(contact.id) 
-                  ? 'bg-primary border-primary' 
-                  : 'border-muted-foreground/50'
-              }`}>
-                {selected.includes(contact.id) && (
-                  <Check className="w-4 h-4 text-white" />
-                )}
-              </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         <button onClick={onClose} className="zenit-btn-secondary">
@@ -122,7 +170,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           disabled={selected.length === 0}
           className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
-          Compartir
+          Compartir con {selected.length} personas
         </button>
       </div>
 
@@ -132,12 +180,18 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           <div className="absolute inset-0 bg-black/50 rounded-t-3xl" onClick={() => setConfirm(null)} />
           <div className="relative bg-card border border-border rounded-2xl p-5 w-full shadow-xl">
             <p className="text-foreground font-semibold text-base mb-2">
-              {confirm.removing ? 'Dejar de compartir' : 'Compartir ruta'}
+              {confirm.action === 'unshare'
+                ? 'Dejar de compartir'
+                : confirm.action === 'cancel'
+                  ? 'Deshacer invitacion'
+                  : 'Compartir ruta'}
             </p>
             <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-              {confirm.removing
+              {confirm.action === 'unshare'
                 ? `¿Vas a dejar de compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`
-                : `¿Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
+                : confirm.action === 'cancel'
+                  ? `¿Vas a deshacer la invitacion de ${confirm.name}. ¿Quieres continuar?`
+                  : `¿Vas a compartir tu ruta con ${confirm.name}. ¿Quieres continuar?`}
             </p>
             <div className="flex gap-3">
               <button
@@ -148,7 +202,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
               </button>
               <button
                 onClick={handleConfirm}
-                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.removing ? 'bg-destructive' : 'bg-primary'}`}
+                className={`flex-1 py-3 rounded-xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-primary'}`}
               >
                 Continuar
               </button>

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { MapPin } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -21,9 +21,7 @@ export const SearchBar: FC<SearchBarProps> = ({
       className="flex items-center gap-2 w-full bg-secondary/90 backdrop-blur-md rounded-xl px-3 py-3 cursor-pointer"
       onClick={readOnly ? onClick : undefined}
     >
-      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-        <MapPin className="w-4 h-4 text-primary" />
-      </div>
+      <Search className="w-4 h-4 shrink-0" />
       <input
         type="text"
         placeholder={placeholder}

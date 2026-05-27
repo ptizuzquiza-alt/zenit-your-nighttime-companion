@@ -216,7 +216,7 @@ const MapIdle: FC = () => {
         </div>
         <button
           onClick={() => navigate('/profile')}
-          className="w-14 h-14 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
+          className="w-14 h-14 rounded-full backdrop-blur-sm border border-border flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
           {profilePhoto || AVATAR_BY_NAME[currentUserName] ? (
             <img
@@ -257,9 +257,9 @@ const MapIdle: FC = () => {
           );
         })()}
 
-        {/* Horizontal row: FAB first, then avatar pill */}
+        {/* Horizontal row: Friends Button + Friends' profiles */}
         <div className="flex flex-row items-center gap-2">
-          {/* Main FAB */}
+          {/* Main button */}
           <FriendsFab
             active={showFriends}
             badgeCount={badgeCount}
@@ -309,7 +309,7 @@ const MapIdle: FC = () => {
         </div>
       </div>
 
-      {/* Locate me FAB */}
+      {/* Center button */}
       <div className="absolute bottom-20 right-4 z-[1000]">
         <button
           onClick={() => {
@@ -325,9 +325,9 @@ const MapIdle: FC = () => {
               setFlyToPoint([...userLocation]);
             }
           }}
-          className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center shadow-lg"
+          className="w-14 h-14 rounded-full bg-popover flex items-center justify-center shadow-lg"
         >
-          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <LocateFixed className="w-6 h-6" />
           </svg>
         </button>
@@ -369,8 +369,8 @@ const MapIdle: FC = () => {
       )}
 
       {/* Bottom navigation bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
-        <button className="flex items-center justify-center text-primary w-12 h-12">
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+        <button className="flex items-center justify-center w-12 h-12">
           <Map className="w-6 h-6" />
         </button>
         <button

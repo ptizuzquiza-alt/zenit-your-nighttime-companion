@@ -21,7 +21,7 @@ export const FriendsFab: FC<FriendsFabProps> = ({
   ariaLabel = 'Amigos',
   className = '',
   activeClassName = 'bg-primary text-primary-foreground',
-  inactiveClassName = 'bg-card/90 text-muted-foreground border border-border',
+  inactiveClassName = 'bg-popover text-white border border-border',
   iconClassName = 'w-7 h-7',
   badgeClassName = 'absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md',
   children,

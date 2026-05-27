@@ -8,6 +8,7 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { NavigationFab } from '@/components/NavigationFab';
 import { FriendsFab } from '../components/FriendsFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
+import { RouteTimeline } from '@/components/RouteTimeline';
 import { getStoredRoute } from '@/lib/routing';
 import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
 
@@ -108,17 +109,14 @@ const Navigation: FC = () => {
       return JSON.parse(sessionStorage.getItem('zenit_shared_contacts') || '[]');
     } catch { return []; }
   });
-  const [sheetOffset, setSheetOffset] = useState(0);
-  const sheetCollapsedByUser = useRef(false);
+  const [sheetState, setSheetState] = useState<'collapsed' | 'middle' | 'expanded'>('middle');
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartY = useRef(0);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const fastForwardRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragStartY = useRef<number | null>(null);
   const animRef = useRef<number | null>(null);
+  const storedRoute = useMemo(() => getStoredRoute(), []);
 
   const routeCoords = useMemo<[number, number][]>(() => {
-    const stored = getStoredRoute();
-    return (stored?.coordinates as [number, number][]) ?? [
+    return (storedRoute?.coordinates as [number, number][]) ?? [
       [41.4036, 2.1744],
       [41.4050, 2.1750],
       [41.4060, 2.1780],
@@ -126,7 +124,8 @@ const Navigation: FC = () => {
       [41.4095, 2.1820],
       [41.4110, 2.1850],
     ];
-  }, []);
+  }, [storedRoute]);
+  const routeSteps = storedRoute?.steps ?? [];
 
   const [routeIndex, setRouteIndex] = useState(0);
   const [userPosition, setUserPosition] = useState<[number, number]>(routeCoords[0]);
@@ -331,52 +330,51 @@ const Navigation: FC = () => {
     .filter((route): route is { id: string; name: string; avatar: string; coordinates: [number, number][]; position: [number, number] } => route !== null);
 
   const focusedFriendRoute = focusedFriend ? friendRoutes.find(fr => fr.id === focusedFriend) : undefined;
-  // Get the full height of the sheet content (minus handle area)
-  const getSheetContentHeight = () => {
-    if (!sheetRef.current) return 300;
-    return sheetRef.current.offsetHeight - 40; // keep handle visible
-  };
+  const sheetHeight = sheetState === 'collapsed'
+    ? '290px'
+    : sheetState === 'middle'
+      ? '395px'
+      : 'calc(100vh - 40px)';
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY;
+    dragStartY.current = e.touches[0]?.clientY ?? null;
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const delta = e.touches[0].clientY - dragStartY.current;
-    if (delta > 0) setSheetOffset(delta); // only allow dragging down
+    if (!isDragging || dragStartY.current === null) return;
+    if (e.cancelable) e.preventDefault();
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     setIsDragging(false);
-    const threshold = getSheetContentHeight() * 0.3;
-    if (sheetOffset > threshold) {
-      setSheetOffset(getSheetContentHeight());
-      sheetCollapsedByUser.current = true;
-    } else {
-      setSheetOffset(0);
-      sheetCollapsedByUser.current = false;
+    if (dragStartY.current === null) return;
+
+    const endY = e.changedTouches[0]?.clientY;
+    if (endY === undefined) {
+      dragStartY.current = null;
+      return;
     }
+    const delta = endY - dragStartY.current;
+    dragStartY.current = null;
+
+    const DRAG_THRESHOLD = 30;
+    if (Math.abs(delta) < DRAG_THRESHOLD) return;
+
+    if (delta < 0) {
+      setSheetState((prev) => (prev === 'collapsed' ? 'middle' : 'expanded'));
+      return;
+    }
+
+    setSheetState((prev) => (prev === 'expanded' ? 'middle' : 'collapsed'));
   };
 
   const toggleSheet = () => {
-    if (sheetOffset > 0) {
-      setSheetOffset(0);
-      sheetCollapsedByUser.current = false;
-    } else {
-      setSheetOffset(getSheetContentHeight());
-      sheetCollapsedByUser.current = true;
-    }
-  };
-
-  // Restore sheet to its user-intended state
-  const restoreSheetState = () => {
-    if (sheetCollapsedByUser.current) {
-      setSheetOffset(getSheetContentHeight());
-    } else {
-      setSheetOffset(0);
-    }
+    setSheetState((prev) => {
+      if (prev === 'expanded') return 'middle';
+      if (prev === 'collapsed') return 'middle';
+      return 'expanded';
+    });
   };
 
   return (
@@ -422,18 +420,18 @@ const Navigation: FC = () => {
 
       {/* Bottom sheet */}
       {createPortal(
-        <div 
-          ref={sheetRef}
-          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999] ${!isDragging ? 'transition-transform duration-300 ease-out' : ''}`}
-          style={{ 
+        <div
+          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto flex flex-col bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999] ${!isDragging ? 'transition-[height] duration-300 ease-out' : ''}`}
+          style={{
+            height: sheetHeight,
             boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
-            transform: `translateY(${sheetOffset}px)`,
+            overscrollBehavior: 'contain',
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-      {/* FABs floating above the sheet */}
+          {/* FABs floating above the sheet */}
           {/* Friends button — left */}
           <div className="absolute -top-20 left-4 flex flex-col items-start gap-2">
             <div className="flex flex-row items-center gap-2">
@@ -494,11 +492,11 @@ const Navigation: FC = () => {
               setFitAll(false);
               setFocusedFriend(null);
               setShowFriendsPopup(false);
-              restoreSheetState();
+              setSheetState('middle');
             }}
             className={`absolute -top-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
               !followUser || fitAll || !!focusedFriend
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-popover text-primary-foreground'
                 : 'bg-popover backdrop-blur-sm text-foreground'
             }`}
           >
@@ -506,118 +504,130 @@ const Navigation: FC = () => {
           </button>
 
           {/* Lower bar's handle */}
-          <div 
-            className="w-10 h-1 bg-muted-foreground/60 rounded-full mx-auto mb-4 cursor-pointer" 
+          <div
+            className="sticky top-0 z-20 flex w-full justify-center bg-card/95 backdrop-blur-xl pt-1 pb-4"
             onClick={toggleSheet}
-          />
-          
-          {/* Lower bar contents */}
-
-          {/* FIRST ROW */}
-          <div className="flex flex-col gap-8 mb-6">
-            <div className="flex items-center justify-between">
-              {/* Remaining time */}
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-foreground">Tiempo restante</span>
-                <span className="text-3xl font-semibold text-foreground">{remainingTimeLabel}</span>
-              </div>
-              {/* Buttons flexbox */}
-              <div className="flex items-center gap-4">
-                {/* Share button */}
-                <button
-                  onClick={() => {
-                    setShowShareModal(true);
-                    setShowViewers(false);
-                  }}
-                  className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="text-lg">{sharedContacts.length}</span>
-                </button>
-                {/* Cancel button */}
-                <button
-                  onClick={() => { setShowCancelConfirm(true); setSheetOffset(getSheetContentHeight()); }}
-                  className="px-4 py-4 rounded-full bg-destructive/85 flex items-center justify-center text-destructive hover:bg-destructive/65 transition-colors"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-            {/* SECOND ROW */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-8">
-                {/* Remaining distance */}
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-foreground">Distancia</span>
-                  <span className="text-2xl text-foreground">{remainingDistanceLabel}</span>
-                </div>
-                {/* Estimate arrival time */}
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-foreground">Previsión</span>
-                  <span className="text-2xl text-foreground">{arrivalLabel}</span>
-                </div>
-              </div>
-            </div>
+          >
+            <div className="w-10 h-1 bg-muted-foreground/60 rounded-full cursor-pointer" />
           </div>
 
-          {/* Viewers list */}
-          {showViewers && (
-            <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
-              <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
-              {sharedContacts.length > 0 ? (
-                <div className="space-y-2">
-                  {sharedContacts.map(id => {
-                    const contact = CONTACTS.find(c => c.id === id);
-                    if (!contact) return null;
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+            {/* Lower bar contents */}
+            <div className="flex flex-col gap-8 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-foreground">Tiempo restante</span>
+                  <span className="text-3xl font-semibold text-foreground">{remainingTimeLabel}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowShareModal(true);
+                      setShowViewers(false);
+                    }}
+                    className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    <span className="text-lg">{sharedContacts.length}</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowCancelConfirm(true); }}
+                    className="px-4 py-4 rounded-full bg-destructive/85 flex items-center justify-center text-destructive hover:bg-destructive/65 transition-colors"
+                  >
+                    <X className="w-6 h-6 text-white" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-8">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-foreground">Distancia</span>
+                    <span className="text-2xl text-foreground">{remainingDistanceLabel}</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-foreground">Previsión</span>
+                    <span className="text-2xl text-foreground">{arrivalLabel}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                    if (confirmRemoveId === id) {
-                      return (
-                        <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
-                          <p className="text-sm text-foreground mb-3">
-                            ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setSharedContacts(prev => prev.filter(x => x !== id));
-                                setConfirmRemoveId(null);
-                              }}
-                              className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
-                            >
-                              Sí, dejar de compartir
-                            </button>
-                            <button
-                              onClick={() => setConfirmRemoveId(null)}
-                              className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
-                            >
-                              Cancelar
-                            </button>
+            {showViewers && (
+              <div className="mb-4 p-4 rounded-2xl bg-secondary/40 border border-border/50">
+                <p className="text-sm font-medium text-foreground mb-3">Viendo tu ruta</p>
+                {sharedContacts.length > 0 ? (
+                  <div className="space-y-2">
+                    {sharedContacts.map(id => {
+                      const contact = CONTACTS.find(c => c.id === id);
+                      if (!contact) return null;
+
+                      if (confirmRemoveId === id) {
+                        return (
+                          <div key={id} className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                            <p className="text-sm text-foreground mb-3">
+                              ¿Dejar de compartir tu ruta con <strong>{contact.name}</strong>?
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setSharedContacts(prev => prev.filter(x => x !== id));
+                                  setConfirmRemoveId(null);
+                                }}
+                                className="flex-1 text-sm py-2 rounded-xl bg-destructive text-destructive-foreground font-medium"
+                              >
+                                Sí, dejar de compartir
+                              </button>
+                              <button
+                                onClick={() => setConfirmRemoveId(null)}
+                                className="flex-1 text-sm py-2 rounded-xl bg-secondary text-foreground font-medium"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
                           </div>
+                        );
+                      }
+
+                      return (
+                        <div key={id} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
+                          </div>
+                          <span className="text-sm text-foreground flex-1">{contact.name}</span>
+                          <button
+                            onClick={() => setConfirmRemoveId(id)}
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       );
-                    }
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Aún no hay nadie visualizando tu ruta.</div>
+                )}
+              </div>
+            )}
 
-                    return (
-                      <div key={id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                          <span className="text-xs font-medium text-muted-foreground">{contact.name[0]}</span>
-                        </div>
-                        <span className="text-sm text-foreground flex-1">{contact.name}</span>
-                        <button
-                          onClick={() => setConfirmRemoveId(id)}
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
+            {sheetState === 'expanded' && (
+              <div className="mt-2 pb-2">
+                <h4 className="text-foreground text-lg font-medium mb-4">Pasos</h4>
+                <div className="pb-4">
+                  <RouteTimeline
+                    originLabel="Tu ubicación"
+                    destinationLabel="Destino"
+                    startTimeLabel={new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    endTimeLabel={arrivalLabel}
+                    steps={routeSteps}
+                  />
+                  {routeSteps.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">No se encontraron pasos detallados.</p>
+                  )}
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">Aún no hay nadie visualizando tu ruta.</div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>,
         document.body
       )}
@@ -626,7 +636,7 @@ const Navigation: FC = () => {
       <ShareRouteModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); restoreSheetState(); }}
+        onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); }}
         initialSelected={sharedContacts}
         contacts={CONTACTS}
       />
@@ -673,19 +683,18 @@ const Navigation: FC = () => {
 
       {/* Cancel confirmation overlay */}
       {showCancelConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
-          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-foreground mb-2">¿Cancelar esta ruta?</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Se le notificará a tus amigos de que tu ruta ha sido cancelada antes de llegar a su destino.
-            </p>
-            <p className="text-xs text-muted-foreground/70 mb-6">
-              Tu ubicación no será compartida hasta que compartas tu próxima ruta.
-            </p>
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="flex flex-col z-[10051] w-full max-w-sm rounded-3xl bg-card border border-border p-6 gap-2 shadow-2xl">
+            <h3 className="text-lg text-center font-bold text-foreground">¿Cancelar esta ruta?</h3>
+            {sharedContacts.length > 0 && (
+              <p className="text-sm text-center mb-3">
+                Se le notificará a tus amigos de que tu ruta ha sido cancelada antes de llegar a su destino.
+              </p>
+            )}
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowCancelConfirm(false); restoreSheetState(); }}
-                className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-semibold transition-colors hover:bg-secondary/80"
+                onClick={() => { setShowCancelConfirm(false); }}
+                className="flex-1 py-3 rounded-2xl bg-popover text-foreground font-semibold transition-colors hover:bg-secondary/80"
               >
                 Volver
               </button>

@@ -26,7 +26,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [pending, setPending] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [initialShareCount, setInitialShareCount] = useState(0);
+  const [initialSharedIds, setInitialSharedIds] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<{
     id: string;
     name: string;
@@ -46,7 +46,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         new Set([...initialSelected, ...sharingFromContacts])
       );
       setSelected(initialShareSet);
-      setInitialShareCount(initialShareSet.length);
+      setInitialSharedIds(initialShareSet);
       setPending(pendingFromContacts);
       setConfirm(null);
     }
@@ -60,6 +60,9 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   );
 
   const shareCount = selected.length;
+  const hasShareChanges =
+    selected.length !== initialSharedIds.length ||
+    selected.some(id => !initialSharedIds.includes(id));
 
   const getStatus = (contact: Contact) => {
     if (contact.status) return contact.status;
@@ -172,7 +175,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
 
         <button
           onClick={() => onShare(selected)}
-          disabled={selected.length === initialShareCount}
+          disabled={!hasShareChanges}
           className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
           Salvar cambios

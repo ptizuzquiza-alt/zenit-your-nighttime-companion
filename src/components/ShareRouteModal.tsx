@@ -112,17 +112,17 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
             </button>
           ))}
         </div>
-        
+
+        <button onClick={onClose} className="zenit-btn-secondary">
+          Cancelar
+        </button>
+
         <button
           onClick={() => onShare(selected)}
           disabled={selected.length === 0}
-          className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
           Compartir
-        </button>
-        
-        <button onClick={onClose} className="zenit-btn-secondary mt-3">
-          Cancelar
         </button>
       </div>
 

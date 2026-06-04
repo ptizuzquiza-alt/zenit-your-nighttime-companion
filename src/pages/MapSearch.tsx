@@ -100,7 +100,7 @@ const MapSearch: FC = () => {
         <div className="flex items-start gap-3">
           <button 
             onClick={() => navigate('/')}
-            className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center mt-2"
+            className="w-10 h-10 rounded-full bg-popover hover:bg-popover/80 transition-colors flex items-center justify-center mt-2"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
           </button>

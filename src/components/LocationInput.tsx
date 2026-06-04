@@ -42,25 +42,25 @@ export const LocationInput: FC<LocationInputProps> = ({
             value={origin}
             onChange={(e) => onOriginChange?.(e.target.value)}
             onFocus={() => onFieldFocus?.('origin')}
-            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'origin' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
+            className={`w-full bg-transparent text-foreground placeholder:text-white/70 border border-popover rounded-sm px-2 -mx-2 focus:outline-none py-2 ${activeField === 'origin' ? 'bg-popover/50 rounded-sm px-2 -mx-2' : ''}`}
           />
-          <div className="h-px bg-border/50" />
+          <div className="h-px bg-transparent" />
           <input
             type="text"
             placeholder="Destino"
             value={destination}
             onChange={(e) => onDestinationChange?.(e.target.value)}
             onFocus={() => onFieldFocus?.('destination')}
-            className={`w-full bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none py-2 ${activeField === 'destination' ? 'ring-1 ring-primary/40 rounded-lg px-2 -mx-2' : ''}`}
+            className={`w-full bg-transparent text-foreground placeholder:text-white/70 border border-popover rounded-sm px-2 -mx-2 focus:outline-none py-2 ${activeField === 'destination' ? 'bg-popover/50 rounded-sm px-2 -mx-2' : ''}`}
           />
         </div>
         
         {/* Swap button */}
         <button 
           onClick={onSwap}
-          className="self-center w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
+          className="self-center w-10 h-10 rounded-xl bg-popover flex items-center justify-center hover:bg-popover/80 transition-colors"
         >
-          <ArrowUpDown className="w-5 h-5 text-muted-foreground" />
+          <ArrowUpDown className="w-5 h-5" />
         </button>
       </div>
     </div>

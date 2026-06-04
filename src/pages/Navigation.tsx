@@ -702,13 +702,13 @@ const Navigation: FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowCancelConfirm(false); }}
-                className="flex-1 py-3 rounded-2xl bg-popover text-foreground font-semibold transition-colors hover:bg-secondary/80"
+                className="flex-1 py-3 rounded-3xl bg-popover text-foreground font-semibold transition-colors hover:bg-secondary/80"
               >
                 Volver
               </button>
               <button
                 onClick={() => navigate('/')}
-                className="flex-1 py-3 rounded-2xl bg-destructive text-destructive-foreground font-semibold transition-colors"
+                className="flex-1 py-3 rounded-3xl bg-destructive text-destructive-foreground font-semibold transition-colors"
               >
                 Cancelar ruta
               </button>

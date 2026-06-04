@@ -495,15 +495,15 @@ const Friends: FC = () => {
                 <span className="flex-1 text-foreground text-sm font-medium">{req.name}</span>
                 <button
                   onClick={() => handleAccept(req.id, req.name)}
-                  className="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-green-500/80 flex items-center justify-center"
                 >
-                  <Check className="w-4 h-4 text-green-400" />
+                  <Check className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleIgnore(req.id)}
-                  className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-destructive/85 flex items-center justify-center"
                 >
-                  <X className="w-4 h-4 text-muted-foreground" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ))}

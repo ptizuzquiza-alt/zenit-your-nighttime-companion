@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 const SLIDES = [
   {
     id: 'welcome',
-    title: 'Con Zenit\nno vas a ciegas',
-    subtitle: 'Planifica rutas seguras y comparte tu trayecto en tiempo real.',
+    title: 'Camina con luz propia',
+    subtitle: 'Deja que Zenit guíe tus pasos en la oscuridad de la ciudad',
     illustration: 'city',
   },
   {
@@ -33,48 +33,6 @@ const TOTAL = SLIDES.length + 1; // 4 slides + login
 const SWIPE_THRESHOLD = 60;
 
 // ─── Illustrations ──────────────────────────────────────────────
-
-const CityIllustration: FC = () => (
-  <img
-    src="/city.png"
-    alt="Barcelona skyline"
-    className="absolute bottom-0 left-1/2 -translate-x-[42%] h-full w-auto max-w-none block"
-    onError={(e) => {
-      const target = e.currentTarget;
-      target.style.display = 'none';
-      const fallback = target.nextElementSibling as HTMLElement | null;
-      if (fallback) fallback.style.display = 'block';
-    }}
-  />
-);
-
-const CityFallback: FC = () => (
-  <svg viewBox="0 0 320 220" className="w-full h-full hidden" fill="none">
-    <ellipse cx="160" cy="180" rx="120" ry="40" fill="hsl(265 90% 60% / 0.08)" />
-    <rect x="20" y="100" width="35" height="120" rx="2" fill="hsl(249 40% 18%)" />
-    <rect x="30" y="80" width="20" height="140" rx="2" fill="hsl(249 38% 20%)" />
-    <rect x="60" y="90" width="28" height="130" rx="2" fill="hsl(249 38% 17%)" />
-    <rect x="85" y="70" width="22" height="150" rx="2" fill="hsl(249 40% 22%)" />
-    <rect x="105" y="95" width="30" height="125" rx="2" fill="hsl(249 38% 18%)" />
-    <rect x="165" y="85" width="25" height="135" rx="2" fill="hsl(249 40% 20%)" />
-    <rect x="190" y="75" width="32" height="145" rx="2" fill="hsl(249 38% 17%)" />
-    <rect x="220" y="92" width="28" height="128" rx="2" fill="hsl(249 40% 22%)" />
-    <rect x="248" y="110" width="24" height="110" rx="2" fill="hsl(249 38% 18%)" />
-    <rect x="270" y="88" width="35" height="132" rx="2" fill="hsl(249 40% 20%)" />
-    {[35, 55, 75, 95, 115, 175, 195, 215, 235].map((x) =>
-      [100, 120, 140, 160].map((y) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width="4" height="3" rx="0.5" fill="hsl(45 100% 50% / 0.15)" />
-      ))
-    )}
-    <line x1="140" y1="180" x2="140" y2="145" stroke="hsl(249 30% 35%)" strokeWidth="2" />
-    <circle cx="140" cy="143" r="6" fill="hsl(45 100% 50% / 0.9)" />
-    <ellipse cx="140" cy="148" rx="14" ry="5" fill="hsl(45 100% 50% / 0.12)" />
-    <rect x="0" y="195" width="320" height="25" fill="hsl(249 40% 10%)" />
-    <circle cx="160" cy="52" r="8" fill="hsl(45 100% 50% / 0.9)" />
-    <line x1="160" y1="40" x2="160" y2="64" stroke="hsl(45 100% 50%)" strokeWidth="1.5" />
-    <line x1="148" y1="52" x2="172" y2="52" stroke="hsl(45 100% 50%)" strokeWidth="1.5" />
-  </svg>
-);
 
 const RouteIllustration: FC = () => (
   <svg viewBox="0 0 280 200" className="w-full h-full" fill="none">
@@ -161,28 +119,138 @@ const Dots: FC<{ total: number; current: number }> = ({ total, current }) => (
 
 // ─── Slide content ──────────────────────────────────────────────
 
-const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ slide, onContinue }) => (
+// The Zenit firefly mascot — layers animated independently (float, wing
+// flutter, glow pulse, antennae wiggle, pupils glance). Motion classes live
+// in index.css (.zf-*) and respect prefers-reduced-motion.
+const FireflyMascot: FC = () => (
+  <div
+    className="zf-bee absolute left-1/2 top-[63.5%] z-[4] w-[60%] max-w-[236px] -translate-x-1/2 -translate-y-1/2"
+    aria-hidden
+  >
+    <svg viewBox="0 0 272 285" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full h-auto overflow-visible">
+      {/* wings (behind body) */}
+      <g className="zf-wing zf-wing-left">
+        <path d="M17.5285 207.408C22.6923 178.557 42.6524 146.763 82.1758 132.51C83.7976 155.27 85.3041 202.964 78.3558 211.662C71.4075 220.36 65.6843 224.349 59.5064 227.844C17.5285 251.595 15.6542 217.879 17.5285 207.408Z" fill="white" />
+      </g>
+      <g className="zf-wing zf-wing-right">
+        <path d="M268.532 187.121C256.302 161.043 220.474 134.386 179.364 130.909C183.61 152.93 194.303 198.595 203.104 205.085C211.905 211.576 231.861 217.255 236.686 216.676C276.059 221.775 272.971 196.586 268.532 187.121Z" fill="white" />
+      </g>
+
+      <g>
+        {/* antennae (behind head) */}
+        <g className="zf-antennae">
+          <path d="M107.103 58.6993L109.734 62.5915L101.95 67.8539L99.3189 63.9617L103.211 61.3305L107.103 58.6993ZM94.0651 2.34967C95.3625 0.102598 98.2358 -0.667306 100.483 0.630043C102.73 1.92739 103.5 4.80071 102.202 7.04779L98.1338 4.69873L94.0651 2.34967ZM103.211 61.3305L99.3189 63.9617C95.6029 58.4647 91.0027 49.0161 88.9215 38.0734C86.8339 27.0978 87.2149 14.2146 94.0651 2.34967L98.1338 4.69873L102.202 7.04779C96.8156 16.3781 96.3396 26.7877 98.1522 36.3178C99.9711 45.8807 104.028 54.1504 107.103 58.6993L103.211 61.3305Z" fill="#AE99FF" />
+          <path d="M144.806 61.3305C151.598 51.2846 162.121 25.8939 149.884 4.69873" stroke="#AE99FF" strokeWidth="9.39623" strokeLinecap="round" />
+        </g>
+
+        {/* abdomen */}
+        <path d="M235.703 246.071C232.715 227.844 224.841 213.115 223 205.75L107.56 256.566C147.329 286.945 188.754 285.396 204.772 284.183C233.936 281.974 237.544 257.302 235.703 246.071Z" fill="#FFEE02" />
+        <path d="M224.656 205.751C221.121 192.495 214.714 184.026 211.952 181.448L81.6 225.083C84.6931 240.549 102.037 253.621 110.322 258.224C128.438 266.619 157.271 261.722 169.422 258.224C204.33 251.596 220.79 220.48 224.656 205.751Z" fill="#FFF899" />
+        <path d="M214.878 184.12C214.552 168.747 193.823 151.622 189.225 151.622L69.7426 158.106C68.1577 158.192 66.7861 159.269 66.3898 160.806C57.9401 193.577 76.1156 220.487 82.1973 228.453C82.557 228.924 83.0311 229.299 83.5707 229.544C138.441 254.456 207.794 218.198 214.81 184.841C214.86 184.602 214.883 184.364 214.878 184.12Z" fill="#FFEE02" />
+        <path d="M197.409 156.037C195.127 153.052 192.409 146.398 179.389 129.433C178.682 128.511 177.58 127.969 176.418 127.969L74.3606 127.969C73.0282 127.969 71.7872 128.66 71.1899 129.852C64.3077 143.575 60.9424 171.62 64.2327 185.203C64.384 185.828 64.7292 186.398 65.1868 186.848C120.488 241.314 196.678 187.685 197.854 157.299C197.872 156.835 197.691 156.405 197.409 156.037Z" fill="#724DFF" />
+
+        {/* left hand */}
+        <path d="M69.1262 199.094C75.1427 197.028 75.9331 192.326 75.0666 186.67C74.2 181.013 74.5789 181.442 74.5659 178.118C74.5468 173.215 75.8651 168.053 74.7065 163.328C72.2401 156.145 66.317 157.135 61.7519 158.703C61.4348 158.812 61.1266 158.936 60.8272 159.074C56.5328 160.93 52.9576 166.968 52.0042 174.894C51.3505 180.33 52.0561 185.602 53.7194 189.688C53.7351 189.735 53.7506 189.782 53.7668 189.829C56.2331 197.012 63.1098 201.16 69.1262 199.094Z" fill="#AE99FF" />
+
+        {/* head */}
+        <circle cx="127.038" cy="106.053" r="57.9958" fill="#5E33FF" />
+
+        {/* eyes (sclera) */}
+        <path d="M115.909 64.3518C121.033 84.0045 109.341 104.138 89.6927 109.403C70.0444 114.667 49.8528 103.077 44.4639 83.4956L115.909 64.3518Z" fill="white" />
+        <path d="M206.334 83.4956C200.945 103.077 180.754 114.667 161.105 109.403C141.457 104.138 129.766 84.0047 134.89 64.3521L206.334 83.4956Z" fill="white" />
+
+        {/* mouth */}
+        <path d="M139.596 100.745C142.844 108.71 139.585 117.594 132.282 120.624C124.98 123.654 116.388 119.688 113.042 111.763L139.596 100.745Z" fill="white" />
+
+        {/* thumbs-up hand */}
+        <path d="M188.457 141.84C187.614 145.211 184.593 146.288 183.188 146.405C178.693 144.158 178.623 136.338 179.325 132.709C177.077 131.023 174.174 131.07 173.003 131.304C162.326 137.204 170.661 149.215 176.164 154.483C168.578 154.202 166.213 159.751 165.979 162.561C166.259 166.494 169.842 167.477 171.598 167.477C169.069 169.163 169.004 171.419 169.707 172.473C170.673 174.958 173.94 174.501 175.462 174.15C173.495 177.241 177.163 180.481 179.325 180.481C188.457 181.387 193.741 176.472 197.253 169.916C207.871 150.098 193.374 143.713 188.457 141.84Z" fill="#AE99FF" />
+
+        {/* pupils */}
+        <g className="zf-pupils">
+          <circle cx="84.7838" cy="90.0357" r="6.07575" fill="#131927" />
+          <circle cx="165.703" cy="90.0357" r="6.07575" fill="#131927" />
+        </g>
+
+        {/* blush */}
+        <path d="M168.188 115.167L175.92 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+        <path d="M156.865 115.167L164.598 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+        <path d="M179.511 115.167L187.244 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+        <path d="M83.1279 115.167L75.3952 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+        <path d="M94.4502 115.167L86.7174 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+        <path d="M71.8037 115.167L64.0709 107.434" stroke="#FE6DD2" strokeWidth="2.81887" strokeLinecap="round" />
+
+        {/* teeth */}
+        <path d="M119.858 109.091L125.934 121.242" stroke="black" strokeWidth="0.375849" strokeLinecap="round" />
+        <path d="M133.114 103.568L138.638 114.339" stroke="black" strokeWidth="0.375849" strokeLinecap="round" />
+        <path d="M126.486 106.33L133.391 119.586" stroke="black" strokeWidth="0.375849" strokeLinecap="round" />
+      </g>
+    </svg>
+  </div>
+);
+
+const WelcomeSlide: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ slide, onContinue }) => (
+  <div className="relative h-full flex-shrink-0 overflow-hidden" style={{ width: `${100 / TOTAL}%` }}>
+    {/* soft purple glow grounding the scene */}
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{ background: 'radial-gradient(90% 55% at 50% 78%, hsl(265 90% 60% / 0.16) 0%, transparent 60%)' }}
+    />
+
+    {/* city skyline — scaled up as a backdrop (overflows the sides, cropped) so
+        the buildings read taller behind the firefly */}
+    <div className="absolute left-[58%] top-[28%] w-[250%] -translate-x-1/2 opacity-90 pointer-events-none">
+      <img src="/onb-city.svg" alt="" className="block w-full h-auto" />
+    </div>
+    {/* street-grid map */}
+    <div className="absolute left-1/2 top-[50%] w-[135%] -translate-x-1/2 opacity-90 pointer-events-none">
+      <img src="/onb-map.svg" alt="" className="block w-full h-auto" />
+    </div>
+    {/* fade the map into the floor near the button */}
+    <div
+      className="absolute inset-x-0 bottom-0 h-[230px] z-[3] pointer-events-none"
+      style={{ background: 'linear-gradient(180deg, hsl(249 42% 12% / 0) 0%, hsl(249 42% 12%) 72%)' }}
+    />
+
+    {/* copy */}
+    <div className="absolute inset-x-0 top-[92px] z-[5] px-[30px] text-center">
+      <h1 className="text-foreground font-bold text-[43px] leading-[1.05] tracking-[-0.5px]">
+        Camina con luz<br />propia
+      </h1>
+      <p className="mt-[22px] mx-auto max-w-[300px] text-muted-foreground font-medium text-[18px] leading-[1.4]">
+        {slide.subtitle}
+      </p>
+    </div>
+
+    {/* firefly glow */}
+    <div
+      className="zf-glow absolute left-1/2 top-[64%] z-[3] w-[300px] h-[300px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+      style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,233,2,.42) 0%, rgba(255,191,0,.18) 32%, rgba(255,191,0,0) 62%)', filter: 'blur(6px)' }}
+      aria-hidden
+    />
+    {/* firefly */}
+    <FireflyMascot />
+
+    {/* CTA */}
+    <button
+      onClick={onContinue}
+      className="absolute left-6 right-6 bottom-[74px] z-[6] h-[66px] rounded-full bg-accent text-accent-foreground font-bold text-[19px] tracking-[0.2px] transition-transform active:scale-[0.985]"
+      style={{ boxShadow: '0 16px 38px -12px rgba(255,230,0,0.55)' }}
+    >
+      Continuar
+    </button>
+  </div>
+);
+
+const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ slide, onContinue }) => {
+  if (slide.id === 'welcome') {
+    return <WelcomeSlide slide={slide} onContinue={onContinue} />;
+  }
+
+  return (
   <div className="flex flex-col h-full flex-shrink-0" style={{ width: `${100 / TOTAL}%` }}>
     <div className="flex flex-col px-6 pt-28 pb-4 items-center text-center">
-      <h1
-        className={`font-extrabold text-foreground mb-4 whitespace-pre-line w-full ${
-          slide.id === 'welcome' ? 'text-[40px] leading-[54px]' : 'text-[32px] leading-[43px]'
-        }`}
-      >
-        {slide.id === 'welcome' ? (
-          <>
-            <span>Con </span>
-            <img
-              src="/logo.png"
-              alt="Zenit"
-              className="inline-block h-[1.05em] align-bottom mx-1"
-              style={{ transform: 'translateY(-10px)' }}
-            />
-            <span className="block">no vas a ciegas</span>
-          </>
-        ) : (
-          slide.title
-        )}
+      <h1 className="font-extrabold text-foreground mb-4 whitespace-pre-line w-full text-[32px] leading-[43px]">
+        {slide.title}
       </h1>
       <p className="text-xl text-muted-foreground leading-[27px] mb-10 max-w-[320px]">
         {slide.subtitle}
@@ -196,13 +264,7 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
     </div>
 
     <div className="flex-1 flex flex-col min-h-0 justify-end">
-      {slide.illustration === 'city' ? (
-        <div className="w-full flex-1 min-h-0 overflow-hidden relative">
-          <CityIllustration />
-          <CityFallback />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, hsl(249 42% 12%) 0%, transparent 40%)' }} />
-        </div>
-      ) : slide.illustration === 'share' ? (
+      {slide.illustration === 'share' ? (
         <div className="flex-1 flex items-start justify-center px-6 overflow-hidden">
           <div className="relative w-full h-full rounded-[26px] overflow-hidden">
             <img src="/amigos.png" alt="Compartir ruta" className="w-full h-full object-cover object-top" />
@@ -227,7 +289,8 @@ const SlideScreen: FC<{ slide: typeof SLIDES[0]; onContinue: () => void }> = ({ 
       )}
     </div>
   </div>
-);
+  );
+};
 
 const INPUT_CLS = "w-full px-4 py-3.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary";
 

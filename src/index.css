@@ -266,3 +266,47 @@
   --offset: 80px !important;
   --mobile-offset: 80px !important;
 }
+
+/* ─── Onboarding firefly (Zenit mascot) animations ─────────────── */
+.zf-glow {
+  animation: zfGlowPulse 2.6s ease-in-out infinite;
+}
+.zf-bee {
+  transform-origin: center center;
+  animation: zfBeeFloat 4.2s ease-in-out infinite;
+}
+.zf-wing { transform-box: fill-box; }
+.zf-wing-left  { transform-origin: 86% 22%; animation: zfFlutterL .42s ease-in-out infinite; }
+.zf-wing-right { transform-origin: 14% 22%; animation: zfFlutterR .42s ease-in-out infinite; }
+.zf-antennae   { transform-box: fill-box; transform-origin: 50% 100%; animation: zfWiggle 3.4s ease-in-out infinite; }
+.zf-pupils     { transform-box: fill-box; transform-origin: 50% 50%; animation: zfLook 6s ease-in-out infinite; }
+
+@keyframes zfBeeFloat {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-2.2deg); }
+  50%      { transform: translate(-50%, -56%) rotate(2.2deg); }
+}
+@keyframes zfGlowPulse {
+  0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(.92); }
+  50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes zfFlutterL {
+  0%, 100% { transform: rotate(2deg); }
+  50%      { transform: rotate(-9deg); }
+}
+@keyframes zfFlutterR {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(9deg); }
+}
+@keyframes zfWiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+@keyframes zfLook {
+  0%, 18%   { transform: translate(0, 0); }
+  30%, 46%  { transform: translate(2px, 1px); }
+  58%, 74%  { transform: translate(-2px, 1px); }
+  86%, 100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zf-bee, .zf-glow, .zf-wing, .zf-antennae, .zf-pupils { animation: none; }
+}

@@ -270,7 +270,7 @@ const MapIdle: FC = () => {
           {/* Avatar pill expanding to the right */}
           {showFriends && (
             <div
-              className="flex flex-row gap-3 px-3 py-2 bg-primary/90 backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
+              className="flex flex-row gap-3 px-3 py-2 bg-secondary backdrop-blur-sm rounded-full shadow-xl overflow-x-auto items-center"
               style={{ maxWidth: 'calc(100vw - 5rem)', transformOrigin: 'left center', animation: 'pillExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
             >
               {acceptedFriendData.map((fr, i) => {

@@ -18,7 +18,7 @@ export const SearchBar: FC<SearchBarProps> = ({
 }) => {
   return (
     <div
-      className="flex items-center gap-2 w-full bg-card backdrop-blur-md rounded-xl px-3 py-3 cursor-pointer"
+      className="flex items-center gap-2 w-full bg-card backdrop-blur-md rounded-3xl px-4 py-4 cursor-pointer"
       onClick={readOnly ? onClick : undefined}
     >
       <Search className="w-4 h-4 shrink-0" />

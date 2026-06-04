@@ -692,7 +692,7 @@ const Navigation: FC = () => {
       {/* Cancel confirmation overlay */}
       {showCancelConfirm && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
-          <div className="flex flex-col z-[10051] w-full max-w-sm rounded-3xl bg-card border border-border p-6 gap-2 shadow-2xl">
+          <div className="flex flex-col z-[10051] w-full max-w-sm rounded-2xl bg-card border border-border p-6 gap-2 shadow-2xl">
             <h3 className="text-lg text-center font-bold text-foreground">¿Cancelar esta ruta?</h3>
             {sharedContacts.length > 0 && (
               <p className="text-sm text-center mb-3">

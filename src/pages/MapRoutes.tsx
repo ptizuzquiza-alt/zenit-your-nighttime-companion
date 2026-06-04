@@ -307,7 +307,7 @@ const MapRoutes: FC = () => {
       <div className="absolute top-10 left-4 right-4 z-[1000] flex items-start gap-3">
         <button
           onClick={() => navigate('/search')}
-          className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center mt-2 flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-popover flex items-center justify-center mt-2 flex-shrink-0"
         >
           <ChevronLeft className="w-5 h-5 text-primary-foreground" />
         </button>

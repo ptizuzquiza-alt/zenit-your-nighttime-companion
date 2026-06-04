@@ -55,6 +55,13 @@ const Friends: FC = () => {
     localStorage.setItem('zenit_pending_requests', JSON.stringify(defaults));
     return defaults;
   });
+  const [sentRequests, setSentRequests] = useState<Friend[]>(() => {
+    const stored = localStorage.getItem('zenit_sent_requests');
+    if (stored !== null) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
   const [showAddToGroup, setShowAddToGroup] = useState(false);
   const [addToGroupMembers, setAddToGroupMembers] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>(() => {
@@ -135,6 +142,31 @@ const Friends: FC = () => {
           }
         }
         // If no Supabase requests, keep localStorage (may have simulated requests)
+
+        // Sent requests — ones the current user has sent and is waiting on
+        const { data: sentReqs } = await supabase
+          .from('friend_requests' as never)
+          .select('receiver_id')
+          .eq('sender_id', user.id) as { data: Array<{receiver_id: string}> | null };
+
+        if (sentReqs && sentReqs.length > 0) {
+          const rIds = sentReqs.map(r => r.receiver_id);
+          const { data: rProfiles } = await supabase
+            .from('profiles' as never)
+            .select('id, name')
+            .in('id', rIds) as { data: Array<{id: string, name: string}> | null };
+          if (rProfiles) {
+            setSentRequests(prev => {
+              const sbSent = rProfiles.map(p => ({ id: p.id, name: p.name }));
+              const merged = [
+                ...sbSent,
+                ...prev.filter(r => !sbSent.some(sb => sb.id === r.id)),
+              ];
+              localStorage.setItem('zenit_sent_requests', JSON.stringify(merged));
+              return merged;
+            });
+          }
+        }
       } catch { /* tables don't exist yet — keep localStorage */ }
     };
     loadFromSupabase();
@@ -181,6 +213,11 @@ const Friends: FC = () => {
     localStorage.setItem('zenit_pending_requests', JSON.stringify(updated));
   };
 
+  const persistSent = (updated: Friend[]) => {
+    setSentRequests(updated);
+    localStorage.setItem('zenit_sent_requests', JSON.stringify(updated));
+  };
+
   // Detect if an ID is a real Supabase UUID
   const isUUID = (id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -190,33 +227,54 @@ const Friends: FC = () => {
     setSearchQuery('');
     setSupabaseResults([]);
 
+    const targetId = id || name.toLowerCase().replace(/\s+/g, '-');
+
+    // Optimistically add to "sent" locally — works for both real and mock users
+    setSentRequests(prev => {
+      if (prev.some(r => r.id === targetId)) return prev;
+      const updated = [...prev, { id: targetId, name }];
+      localStorage.setItem('zenit_sent_requests', JSON.stringify(updated));
+      return updated;
+    });
+
     if (user && !user.email?.includes(DEMO_EMAIL) && isUUID(id)) {
       // Real user → insert into Supabase friend_requests
       supabase
         .from('friend_requests' as never)
         .insert({ sender_id: user.id, receiver_id: id } as never)
         .then(() => toast.success(`Solicitud enviada a ${name}`));
-      // Optimistically add to pending locally
-      setPendingRequests(prev => {
-        if (prev.some(r => r.id === id)) return prev;
-        const updated = [...prev, { id, name }];
-        localStorage.setItem('zenit_pending_requests', JSON.stringify(updated));
-        return updated;
-      });
     } else {
-      // Mock user (demo contacts) — localStorage only with simulated back-request
+      // Mock user (demo contacts) — simulate the other side accepting after 3s
       toast.success(`Solicitud enviada a ${name}`);
-      const mockId = id || name.toLowerCase().replace(/\s+/g, '-');
       setTimeout(() => {
-        setPendingRequests(prev => {
-          if (prev.some(r => r.id === mockId) || friends.some(f => f.id === mockId)) return prev;
-          const updated = [...prev, { id: mockId, name }];
-          localStorage.setItem('zenit_pending_requests', JSON.stringify(updated));
-          toast(`${name} también te ha enviado una solicitud`);
-          return updated;
+        setSentRequests(prevSent => {
+          if (!prevSent.some(r => r.id === targetId)) return prevSent;
+          const updatedSent = prevSent.filter(r => r.id !== targetId);
+          localStorage.setItem('zenit_sent_requests', JSON.stringify(updatedSent));
+          return updatedSent;
         });
-      }, 3000);
+        setFriends(prevFriends => {
+          if (prevFriends.some(f => f.id === targetId)) return prevFriends;
+          const updatedFriends = [...prevFriends, { id: targetId, name }];
+          localStorage.setItem('zenit_friends', JSON.stringify(updatedFriends));
+          toast.success(`${name} ha aceptado tu solicitud`);
+          return updatedFriends;
+        });
+      }, 8000);
     }
+  };
+
+  const handleCancelSent = (id: string, name: string) => {
+    persistSent(sentRequests.filter(r => r.id !== id));
+    if (user && !user.email?.includes(DEMO_EMAIL) && isUUID(id)) {
+      supabase
+        .from('friend_requests' as never)
+        .delete()
+        .eq('sender_id', user.id)
+        .eq('receiver_id', id)
+        .then();
+    }
+    toast(`Solicitud a ${name} cancelada`);
   };
 
   const handleAccept = (id: string, name: string) => {
@@ -366,11 +424,14 @@ const Friends: FC = () => {
             const mockSuggestions = DISCOVERABLE_USERS.filter(u =>
               u.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
               !friends.some(f => f.id === u.id) &&
-              !pendingRequests.some(r => r.id === u.id)
+              !pendingRequests.some(r => r.id === u.id) &&
+              !sentRequests.some(r => r.id === u.id)
             );
             const allSuggestions: Friend[] = [
               ...supabaseResults.filter(
-                sr => !friends.some(f => f.id === sr.id) && !pendingRequests.some(r => r.id === sr.id)
+                sr => !friends.some(f => f.id === sr.id)
+                  && !pendingRequests.some(r => r.id === sr.id)
+                  && !sentRequests.some(r => r.id === sr.id)
               ),
               ...mockSuggestions.filter(m => !supabaseResults.some(sr => sr.id === m.id)),
             ];
@@ -411,11 +472,11 @@ const Friends: FC = () => {
           })()}
         </div>
 
-        {/* Pending requests */}
+        {/* Pending requests — received (waiting on you to accept) */}
         {pendingRequests.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-              Solicitudes pendientes
+              Solicitudes recibidas
             </p>
             {pendingRequests.map(req => (
               <div
@@ -443,6 +504,39 @@ const Friends: FC = () => {
                   className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center"
                 >
                   <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Sent requests — waiting on the other person to accept */}
+        {sentRequests.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+              Solicitudes enviadas
+            </p>
+            {sentRequests.map(req => (
+              <div
+                key={req.id}
+                className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3"
+              >
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-[#9E9AB3] bg-primary/20">
+                  {AVATAR_BY_NAME[req.name] ? (
+                    <img src={AVATAR_BY_NAME[req.name]} alt={req.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-primary font-semibold text-sm">{req.name[0]}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-foreground text-sm font-medium">{req.name}</p>
+                  <p className="text-xs text-muted-foreground">Esperando respuesta</p>
+                </div>
+                <button
+                  onClick={() => handleCancelSent(req.id, req.name)}
+                  className="text-xs text-muted-foreground font-medium px-3 py-1.5 rounded-lg bg-card border border-border flex-shrink-0"
+                >
+                  Cancelar
                 </button>
               </div>
             ))}

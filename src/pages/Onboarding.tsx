@@ -280,7 +280,7 @@ const LocationModal: FC<{ onAllow: () => void; onSkip: () => void }> = ({ onAllo
 
 // ─── Register screen ────────────────────────────────────────────
 
-const RegisterScreen: FC<{ onBack: () => void; onSuccess: () => void }> = ({ onBack, onSuccess }) => {
+const RegisterScreen: FC<{ onBack: () => void; onSuccess: () => void; onDemoLogin: () => void; demoLoading: boolean }> = ({ onBack, onSuccess, onDemoLogin, demoLoading }) => {
   const { signUp } = useAuth();
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -342,10 +342,25 @@ const RegisterScreen: FC<{ onBack: () => void; onSuccess: () => void }> = ({ onB
         {loading ? 'Creando cuenta…' : 'Crear cuenta'}
       </button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground mb-6">
         ¿Ya tienes cuenta?{' '}
         <button onClick={onBack} className="text-foreground underline">Inicia sesión</button>
       </p>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-muted-foreground">o regístrate con</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onDemoLogin} disabled={demoLoading} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium disabled:opacity-50">
+          {demoLoading ? '…' : <><GoogleIcon /> Google</>}
+        </button>
+        <button onClick={onDemoLogin} disabled={demoLoading} className="flex-1 py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 text-sm text-foreground font-medium disabled:opacity-50">
+          {demoLoading ? '…' : <><AppleIcon /> Apple</>}
+        </button>
+      </div>
     </div>
   );
 };
@@ -569,6 +584,8 @@ const Onboarding: FC = () => {
           <RegisterScreen
             onBack={() => setSubScreen('login')}
             onSuccess={handleRequestLocation}
+            onDemoLogin={handleDemoLogin}
+            demoLoading={demoLoading}
           />
         ) : (
           <LoginScreen onDemoLogin={handleDemoLogin} onRegister={() => setSubScreen('register')} demoLoading={demoLoading} />

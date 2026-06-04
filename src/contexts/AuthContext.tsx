@@ -82,6 +82,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     localStorage.setItem('zenit_onboarded', 'true');
+    // For real (non-demo) accounts, make sure the contact lists are explicitly
+    // empty after sign-out cleared them — otherwise Friends.tsx's null fallback
+    // would seed Patricia's demo contacts. Supabase data, if any, overrides this.
+    if (email !== DEMO_EMAIL) {
+      if (localStorage.getItem('zenit_friends') === null) localStorage.setItem('zenit_friends', '[]');
+      if (localStorage.getItem('zenit_pending_requests') === null) localStorage.setItem('zenit_pending_requests', '[]');
+      if (localStorage.getItem('zenit_sent_requests') === null) localStorage.setItem('zenit_sent_requests', '[]');
+      if (localStorage.getItem('zenit_groups') === null) localStorage.setItem('zenit_groups', '[]');
+    }
     return { error: null };
   };
 
@@ -104,13 +113,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: data.user.id, name: DEMO_NAME, username: DEMO_USERNAME, avatar_url: null,
       } as never);
     }
-    // Seed demo friends in localStorage (kept mock, not in DB)
-    if (!localStorage.getItem('zenit_friends')) {
-      localStorage.setItem('zenit_friends', JSON.stringify([
-        { id: 'juan', name: 'Juan' }, { id: 'marta', name: 'Marta' }, { id: 'javier', name: 'Javier' },
-      ]));
-      localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
-    }
+    // Always (re)seed Patricia's demo contacts — the Google/demo path must
+    // always land on the configured demo account regardless of prior state
+    // (e.g. user filled the register form first, which sets empty arrays).
+    localStorage.setItem('zenit_friends', JSON.stringify([
+      { id: 'juan', name: 'Juan' }, { id: 'marta', name: 'Marta' }, { id: 'javier', name: 'Javier' },
+    ]));
+    localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
+    localStorage.setItem('zenit_sent_requests', '[]');
     localStorage.setItem('zenit_onboarded', 'true');
     return { error: null };
   };
@@ -135,6 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('zenit_photo');
       localStorage.setItem('zenit_friends', '[]');
       localStorage.setItem('zenit_pending_requests', '[]');
+      localStorage.setItem('zenit_sent_requests', '[]');
       localStorage.setItem('zenit_groups', '[]');
       localStorage.setItem('zenit_onboarded', 'true');
     }
@@ -145,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setProfile(null);
     ['zenit_onboarded','zenit_name','zenit_username','zenit_email','zenit_photo',
-     'zenit_friends','zenit_pending_requests','zenit_groups'].forEach(k => localStorage.removeItem(k));
+     'zenit_friends','zenit_pending_requests','zenit_sent_requests','zenit_groups'].forEach(k => localStorage.removeItem(k));
   };
 
   const refreshProfile = async () => { if (user) await fetchProfile(user.id); };

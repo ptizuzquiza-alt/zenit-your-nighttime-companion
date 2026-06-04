@@ -12,10 +12,10 @@ const Profile: FC = () => {
   const { user, profile, signOut, updateProfile, uploadAvatar } = useAuth();
   const [activeSheet, setActiveSheet] = useState<Sheet>(null);
 
-  // Edit profile state — reads from auth profile when available, falls back to localStorage (demo)
+  // Edit profile state — reads from auth user/profile when available, falls back to localStorage (demo)
   const [name, setName] = useState(() => profile?.name ?? localStorage.getItem('zenit_name') ?? 'Patricia');
   const [username, setUsername] = useState(() => profile?.username ? `@${profile.username}` : (localStorage.getItem('zenit_username') ?? '@patricia'));
-  const [email, setEmail] = useState(() => localStorage.getItem('zenit_email') ?? 'patricia@email.com');
+  const [email, setEmail] = useState(() => user?.email ?? localStorage.getItem('zenit_email') ?? 'patricia@email.com');
   const [editName, setEditName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -31,6 +31,14 @@ const Profile: FC = () => {
       if (profile.avatar_url) setProfilePhoto(profile.avatar_url);
     }
   }, [profile]);
+
+  // Sync email from the authenticated session — source of truth for the account email
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+      localStorage.setItem('zenit_email', user.email);
+    }
+  }, [user]);
 
   useEffect(() => {
     const stored = localStorage.getItem('zenit_photo');

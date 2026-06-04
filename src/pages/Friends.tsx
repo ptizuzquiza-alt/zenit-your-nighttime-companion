@@ -1007,7 +1007,7 @@ const Friends: FC = () => {
         >
           <Map className="w-6 h-6" />
         </button>
-        <button className="flex items-center justify-center text-primary w-12 h-12">
+        <button className="flex items-center justify-center text-white w-12 h-12">
           <Users className="w-6 h-6" />
         </button>
       </div>

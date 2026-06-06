@@ -310,3 +310,120 @@
 @media (prefers-reduced-motion: reduce) {
   .zf-bee, .zf-glow, .zf-wing, .zf-antennae, .zf-pupils { animation: none; }
 }
+
+/* ─── Onboarding screen 2 — sleepy firefly + route ─────────────── */
+.ff-bee { transform-origin: center center; animation: ff-float 4.6s ease-in-out infinite; }
+.ff-glow { animation: ff-glow 2.8s ease-in-out infinite; }
+.ff-wing { transform-box: fill-box; }
+.ff-wing-left  { transform-origin: 92% 26%; animation: ff-flutterL .42s ease-in-out infinite; }
+.ff-wing-right { transform-origin: 8% 26%;  animation: ff-flutterR .42s ease-in-out infinite; }
+.ff-antennae   { transform-box: fill-box; transform-origin: 50% 100%; animation: ff-wiggle 3.6s ease-in-out infinite; }
+/* eyes stay still — only the sparkles pulse in place, in sync, each around its own centre */
+.ff-sparkle    { transform-box: fill-box; transform-origin: 50% 50%; animation: ff-twinkle 2.8s ease-in-out infinite; }
+
+@keyframes ff-float {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-2deg); }
+  50%      { transform: translate(-50%, -55%) rotate(2deg); }
+}
+@keyframes ff-glow {
+  0%, 100% { opacity: .5; transform: translate(-50%, -50%) scale(.9); }
+  50%      { opacity: 1;  transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes ff-flutterL { 0%, 100% { transform: rotate(2deg); }  50% { transform: rotate(-8deg); } }
+@keyframes ff-flutterR { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(8deg); } }
+@keyframes ff-wiggle   { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes ff-twinkle  { 0%, 100% { transform: scale(1); }      50% { transform: scale(.5); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-bee, .ff-glow, .ff-wing, .ff-antennae, .ff-sparkle { animation: none; }
+}
+
+/* ─── Onboarding screen 3 — firefly network ────────────────────── */
+/* sonar pulses radiating from the centre avatar */
+.zn-sonar {
+  fill: none; stroke: hsl(56 100% 51%); stroke-width: 3;
+  transform-box: fill-box; transform-origin: center;
+  animation: zn-sonar 3.4s ease-out infinite;
+}
+.zn-sonar-2 { animation-delay: 1.7s; }
+@keyframes zn-sonar {
+  0%   { transform: scale(.5); opacity: .9; }
+  70%  { opacity: .18; }
+  100% { transform: scale(2.05); opacity: 0; }
+}
+
+/* gold light pulses travelling out along each line to the friends */
+.zn-spark {
+  position: absolute; left: 50%; top: 50%;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle, #fffbe0 0%, hsl(54 100% 50%) 55%, rgba(255,230,0,0) 75%);
+  box-shadow: 0 0 10px 3px rgba(255,230,0,.7);
+  pointer-events: none;
+}
+.zn-spark-tl { animation: zn-flow-tl 2.6s ease-in-out infinite; }
+.zn-spark-tr { animation: zn-flow-tr 2.6s ease-in-out .65s infinite; }
+.zn-spark-bl { animation: zn-flow-bl 2.6s ease-in-out 1.3s infinite; }
+.zn-spark-br { animation: zn-flow-br 2.6s ease-in-out 1.95s infinite; }
+@keyframes zn-flow-tl { 0% { transform: translate(-50%,-50%) translate(0,0); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(-128px,-128px); opacity: 0; } }
+@keyframes zn-flow-tr { 0% { transform: translate(-50%,-50%) translate(0,0); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(128px,-128px); opacity: 0; } }
+@keyframes zn-flow-bl { 0% { transform: translate(-50%,-50%) translate(0,0); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(-128px,128px); opacity: 0; } }
+@keyframes zn-flow-br { 0% { transform: translate(-50%,-50%) translate(0,0); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(128px,128px); opacity: 0; } }
+
+/* small expansive wave from each friend when the spark arrives */
+.zn-wave {
+  position: absolute; width: 52px; height: 52px; border-radius: 50%;
+  border: 2px solid hsl(56 100% 51%);
+  transform: translate(-50%,-50%) scale(.5); opacity: 0; pointer-events: none;
+}
+.zn-wave-tl { left: 8%; top: 8%; animation: zn-friend-sonar 2.6s ease-out 2.6s infinite; }
+.zn-wave-tr { left: 92%; top: 8%; animation: zn-friend-sonar 2.6s ease-out 3.25s infinite; }
+.zn-wave-bl { left: 8%; top: 92%; animation: zn-friend-sonar 2.6s ease-out 3.9s infinite; }
+.zn-wave-br { left: 92%; top: 92%; animation: zn-friend-sonar 2.6s ease-out 4.55s infinite; }
+@keyframes zn-friend-sonar {
+  0%  { transform: translate(-50%,-50%) scale(.55); opacity: .9; }
+  45% { opacity: .4; }
+  65% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+  100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+}
+
+/* friend avatars gently pulse a gold halo */
+.zn-friend { animation: zn-friend-pulse 4s ease-in-out infinite; }
+.zn-friend-tr { animation-delay: .6s; }
+.zn-friend-bl { animation-delay: 1.2s; }
+.zn-friend-br { animation-delay: 1.8s; }
+@keyframes zn-friend-pulse {
+  0%, 100% { box-shadow: 0 6px 18px -6px rgba(0,0,0,.6), 0 0 0 0 rgba(255,230,0,0); }
+  50%      { box-shadow: 0 6px 18px -6px rgba(0,0,0,.6), 0 0 14px 2px rgba(255,230,0,.45); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zn-sonar, .zn-spark, .zn-wave, .zn-friend { animation: none; }
+  .zn-sonar, .zn-spark, .zn-wave { opacity: 0; }
+}
+
+/* ─── Onboarding screen 4 — awake firefly + friend light-cone markers ─── */
+.sl-glow { animation: sl-glow 2.8s ease-in-out infinite; }
+.sl-bee  { animation: sl-float 4.6s ease-in-out infinite; }
+.sl-wing { transform-box: fill-box; }
+.sl-wing-left  { transform-origin: 84% 28%; animation: sl-flutterL .42s ease-in-out infinite; }
+.sl-wing-right { transform-origin: 16% 28%; animation: sl-flutterR .42s ease-in-out infinite; }
+.sl-antennae   { transform-box: fill-box; transform-origin: 50% 100%; animation: sl-wiggle 3.6s ease-in-out infinite; }
+
+@keyframes sl-float    { 0%, 100% { transform: translate(-50%,-50%) rotate(-2deg); } 50% { transform: translate(-50%,-58%) rotate(2deg); } }
+@keyframes sl-glow     { 0%, 100% { opacity: .5; transform: translate(-50%,-50%) scale(.9); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes sl-flutterL { 0%, 100% { transform: rotate(2deg); }  50% { transform: rotate(-8deg); } }
+@keyframes sl-flutterR { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(8deg); } }
+@keyframes sl-wiggle   { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
+/* friend markers — fixed in place: the cone flickers and the gold ring pulses (no bob) */
+.sl-cone { animation: sl-cone-flicker 3.2s ease-in-out infinite; }
+.sl-av   { animation: sl-ring-glow var(--bob, 4.6s) ease-in-out infinite; }
+@keyframes sl-cone-flicker { 0%, 100% { opacity: .92; } 50% { opacity: .62; } }
+@keyframes sl-ring-glow {
+  0%, 100% { box-shadow: 0 10px 26px -8px rgba(0,0,0,.6), 0 0 16px -4px rgba(255,230,0,.25); }
+  50%      { box-shadow: 0 10px 26px -8px rgba(0,0,0,.6), 0 0 30px 2px rgba(255,230,0,.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-bee, .sl-glow, .sl-wing, .sl-antennae, .sl-cone, .sl-av { animation: none; }
+}

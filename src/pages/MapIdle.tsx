@@ -10,6 +10,8 @@ import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
+const MAP_INTRO_SEEN_KEY = 'zenit_map_intro_seen';
+
 const FRIEND_ROUTES = [
   {
     id: 'juan',
@@ -71,6 +73,7 @@ const MapIdle: FC = () => {
   });
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
+  const [showMapIntro, setShowMapIntro] = useState(() => localStorage.getItem(MAP_INTRO_SEEN_KEY) !== 'true');
 
   const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
     try {
@@ -86,6 +89,11 @@ const MapIdle: FC = () => {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
   const [flyToPoint, setFlyToPoint] = useState<[number, number] | undefined>(undefined);
+
+  const dismissMapIntro = useCallback(() => {
+    setShowMapIntro(false);
+    localStorage.setItem(MAP_INTRO_SEEN_KEY, 'true');
+  }, []);
 
   // Auto-accept all friends when they share their location
   useEffect(() => {
@@ -229,6 +237,27 @@ const MapIdle: FC = () => {
           )}
         </button>
       </div>
+
+      {showMapIntro && (
+        <div className="absolute top-28 left-4 right-4 z-[1000]">
+          <div className="rounded-xl bg-popover border border-border shadow-xl px-4 py-3.5 flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Empieza por la búsqueda</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Toca la barra para buscar un destino, una ruta o un lugar seguro por primera vez.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={dismissMapIntro}
+              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground shrink-0"
+              aria-label="Cerrar instrucciones"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Friends speed-dial */}
       <div className="absolute bottom-20 left-4 right-4 z-[1000] flex flex-col items-start gap-2">

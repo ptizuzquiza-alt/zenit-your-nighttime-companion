@@ -217,7 +217,7 @@ const MapIdle: FC = () => {
       <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-4">
         <div className="flex-1">
           <SearchBar
-            placeholder="Buscar"
+            placeholder="Buscar ruta"
             onClick={() => {
               dismissMapIntro();
               navigate('/search');

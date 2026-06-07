@@ -188,7 +188,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           disabled={!hasShareChanges}
           className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
-          Salvar cambios
+          Guardar cambios
         </button>
       </div>
 

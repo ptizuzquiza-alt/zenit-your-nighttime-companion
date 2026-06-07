@@ -996,15 +996,22 @@ const Friends: FC = () => {
       )}
 
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
         <button
-          onClick={() => navigate('/')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
-        >
+          onClick={() => navigate('/')} 
+          className="flex flex-col items-center justify-center w-12 h-12 text-muted-foreground">
           <Map className="w-6 h-6" />
+          <p className="text-center text-sm font-semibold">
+            Mapa
+          </p>
         </button>
-        <button className="flex items-center justify-center text-white w-12 h-12">
+        <button
+          className="flex flex-col items-center justify-center w-12 h-12 text-foreground"
+        >
           <Users className="w-6 h-6" />
+          <p className="text-center text-sm font-semibold">
+            Amigos
+          </p>
         </button>
       </div>
     </div>

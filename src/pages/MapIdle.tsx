@@ -402,14 +402,20 @@ const MapIdle: FC = () => {
 
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
-        <button className="flex items-center justify-center w-12 h-12">
+        <button className="flex flex-col items-center justify-center w-12 h-12 text-foreground">
           <Map className="w-6 h-6" />
+          <p className="text-center text-sm font-semibold">
+            Mapa
+          </p>
         </button>
         <button
           onClick={() => navigate('/friends')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+          className="flex flex-col items-center justify-center text-muted-foreground w-12 h-12"
         >
           <Users className="w-6 h-6" />
+          <p className="text-center text-sm font-semibold">
+            Amigos
+          </p>
         </button>
       </div>
     </div>

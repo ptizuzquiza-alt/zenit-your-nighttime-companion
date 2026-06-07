@@ -43,7 +43,7 @@ export const LocationInput: FC<LocationInputProps> = ({
             onChange={(e) => onOriginChange?.(e.target.value)}
             onFocus={() => onFieldFocus?.('origin')}
             className={`w-full bg-transparent text-foreground placeholder:text-white/70 border border-popover rounded-sm px-2 -mx-2 focus:outline-none py-2
-              ${activeField === 'origin' ? 'border-popover/40 bg-popover/50 rounded-sm px-2 -mx-2' : ''}`
+              ${activeField === 'origin' ? 'bg-popover/40 border-popover/40 bg-popover/50 rounded-sm px-2 -mx-2' : ''}`
             }
           />
           <div className="h-px bg-transparent" />
@@ -54,7 +54,7 @@ export const LocationInput: FC<LocationInputProps> = ({
             onChange={(e) => onDestinationChange?.(e.target.value)}
             onFocus={() => onFieldFocus?.('destination')}
             className={`w-full bg-transparent text-foreground placeholder:text-white/70 border border-popover rounded-sm px-2 -mx-2 focus:outline-none py-2
-              ${activeField === 'destination' ? 'border-popover/40 bg-popover/50 rounded-sm px-2 -mx-2' : ''}`
+              ${activeField === 'destination' ? 'bg-popover/40 border-popover/40 rounded-sm px-2 -mx-2' : ''}`
             }
           />
         </div>

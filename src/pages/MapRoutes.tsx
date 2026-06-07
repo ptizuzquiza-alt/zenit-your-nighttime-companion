@@ -12,7 +12,7 @@ import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
 import { fetchZenitRoute, fetchTransitRoute, storeSelectedRoute, RouteResult, TransitRoute } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { CONTACTS } from '@/config/contacts';
+import { getStoredFriends } from '@/config/contacts';
 import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
 
 const BANNER_DISMISSED_KEY = 'zenit_banner_dismissed';
@@ -33,6 +33,7 @@ const MapRoutes: FC = () => {
   const [transportMode, setTransportMode] = useState<'walk' | 'transit'>('walk');
   const [transitRoute, setTransitRoute] = useState<TransitRoute | null>(null);
   const [loadingTransit, setLoadingTransit] = useState(false);
+  const contacts = getStoredFriends();
 
   // Panel state: 'minimized' | 'half-expanded' | 'fully-expanded'
   const [panelState, setPanelState] = useState<'minimized' | 'half-expanded' | 'fully-expanded'>('minimized');
@@ -585,7 +586,7 @@ const MapRoutes: FC = () => {
           setSharedContacts(selected);
           setShowShareModal(false);
         }}
-        contacts={CONTACTS}
+        contacts={contacts}
         initialSelected={sharedContacts}
       />
 

@@ -218,7 +218,10 @@ const MapIdle: FC = () => {
         <div className="flex-1">
           <SearchBar
             placeholder="Buscar"
-            onClick={() => navigate('/search')}
+            onClick={() => {
+              dismissMapIntro();
+              navigate('/search');
+            }}
             readOnly
           />
         </div>

@@ -75,6 +75,7 @@ const Profile: FC = () => {
   const [placeSearch, setPlaceSearch] = useState('');
   const [placeResults, setPlaceResults] = useState<GeocodingResult[]>([]);
   const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
+  const [confirmDeletePlace, setConfirmDeletePlace] = useState<string | null>(null);
 
   const savePlaces = (updated: SavedPlace[]) => {
     setSavedPlaces(updated);
@@ -82,7 +83,13 @@ const Profile: FC = () => {
   };
 
   const handleDeletePlace = (id: string) => {
-    savePlaces(savedPlaces.filter(p => p.id !== id));
+    setConfirmDeletePlace(id);
+  };
+
+  const confirmDelete = () => {
+    if (!confirmDeletePlace) return;
+    savePlaces(savedPlaces.filter(p => p.id !== confirmDeletePlace));
+    setConfirmDeletePlace(null);
   };
 
   const handleAddPlace = (result: GeocodingResult) => {
@@ -527,6 +534,29 @@ const Profile: FC = () => {
                 );
               })}
             </div>
+
+            {/* Confirm delete dialog */}
+            {confirmDeletePlace && (
+              <div className="mb-4 p-4 rounded-xl bg-secondary/60 border border-destructive/20 space-y-3">
+                <p className="text-sm font-medium text-foreground text-center">
+                  ¿Eliminar "{savedPlaces.find(p => p.id === confirmDeletePlace)?.label}"?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmDeletePlace(null)}
+                    className="flex-1 py-2 rounded-xl bg-secondary text-foreground text-sm font-medium"
+                  >
+                    No
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 py-2 rounded-xl bg-destructive text-white text-sm font-medium"
+                  >
+                    Sí, eliminar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Add new place */}
             {!addingPlace ? (

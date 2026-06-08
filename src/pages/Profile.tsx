@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin, Home, Briefcase, Star, Plus, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AVATAR_BY_NAME } from '@/config/contacts';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { SavedPlace, getSavedPlaces } from '@/pages/MapSearch';
 import { searchPlaces, GeocodingResult } from '@/lib/geocoding';
 
@@ -50,8 +50,25 @@ const Profile: FC = () => {
   }, [profile]);
   const [showPw, setShowPw] = useState(false);
 
+  const DEMO_PLACES: SavedPlace[] = [
+    { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
+    { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },
+  ];
+
+  const seedDemoPlaces = () => {
+    localStorage.setItem('zenit_saved_places', JSON.stringify(DEMO_PLACES));
+    setSavedPlaces(DEMO_PLACES);
+  };
+
   // Saved places
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>(() => getSavedPlaces());
+
+  // Seed demo places when user loads (covers Vercel/Supabase session)
+  useEffect(() => {
+    if (savedPlaces.length > 0) return;
+    const isDemo = user?.email === DEMO_EMAIL || localStorage.getItem('zenit_name') === 'Patricia';
+    if (isDemo) seedDemoPlaces();
+  }, [user]);
   const [addingPlace, setAddingPlace] = useState(false);
   const [newPlaceLabel, setNewPlaceLabel] = useState('');
   const [newPlaceIcon, setNewPlaceIcon] = useState<SavedPlace['icon']>('star');
@@ -256,15 +273,17 @@ const Profile: FC = () => {
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"
         >
           <Map className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Mapa</span>
         </button>
         <button
           onClick={() => navigate('/friends')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"
         >
           <Users className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Amigos</span>
         </button>
       </div>
 

@@ -6,6 +6,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendsFab } from '../components/FriendsFab';
 import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -49,8 +50,9 @@ const MapIdle: FC = () => {
   const navigate = useNavigate();
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
   const [friendData, setFriendData] = useState<
-    { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number }[]
+    { name: string; coordinates: [number, number][]; position: [number, number]; durationSec?: number; routeOrigin?: [number, number]; routeDest?: [number, number] }[]
   >([]);
+  const { profile } = useAuth();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   const isDemo = localStorage.getItem('zenit_friends') === null;
@@ -103,11 +105,13 @@ const MapIdle: FC = () => {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem('zenit_photo');
-    if (stored) {
-      setProfilePhoto(stored);
+    if (profile?.avatar_url) {
+      setProfilePhoto(profile.avatar_url);
+    } else {
+      const stored = localStorage.getItem('zenit_photo');
+      if (stored) setProfilePhoto(stored);
     }
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -138,11 +142,11 @@ const MapIdle: FC = () => {
               ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
             );
             const idx = Math.floor(pts.length * fr.progress);
-            return { name: fr.name, coordinates: pts, position: pts[idx], durationSec: data.routes[0].duration };
+            return { name: fr.name, coordinates: pts, position: pts[idx], durationSec: data.routes[0].duration, routeOrigin: fr.origin, routeDest: fr.dest };
           }
         } catch { /* fallback */ }
         const idx = Math.floor(fr.fallback.length * fr.progress);
-        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx], durationSec: fr.totalDurationMin * 60 };
+        return { name: fr.name, coordinates: fr.fallback, position: fr.fallback[idx], durationSec: fr.totalDurationMin * 60, routeOrigin: fr.origin, routeDest: fr.dest };
       })
     ).then(setFriendData);
   }, []);
@@ -162,9 +166,17 @@ const MapIdle: FC = () => {
       const fr = FRIEND_ROUTES.find(r => r.name === fd.name);
       return fr && acceptedFriends.includes(fr.id);
     })
-    .map(({ name, coordinates, position }) => {
+    .map(({ name, coordinates, position, routeOrigin, routeDest }) => {
       const fr = FRIEND_ROUTES.find(r => r.name === name);
-      return { name, avatar: AVATAR_BY_NAME[name], coordinates, position, dim: fr ? hiddenFriends.includes(fr.id) : false };
+      return {
+        name,
+        avatar: AVATAR_BY_NAME[name],
+        coordinates,
+        position,
+        dim: fr ? hiddenFriends.includes(fr.id) : false,
+        routeOrigin,
+        routeDest,
+      };
     });
 
   const badgeCount = myFriendRoutes.filter(fr => SHARING_ROUTE_IDS.has(fr.id)).length;
@@ -263,8 +275,8 @@ const MapIdle: FC = () => {
           <FriendsFab
             active={showFriends}
             badgeCount={badgeCount}
-            onClick={() => { setShowFriends((p) => !p); setActiveFriendLabel(null); }}
-            className="w-14 h-14 flex-shrink-0"
+            onClick={badgeCount > 0 ? () => { setShowFriends((p) => !p); setActiveFriendLabel(null); } : undefined}
+            className={`w-14 h-14 flex-shrink-0 ${badgeCount === 0 ? 'opacity-40 cursor-not-allowed pointer-events-none grayscale' : ''}`}
           />
 
           {/* Avatar pill expanding to the right */}
@@ -370,14 +382,16 @@ const MapIdle: FC = () => {
 
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
-        <button className="flex items-center justify-center w-12 h-12">
+        <button className="flex flex-col items-center justify-center gap-0.5 w-12">
           <Map className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Mapa</span>
         </button>
         <button
           onClick={() => navigate('/friends')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"
         >
           <Users className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Amigos</span>
         </button>
       </div>
     </div>

@@ -25,6 +25,8 @@ interface FriendRoute {
   coordinates: [number, number][];
   position: [number, number];
   dim?: boolean;
+  routeOrigin?: [number, number];
+  routeDest?: [number, number];
 }
 
 interface ZenitMapProps {
@@ -279,6 +281,31 @@ export const ZenitMap: FC<ZenitMapProps> = ({
           color: '#a78bfa', weight: fr.dim ? 3 : 4, dashArray: '6, 6', opacity: fr.dim ? 0.2 : 0.7,
         }).addTo(mapRef.current!);
         polylinesRef.current.push(friendPolyline);
+      }
+
+      // Origin circle — sits exactly on the first point of the polyline
+      if (fr.routeOrigin && !fr.dim) {
+        const originIcon = L.divIcon({
+          className: 'zenit-marker',
+          html: `<div style="width:10px;height:10px;background:#a78bfa;border:2px solid rgba(255,255,255,0.6);border-radius:50%;box-shadow:0 0 0 2px rgba(167,139,250,0.4);opacity:0.65;"></div>`,
+          iconSize: [10, 10],
+          iconAnchor: [5, 5],
+        });
+        markersRef.current.push(L.marker(fr.routeOrigin, { icon: originIcon }).addTo(mapRef.current!));
+      }
+
+      // Destination — teardrop maps-style pin, semi-opaque
+      if (fr.routeDest && !fr.dim) {
+        const destIcon = L.divIcon({
+          className: 'zenit-marker',
+          html: `<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:1;">
+            <path d="M10 0C4.477 0 0 4.477 0 10C0 16.627 10 26 10 26C10 26 20 16.627 20 10C20 4.477 15.523 0 10 0Z" fill="#a78bfa"/>
+            <circle cx="10" cy="10" r="4" fill="white" opacity="0.8"/>
+          </svg>`,
+          iconSize: [20, 26],
+          iconAnchor: [10, 26],
+        });
+        markersRef.current.push(L.marker(fr.routeDest, { icon: destIcon }).addTo(mapRef.current!));
       }
     });
 

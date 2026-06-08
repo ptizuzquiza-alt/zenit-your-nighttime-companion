@@ -1,5 +1,11 @@
 import { FC, useState, useEffect } from 'react';
-import { Search, Share2 } from 'lucide-react';
+import { Search, Share2, Users } from 'lucide-react';
+
+interface Group {
+  id: string;
+  name: string;
+  members: string[];
+}
 
 interface Contact {
   id: string;
@@ -27,11 +33,24 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   const [pending, setPending] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [initialSharedIds, setInitialSharedIds] = useState<string[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [confirm, setConfirm] = useState<{
     id: string;
     name: string;
-    action: 'share' | 'unshare' | 'cancel';
+    action: 'share' | 'share-group' | 'unshare' | 'cancel';
+    groupIds?: string[];
   } | null>(null);
+
+  // Load groups from localStorage when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        setGroups(JSON.parse(localStorage.getItem('zenit_groups') || '[]'));
+      } catch {
+        setGroups([]);
+      }
+    }
+  }, [isOpen]);
 
   // Sync with external state only when modal opens
   useEffect(() => {
@@ -71,6 +90,26 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
     return 'idle';
   };
 
+  // Map group member ids (lowercase name) to contact ids
+  const getContactIdsForGroup = (group: Group) =>
+    contacts
+      .filter(c => group.members.includes(c.name.toLowerCase()))
+      .map(c => c.id);
+
+  const isGroupFullySelected = (group: Group) => {
+    const ids = getContactIdsForGroup(group);
+    return ids.length > 0 && ids.every(id => selected.includes(id));
+  };
+
+  const handleGroupClick = (group: Group) => {
+    const ids = getContactIdsForGroup(group);
+    if (isGroupFullySelected(group)) {
+      setSelected(prev => prev.filter(id => !ids.includes(id)));
+    } else {
+      setConfirm({ id: group.id, name: group.name, action: 'share-group', groupIds: ids });
+    }
+  };
+
   const handleActionClick = (contact: Contact) => {
     const status = getStatus(contact);
     if (status === 'sharing') {
@@ -81,7 +120,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       setPending(prev => prev.filter(x => x !== contact.id));
       return;
     }
-    setSelected(prev => (prev.includes(contact.id) ? prev : [...prev, contact.id]));
+    setConfirm({ id: contact.id, name: contact.name, action: 'share' });
   };
 
   const handleConfirm = () => {
@@ -91,7 +130,13 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       onClose();
       return;
     }
-    setSelected(prev => prev.filter(x => x !== confirm.id));
+    if (confirm.action === 'share') {
+      setSelected(prev => (prev.includes(confirm.id) ? prev : [...prev, confirm.id]));
+    } else if (confirm.action === 'share-group') {
+      setSelected(prev => Array.from(new Set([...prev, ...(confirm.groupIds ?? [])])));
+    } else if (confirm.action === 'unshare') {
+      setSelected(prev => prev.filter(x => x !== confirm.id));
+    }
     setConfirm(null);
   };
 
@@ -126,6 +171,37 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           />
         </div>
         
+        {/* Groups section */}
+        {groups.length > 0 && (
+          <>
+            <p className="text-sm font-medium text-muted-foreground mb-3">Grupos</p>
+            <div className="space-y-2 mb-4">
+              {groups
+                .filter(g => g.name.toLowerCase().includes(search.toLowerCase()) || search === '')
+                .map(group => {
+                  const fullySelected = isGroupFullySelected(group);
+                  return (
+                    <div key={group.id} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/20 flex-shrink-0">
+                        <Users className="w-5 h-5 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-foreground">{group.name}</span>
+                        <p className="text-xs text-muted-foreground">{group.members.length} miembro{group.members.length !== 1 ? 's' : ''}</p>
+                      </div>
+                      <button
+                        onClick={() => handleGroupClick(group)}
+                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${fullySelected ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-white'}`}
+                      >
+                        {fullySelected ? 'Dejar de compartir' : 'Compartir con grupo'}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </>
+        )}
+
         <p className="text-sm font-medium text-muted-foreground mb-3">Recientes</p>
         
         {/* Contacts list */}
@@ -188,7 +264,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           disabled={!hasShareChanges}
           className="zenit-btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-3"
         >
-          Salvar cambios
+          Guardar cambios
         </button>
       </div>
 
@@ -197,25 +273,37 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
         <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/50 rounded-t-3xl" onClick={() => setConfirm(null)} />
           <div className="relative bg-card border border-border rounded-2xl p-6 w-full shadow-xl">
-            <p className="text-foreground font-semibold text-center text-base mb-4">
-              {confirm.action === 'unshare'
-                ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
-                : confirm.action === 'cancel'
-                  ? '¿Salir sin guardar tus cambios?'
-                  : 'Compartir ruta'}
+            <p className="text-foreground font-semibold text-center text-base mb-2">
+              {confirm.action === 'share'
+                ? `¿Compartir tu ruta con ${confirm.name}?`
+                : confirm.action === 'share-group'
+                  ? `¿Compartir tu ruta con el grupo "${confirm.name}"?`
+                  : confirm.action === 'unshare'
+                    ? `¿Dejar de compartir tu ruta con ${confirm.name}?`
+                    : '¿Salir sin guardar tus cambios?'}
             </p>
+            {(confirm.action === 'share' || confirm.action === 'share-group') && (
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                Podrán ver tu ubicación en directo hasta que llegues a tu destino.
+              </p>
+            )}
+            {(confirm.action === 'unshare' || confirm.action === 'cancel') && (
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                {confirm.action === 'cancel' ? 'Los cambios no se guardarán.' : 'Dejarán de ver tu ubicación en tiempo real.'}
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
                 className="flex-1 py-3 rounded-3xl bg-popover text-foreground font-medium text-sm"
               >
-                Cancelar
+                No
               </button>
               <button
                 onClick={handleConfirm}
-                className={`flex-1 py-3 rounded-3xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : 'bg-destructive'}`}
+                className={`flex-1 py-3 rounded-3xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : confirm.action === 'cancel' ? 'bg-destructive' : 'bg-primary'}`}
               >
-                {confirm.action === 'cancel' ? 'Salir sin guardar' : 'Dejar de compartir'}
+                {confirm.action === 'cancel' ? 'Salir sin guardar' : confirm.action === 'unshare' ? 'Dejar de compartir' : 'Sí, compartir'}
               </button>
             </div>
           </div>

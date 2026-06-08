@@ -1003,12 +1003,14 @@ const Friends: FC = () => {
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center justify-center text-muted-foreground w-12 h-12"
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"
         >
           <Map className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Mapa</span>
         </button>
-        <button className="flex items-center justify-center text-white w-12 h-12">
+        <button className="flex flex-col items-center justify-center gap-0.5 text-white w-12">
           <Users className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Amigos</span>
         </button>
       </div>
     </div>

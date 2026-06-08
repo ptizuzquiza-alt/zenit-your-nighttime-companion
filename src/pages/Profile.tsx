@@ -1,11 +1,13 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin, Home, Briefcase, Star, Plus, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 import { useAuth } from '@/contexts/AuthContext';
+import { SavedPlace, getSavedPlaces } from '@/pages/MapSearch';
+import { searchPlaces, GeocodingResult } from '@/lib/geocoding';
 
-type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | null;
+type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | 'places' | null;
 
 const Profile: FC = () => {
   const navigate = useNavigate();
@@ -47,6 +49,52 @@ const Profile: FC = () => {
     }
   }, [profile]);
   const [showPw, setShowPw] = useState(false);
+
+  // Saved places
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>(() => getSavedPlaces());
+  const [addingPlace, setAddingPlace] = useState(false);
+  const [newPlaceLabel, setNewPlaceLabel] = useState('');
+  const [newPlaceIcon, setNewPlaceIcon] = useState<SavedPlace['icon']>('star');
+  const [placeSearch, setPlaceSearch] = useState('');
+  const [placeResults, setPlaceResults] = useState<GeocodingResult[]>([]);
+  const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
+
+  const savePlaces = (updated: SavedPlace[]) => {
+    setSavedPlaces(updated);
+    localStorage.setItem('zenit_saved_places', JSON.stringify(updated));
+  };
+
+  const handleDeletePlace = (id: string) => {
+    savePlaces(savedPlaces.filter(p => p.id !== id));
+  };
+
+  const handleAddPlace = (result: GeocodingResult) => {
+    if (!newPlaceLabel.trim()) return;
+    const newPlace: SavedPlace = {
+      id: Date.now().toString(),
+      label: newPlaceLabel.trim(),
+      name: result.name,
+      address: result.address ?? '',
+      lat: result.lat,
+      lon: result.lon,
+      icon: newPlaceIcon,
+    };
+    savePlaces([...savedPlaces, newPlace]);
+    setAddingPlace(false);
+    setNewPlaceLabel('');
+    setPlaceSearch('');
+    setPlaceResults([]);
+    toast.success(`"${newPlace.label}" guardado`);
+  };
+
+  useEffect(() => {
+    if (!addingPlace || placeSearch.length < 2) { setPlaceResults([]); return; }
+    setPlaceSearchLoading(true);
+    const t = setTimeout(() => {
+      searchPlaces(placeSearch).then(res => { setPlaceResults(res); setPlaceSearchLoading(false); });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [placeSearch, addingPlace]);
 
   // Privacy toggles
   const [showLocation, setShowLocation] = useState(true);
@@ -180,6 +228,7 @@ const Profile: FC = () => {
           { icon: Shield, label: 'Privacidad y seguridad', sheet: 'privacy' as Sheet },
           { icon: Bell, label: 'Notificaciones', sheet: 'notifications' as Sheet },
           { icon: User, label: 'Editar perfil', sheet: 'edit' as Sheet },
+          { icon: MapPin, label: 'Lugares guardados', sheet: 'places' as Sheet },
         ].map(({ icon: Icon, label, sheet }) => (
           <button
             key={label}
@@ -418,6 +467,122 @@ const Profile: FC = () => {
                 Cerrar sesión
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Lugares guardados sheet ── */}
+      {activeSheet === 'places' && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[1100] flex items-end">
+          <div className="w-full bg-card border-t border-border rounded-t-3xl px-5 pt-5 pb-10" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                <h2 className="text-foreground font-semibold">Lugares guardados</h2>
+              </div>
+              <button onClick={() => { setActiveSheet(null); setAddingPlace(false); setPlaceSearch(''); setPlaceResults([]); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* List of saved places */}
+            <div className="space-y-2 mb-4">
+              {savedPlaces.length === 0 && !addingPlace && (
+                <p className="text-sm text-muted-foreground text-center py-4">No tienes lugares guardados aún.</p>
+              )}
+              {savedPlaces.map(place => {
+                const Icon = place.icon === 'home' ? Home : place.icon === 'work' ? Briefcase : Star;
+                return (
+                  <div key={place.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40">
+                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm">{place.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{place.name}</p>
+                    </div>
+                    <button onClick={() => handleDeletePlace(place.id)} className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add new place */}
+            {!addingPlace ? (
+              <button
+                onClick={() => setAddingPlace(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground text-sm hover:bg-secondary/30 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Añadir lugar
+              </button>
+            ) : (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <p className="text-sm font-medium text-foreground">Nuevo lugar</p>
+
+                {/* Label */}
+                <input
+                  type="text"
+                  placeholder="Nombre (ej: Casa, Trabajo…)"
+                  value={newPlaceLabel}
+                  onChange={e => setNewPlaceLabel(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-secondary/60 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+
+                {/* Icon picker */}
+                <div className="flex gap-2">
+                  {(['home', 'work', 'star'] as const).map(ico => {
+                    const Icon = ico === 'home' ? Home : ico === 'work' ? Briefcase : Star;
+                    return (
+                      <button
+                        key={ico}
+                        onClick={() => setNewPlaceIcon(ico)}
+                        className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1 text-xs font-medium transition-colors ${newPlaceIcon === ico ? 'bg-accent/20 text-accent border border-accent/40' : 'bg-secondary/40 text-muted-foreground'}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {ico === 'home' ? 'Casa' : ico === 'work' ? 'Trabajo' : 'Otro'}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Location search */}
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary/60">
+                  <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Buscar dirección…"
+                    value={placeSearch}
+                    onChange={e => setPlaceSearch(e.target.value)}
+                    className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  />
+                </div>
+
+                {placeSearchLoading && <p className="text-xs text-muted-foreground">Buscando…</p>}
+                {placeResults.length > 0 && (
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {placeResults.map(r => (
+                      <button
+                        key={r.id}
+                        onClick={() => handleAddPlace(r)}
+                        className="w-full text-left px-3 py-2 rounded-xl bg-secondary/40 hover:bg-secondary/60 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-foreground truncate">{r.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{r.address}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => { setAddingPlace(false); setPlaceSearch(''); setPlaceResults([]); setNewPlaceLabel(''); }}
+                  className="w-full py-2 text-sm text-muted-foreground"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

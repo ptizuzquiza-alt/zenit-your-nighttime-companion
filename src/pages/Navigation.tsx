@@ -646,7 +646,13 @@ const Navigation: FC = () => {
         onClose={() => setShowShareModal(false)}
         onShare={(ids) => { setSharedContacts(ids); setShowShareModal(false); }}
         initialSelected={sharedContacts}
-        contacts={CONTACTS}
+        contacts={(() => {
+          try {
+            const friends: { id: string; name: string }[] = JSON.parse(localStorage.getItem('zenit_friends') || '[]');
+            if (friends.length === 0) return CONTACTS;
+            return CONTACTS.filter(c => friends.some(f => f.name.toLowerCase() === c.name.toLowerCase()));
+          } catch { return CONTACTS; }
+        })()}
       />
 
       {/* Problem modal — shown when coming back from NavigationEnd via "Aún no he llegado" */}

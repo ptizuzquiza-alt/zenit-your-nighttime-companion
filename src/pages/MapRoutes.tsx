@@ -419,6 +419,7 @@ const MapRoutes: FC = () => {
 
           <div className="ml-3 flex-shrink-0 flex items-center">
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowInfoModal(true);
@@ -585,7 +586,13 @@ const MapRoutes: FC = () => {
           setSharedContacts(selected);
           setShowShareModal(false);
         }}
-        contacts={CONTACTS}
+        contacts={(() => {
+          try {
+            const friends: { id: string; name: string }[] = JSON.parse(localStorage.getItem('zenit_friends') || '[]');
+            if (friends.length === 0) return CONTACTS;
+            return CONTACTS.filter(c => friends.some(f => f.name.toLowerCase() === c.name.toLowerCase()));
+          } catch { return CONTACTS; }
+        })()}
         initialSelected={sharedContacts}
       />
 

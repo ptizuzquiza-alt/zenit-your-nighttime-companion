@@ -122,6 +122,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
     localStorage.setItem('zenit_sent_requests', '[]');
     localStorage.setItem('zenit_onboarded', 'true');
+    localStorage.setItem('zenit_saved_places', JSON.stringify([
+      { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
+      { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },
+    ]));
     return { error: null };
   };
 

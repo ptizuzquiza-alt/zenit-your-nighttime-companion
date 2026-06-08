@@ -64,6 +64,12 @@ const MapIdle: FC = () => {
     const stored = localStorage.getItem('zenit_friends');
     if (stored === null) {
       if (!localStorage.getItem('zenit_name')) localStorage.setItem('zenit_name', 'Patricia');
+      if (!localStorage.getItem('zenit_saved_places')) {
+        localStorage.setItem('zenit_saved_places', JSON.stringify([
+          { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
+          { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },
+        ]));
+      }
       return FRIEND_ROUTES;
     }
     try {

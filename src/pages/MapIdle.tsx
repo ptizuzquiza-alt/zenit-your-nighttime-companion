@@ -7,11 +7,26 @@ import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendsFab } from '../components/FriendsFab';
 import { LuciTutorial } from '@/components/LuciTutorial';
 import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
+import { isTutorialSeen, markTutorialSeen, type TutorialId } from '@/lib/tutorials';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-const MAP_INTRO_SEEN_KEY = 'zenit_map_intro_seen';
+type MapIdleTutorialId = Extract<TutorialId, 'mapSearch' | 'mapFriends'>;
+
+const MAP_SEARCH_TUTORIAL = (
+  <>
+    Haz tu <strong className="text-accent">primera ruta</strong> usando la
+    barra de búsqueda.
+  </>
+);
+
+const MAP_FRIENDS_TUTORIAL = (
+  <>
+    Mira las <strong className="text-accent">rutas de tus amigos</strong>
+    cuando te las compartan.
+  </>
+);
 
 const FRIEND_ROUTES = [
   {
@@ -74,7 +89,7 @@ const MapIdle: FC = () => {
   });
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
-  const [showMapIntro, setShowMapIntro] = useState(() => localStorage.getItem(MAP_INTRO_SEEN_KEY) !== 'true');
+  const [activeTutorial, setActiveTutorial] = useState<MapIdleTutorialId | null>(null);
 
   const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
     try {
@@ -91,9 +106,12 @@ const MapIdle: FC = () => {
   const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
   const [flyToPoint, setFlyToPoint] = useState<[number, number] | undefined>(undefined);
 
-  const dismissMapIntro = useCallback(() => {
-    setShowMapIntro(false);
-    localStorage.setItem(MAP_INTRO_SEEN_KEY, 'true');
+  const dismissTutorial = useCallback((tutorialId: MapIdleTutorialId) => {
+    markTutorialSeen(tutorialId);
+    setActiveTutorial((current) => {
+      if (current !== tutorialId) return current;
+      return null;
+    });
   }, []);
 
   // Auto-accept all friends when they share their location
@@ -177,6 +195,20 @@ const MapIdle: FC = () => {
     });
 
   const badgeCount = myFriendRoutes.filter(fr => SHARING_ROUTE_IDS.has(fr.id)).length;
+  const hasFriendRoutes = badgeCount > 0;
+
+  useEffect(() => {
+    if (activeTutorial !== null) return;
+
+    if (!isTutorialSeen('mapSearch')) {
+      setActiveTutorial('mapSearch');
+      return;
+    }
+
+    if (hasFriendRoutes && !isTutorialSeen('mapFriends')) {
+      setActiveTutorial('mapFriends');
+    }
+  }, [activeTutorial, hasFriendRoutes]);
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
@@ -220,7 +252,7 @@ const MapIdle: FC = () => {
           <SearchBar
             placeholder="Buscar ruta"
             onClick={() => {
-              dismissMapIntro();
+              dismissTutorial('mapSearch');
               navigate('/search');
             }}
             readOnly
@@ -242,12 +274,22 @@ const MapIdle: FC = () => {
         </button>
       </div>
 
-      {/* Tutorial - Search bar */}
-      {showMapIntro && (
+      {/* Tutorial overlay */}
+      {activeTutorial === 'mapSearch' && (
         <div className="absolute top-28 left-4 right-4 z-[1000]">
           <LuciTutorial
-            message="Interactúa con ese elemento para que te salga ese resultado."
-            onClose={dismissMapIntro}
+            message={MAP_SEARCH_TUTORIAL}
+            onClose={() => dismissTutorial('mapSearch')}
+            showPortrait
+          />
+        </div>
+      )}
+
+      {activeTutorial === 'mapFriends' && (
+        <div className="absolute bottom-28 left-4 right-4 z-[1000]">
+          <LuciTutorial
+            message={MAP_FRIENDS_TUTORIAL}
+            onClose={() => dismissTutorial('mapFriends')}
             showPortrait
           />
         </div>

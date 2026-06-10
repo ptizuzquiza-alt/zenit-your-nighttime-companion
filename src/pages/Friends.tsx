@@ -6,6 +6,8 @@ import { toDataURL } from 'qrcode';
 import { AVATAR_BY_NAME, DEFAULT_FRIENDS, SHARING_ROUTE_IDS } from '@/config/contacts';
 import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { LuciTutorial } from '@/components/LuciTutorial';
+import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 interface Group {
   id: string;
@@ -14,6 +16,7 @@ interface Group {
 }
 
 type Friend = { id: string; name: string };
+type FriendsTutorialId = 'friendsAdd' | 'friendsSharing';
 
 const DISCOVERABLE_USERS: Friend[] = [
   { id: 'juan', name: 'Juan' },
@@ -70,6 +73,7 @@ const Friends: FC = () => {
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [activeTutorial, setActiveTutorial] = useState<FriendsTutorialId | null>(null);
 
   const profileUrl = `https://zenit.app/u/${currentUserName.toLowerCase()}`;
 
@@ -79,6 +83,24 @@ const Friends: FC = () => {
         .then(setQrDataUrl);
     }
   }, [showShareModal, profileUrl]);
+
+  useEffect(() => {
+    if (activeTutorial !== null) return;
+
+    if (!isTutorialSeen('friendsAdd') && friends.length === 0 && pendingRequests.length === 0 && sentRequests.length === 0) {
+      setActiveTutorial('friendsAdd');
+      return;
+    }
+
+    if (!isTutorialSeen('friendsSharing') && sentRequests.length > 0) {
+      setActiveTutorial('friendsSharing');
+    }
+  }, [activeTutorial, friends.length, pendingRequests.length, sentRequests.length]);
+
+  const dismissTutorial = (tutorialId: FriendsTutorialId) => {
+    markTutorialSeen(tutorialId);
+    setActiveTutorial((current) => (current === tutorialId ? null : current));
+  };
 
   // Supabase profile search results
   const [supabaseResults, setSupabaseResults] = useState<Friend[]>([]);
@@ -220,6 +242,7 @@ const Friends: FC = () => {
 
   const handleSendRequest = (friend: Friend) => {
     const { id, name } = friend;
+    dismissTutorial('friendsAdd');
     setSearchQuery('');
     setSupabaseResults([]);
 
@@ -398,7 +421,11 @@ const Friends: FC = () => {
               type="text"
               placeholder="Buscar o añadir amigos..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                if (value.trim()) dismissTutorial('friendsAdd');
+              }}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim().toLowerCase();
@@ -465,6 +492,20 @@ const Friends: FC = () => {
                 ))}
               </div>
             );
+
+            {activeTutorial === 'friendsAdd' && (
+              <LuciTutorial
+                className="mt-5"
+                message={(
+                  <>
+                    Aquí puedes añadir amigos <strong className="text-accent">buscando</strong>
+                    sus nombres o <strong className="text-accent">compartiéndoles</strong> tu perfil.
+                  </>
+                )}
+                onClose={() => dismissTutorial('friendsAdd')}
+                showPortrait
+              />
+            )}
           })()}
         </div>
 
@@ -537,6 +578,20 @@ const Friends: FC = () => {
               </div>
             ))}
           </div>
+        )}
+
+        {activeTutorial === 'friendsSharing' && (
+          <LuciTutorial
+            className="mt-2"
+            message={(
+              <>
+                Tus amigos podrán <strong className="text-accent">compartirte sus rutas</strong>
+                o mirar las tuyas si <strong className="text-accent">las compartes con ellos</strong>.
+              </>
+            )}
+            onClose={() => dismissTutorial('friendsSharing')}
+            showPortrait
+          />
         )}
 
         {/* Friends list */}

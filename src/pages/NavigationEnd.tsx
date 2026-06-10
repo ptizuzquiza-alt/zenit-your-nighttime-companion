@@ -1,9 +1,13 @@
 import { FC } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Home, AlertTriangle } from 'lucide-react';
+import { LuciTutorial } from '@/components/LuciTutorial';
+import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 const NavigationEnd: FC = () => {
   const navigate = useNavigate();
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialSeen('navigationEnd'));
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -20,6 +24,24 @@ const NavigationEnd: FC = () => {
       <p className="text-sm text-muted-foreground/80 text-center mb-8 px-4">
         Tu ubicación no será compartida hasta que compartas tu próxima ruta.
       </p>
+
+      {showTutorial && (
+        <div className="w-full max-w-md px-4 mb-8">
+          <LuciTutorial
+            message={(
+              <>
+                Tu ubicación no será <strong className="text-accent">compartida</strong>
+                hasta que compartas tu próxima ruta.
+              </>
+            )}
+            onClose={() => {
+              markTutorialSeen('navigationEnd');
+              setShowTutorial(false);
+            }}
+            showPortrait
+          />
+        </div>
+      )}
 
       <button
         onClick={() => navigate('/')}

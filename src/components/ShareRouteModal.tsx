@@ -1,5 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import { Search, Share2 } from 'lucide-react';
+import { LuciTutorial } from '@/components/LuciTutorial';
+import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 interface Contact {
   id: string;
@@ -27,6 +29,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
   const [pending, setPending] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [initialSharedIds, setInitialSharedIds] = useState<string[]>([]);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [confirm, setConfirm] = useState<{
     id: string;
     name: string;
@@ -49,6 +52,9 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       setInitialSharedIds(initialShareSet);
       setPending(pendingFromContacts);
       setConfirm(null);
+      setShowTutorial(!isTutorialSeen('shareRoute'));
+    } else {
+      setShowTutorial(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -168,6 +174,23 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
             );
           })}
         </div>
+
+        {showTutorial && shareCount === 0 && (
+          <LuciTutorial
+            className="mb-5"
+            message={(
+              <>
+                Puedes compartir tu ruta con <strong className="text-accent">amigos</strong>
+                que añadas antes de empezar rutas, en ese apartado.
+              </>
+            )}
+            onClose={() => {
+              markTutorialSeen('shareRoute');
+              setShowTutorial(false);
+            }}
+            showPortrait
+          />
+        )}
 
         {/* Action buttons */}
         <button

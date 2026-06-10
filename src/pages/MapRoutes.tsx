@@ -6,6 +6,7 @@ import { LocationInput } from '@/components/LocationInput';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
+import { LuciTutorial } from '@/components/LuciTutorial';
 import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
 import { ShareIcon } from '@/components/icons/ShareIcon';
 import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
@@ -14,8 +15,7 @@ import { fetchZenitRoute, fetchTransitRoute, storeSelectedRoute, RouteResult, Tr
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 import { getStoredFriends } from '@/config/contacts';
 import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
-
-const BANNER_DISMISSED_KEY = 'zenit_banner_dismissed';
+import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
@@ -27,13 +27,11 @@ const MapRoutes: FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [sharedContacts, setSharedContacts] = useState<string[]>([]);
-  const [bannerDismissed, setBannerDismissed] = useState(
-    () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
-  );
   const [transportMode, setTransportMode] = useState<'walk' | 'transit'>('walk');
   const [transitRoute, setTransitRoute] = useState<TransitRoute | null>(null);
   const [loadingTransit, setLoadingTransit] = useState(false);
   const contacts = getStoredFriends();
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Panel state: 'minimized' | 'half-expanded' | 'fully-expanded'
   const [panelState, setPanelState] = useState<'minimized' | 'half-expanded' | 'fully-expanded'>('minimized');
@@ -57,6 +55,12 @@ const MapRoutes: FC = () => {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (!showShareModal && !showInfoModal && !isTutorialSeen('routeZenit')) {
+      setShowTutorial(true);
+    }
+  }, [showShareModal, showInfoModal]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -132,14 +136,14 @@ const MapRoutes: FC = () => {
     navigate('/navigation');
   };
 
+  const dismissTutorial = () => {
+    markTutorialSeen('routeZenit');
+    setShowTutorial(false);
+  };
+
   const draggingRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
   const justCollapsedFromFullRef = useRef(false);
-
-  const handleDismissBanner = () => {
-    setBannerDismissed(true);
-    localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
-  };
 
   const handleHandlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     dragStartYRef.current = e.clientY;
@@ -282,7 +286,7 @@ const MapRoutes: FC = () => {
 
   // Calculate panel height based on state
   const getPanelHeight = () => {
-    if (panelState === 'minimized') return bannerDismissed ? '295px' : '395px';
+    if (panelState === 'minimized') return '295px';
     if (panelState === 'half-expanded') return 'calc(15vh + 295px)';
     return 'calc(100vh - 40px)'; // fully-expanded, leaving 50px at top for search bar interaction
   };
@@ -432,45 +436,6 @@ const MapRoutes: FC = () => {
           </div>
         </div>
 
-        {!bannerDismissed && (
-          <div
-            className="px-6 pb-4 shrink-0 cursor-pointer"
-            onPointerDown={handleHandlePointerDown}
-            onPointerMove={handleHandlePointerMove}
-            onPointerUp={handleHandlePointerUp}
-            onPointerCancel={handleHandlePointerCancel}
-            onTouchStart={handleHandleTouchStart}
-            onTouchMove={handleHandleTouchMove}
-            onTouchEnd={handleHandleTouchEnd}
-            onTouchCancel={handleHandleTouchCancel}
-            onClick={handleHandleClick}
-            style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
-          >
-            <div className="p-4 rounded-xl bg-[#665D93] border border-border/50 flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-[40px] h-[40px] min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#332D54' }}>
-                    <ShieldCheckIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-xs text-white">
-                    La <b className="text-accent">Ruta Zenit</b> prioriza las vias más bien iluminadas, más anchas y con mayor flujo de personas.
-                  </p>
-                </div>
-              </div>
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDismissBanner();
-                }}
-                className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
-              >
-                <X className="w-3.5 h-3.5 text-white" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {(panelState === 'half-expanded' || panelState === 'fully-expanded') && (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6" style={{ paddingBottom: `${FIXED_BAR_HEIGHT}px`, WebkitOverflowScrolling: 'touch' }}>
             {transportMode === 'walk' ? (
@@ -577,6 +542,21 @@ const MapRoutes: FC = () => {
           {loading ? 'Cargando…' : 'Iniciar trayecto'}
         </button>
       </div>
+
+      {showTutorial && !showShareModal && !showInfoModal && (
+        <div className="absolute bottom-[150px] left-4 right-4 z-[1002]">
+          <LuciTutorial
+            message={(
+              <>
+                La <strong className="text-accent">Ruta Zenit</strong> prioriza las
+                vías más bien iluminadas, anchas y con mayor flujo de personas.
+              </>
+            )}
+            onClose={dismissTutorial}
+            showPortrait
+          />
+        </div>
+      )}
 
       {/* Modals */}
       <ShareRouteModal

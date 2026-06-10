@@ -1,11 +1,13 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import luciHablandoRaw from '@/assets/luci-hablando.svg?raw';
 import luciHablandoTrazoRaw from '@/assets/luci-hablando-trazo.svg?raw';
 
 interface LuciTutorialProps {
-  message: string;
+  message: ReactNode;
   onClose: () => void;
   showPortrait?: boolean;
+  className?: string;
 }
 
 const SvgAsset = ({ raw, className }: { raw: string; className?: string }) => (
@@ -25,9 +27,9 @@ const Triangle = () => (
   </svg>
 );
 
-export const LuciTutorial: FC<LuciTutorialProps> = ({ message, onClose, showPortrait = false }) => {
+export const LuciTutorial: FC<LuciTutorialProps> = ({ message, onClose, showPortrait = false, className }) => {
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn('flex w-full flex-col gap-2', className)}>
       <div className="flex w-full items-center gap-4">
         {showPortrait && (
           <div className="relative h-[60px] w-[60px] shrink-0">

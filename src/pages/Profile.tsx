@@ -4,9 +4,9 @@ import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, E
 import { toast } from 'sonner';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 import { useAuth } from '@/contexts/AuthContext';
+import { resetTutorials } from '@/lib/tutorials';
 
 type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | null;
-const MAP_INTRO_SEEN_KEY = 'zenit_map_intro_seen';
 
 const Profile: FC = () => {
   const navigate = useNavigate();
@@ -197,14 +197,14 @@ const Profile: FC = () => {
 
         <button
           onClick={() => {
-            localStorage.removeItem(MAP_INTRO_SEEN_KEY);
-            toast.success('Las instrucciones del mapa volverán a mostrarse');
+            resetTutorials();
+            toast.success('Los tutoriales volverán a mostrarse');
           }}
           className="w-full flex items-center justify-between px-4 py-4 rounded-2xl bg-card border border-border text-left active:opacity-70 transition-opacity"
         >
           <div className="flex items-center gap-3">
             <MapPin className="w-5 h-5 text-muted-foreground" />
-            <span className="text-foreground text-sm">Reiniciar instrucciones del mapa</span>
+            <span className="text-foreground text-sm">Reiniciar tutoriales</span>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>

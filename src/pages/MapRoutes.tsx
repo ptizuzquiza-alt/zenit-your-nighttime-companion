@@ -294,6 +294,12 @@ const MapRoutes: FC = () => {
   const panelHeight = getPanelHeight();
   const panelZIndex = 'z-[1000]';
   const FIXED_BAR_HEIGHT = 140; // px approx
+  const TUTORIAL_PANEL_SPACING = 24;
+  const PANEL_MIN_HEIGHT = 295;
+  const PANEL_HALF_EXPANDED_BOTTOM = `calc(15vh + ${PANEL_MIN_HEIGHT + TUTORIAL_PANEL_SPACING}px)`;
+  const tutorialBottom = panelState === 'minimized'
+    ? `${PANEL_MIN_HEIGHT + TUTORIAL_PANEL_SPACING}px`
+    : PANEL_HALF_EXPANDED_BOTTOM;
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -544,7 +550,7 @@ const MapRoutes: FC = () => {
       </div>
 
       {showTutorial && !showShareModal && !showInfoModal && (
-        <div className="absolute bottom-[150px] left-4 right-4 z-[1002]">
+        <div className="absolute left-4 right-4" style={{ bottom: tutorialBottom, zIndex: 999 }}>
           <LuciTutorial
             message={(
               <>

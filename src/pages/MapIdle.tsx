@@ -285,7 +285,7 @@ const MapIdle: FC = () => {
       )}
 
       {activeTutorial === 'mapFriends' && (
-        <div className="absolute bottom-28 left-4 right-4 z-[1000]">
+        <div className="absolute bottom-40 left-4 right-4 z-[1000]">
           <LuciTutorial
             message={MAP_FRIENDS_TUTORIAL}
             onClose={() => dismissTutorial('mapFriends')}

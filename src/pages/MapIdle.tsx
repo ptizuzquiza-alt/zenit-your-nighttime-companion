@@ -242,6 +242,7 @@ const MapIdle: FC = () => {
         </button>
       </div>
 
+      {/* Tutorial - Search bar */}
       {showMapIntro && (
         <div className="absolute top-28 left-4 right-4 z-[1000]">
           <LuciTutorial

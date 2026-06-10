@@ -180,8 +180,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
             className="mb-5"
             message={(
               <>
-                Puedes compartir tu ruta con <strong className="text-accent">amigos</strong>
-                que añadas antes de empezar rutas, en ese apartado.
+                Puedes compartir tu ruta con <strong className="text-accent">amigos</strong> que añadas antes de empezar rutas, en ese apartado.
               </>
             )}
             onClose={() => {

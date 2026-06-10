@@ -23,8 +23,7 @@ const MAP_SEARCH_TUTORIAL = (
 
 const MAP_FRIENDS_TUTORIAL = (
   <>
-    Mira las <strong className="text-accent">rutas de tus amigos</strong>
-    cuando te las compartan.
+    Mira las <strong className="text-accent">rutas de tus amigos</strong> cuando te las compartan.
   </>
 );
 

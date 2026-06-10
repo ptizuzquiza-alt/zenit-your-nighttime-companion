@@ -30,8 +30,7 @@ const NavigationEnd: FC = () => {
           <LuciTutorial
             message={(
               <>
-                Tu ubicación no será <strong className="text-accent">compartida</strong>
-                hasta que compartas tu próxima ruta.
+                Tu ubicación no será <strong className="text-accent">compartida</strong> hasta que compartas tu próxima ruta.
               </>
             )}
             onClose={() => {

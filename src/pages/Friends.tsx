@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus, UserMinus, Link, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { toDataURL } from 'qrcode';
-import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
+import { AVATAR_BY_NAME, DEFAULT_FRIENDS, SHARING_ROUTE_IDS } from '@/config/contacts';
 import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { LuciTutorial } from '@/components/LuciTutorial';
+import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 interface Group {
   id: string;
@@ -14,6 +16,7 @@ interface Group {
 }
 
 type Friend = { id: string; name: string };
+type FriendsTutorialId = 'friendsAdd' | 'friendsSharing';
 
 const DISCOVERABLE_USERS: Friend[] = [
   { id: 'juan', name: 'Juan' },
@@ -37,11 +40,7 @@ const Friends: FC = () => {
       try { return JSON.parse(stored); } catch { return []; }
     }
     // Cuenta existente (Patricia) — seed con amigos y nombre por defecto
-    const defaults = [
-      { id: 'juan', name: 'Juan' },
-      { id: 'marta', name: 'Marta' },
-      { id: 'javier', name: 'Javier' },
-    ];
+    const defaults = DEFAULT_FRIENDS;
     localStorage.setItem('zenit_friends', JSON.stringify(defaults));
     if (!localStorage.getItem('zenit_name')) localStorage.setItem('zenit_name', 'Patricia');
     return defaults;
@@ -74,6 +73,7 @@ const Friends: FC = () => {
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [activeTutorial, setActiveTutorial] = useState<FriendsTutorialId | null>(null);
 
   const profileUrl = `https://zenit.app/u/${currentUserName.toLowerCase()}`;
 
@@ -83,6 +83,24 @@ const Friends: FC = () => {
         .then(setQrDataUrl);
     }
   }, [showShareModal, profileUrl]);
+
+  useEffect(() => {
+    if (activeTutorial !== null) return;
+
+    if (!isTutorialSeen('friendsAdd') && friends.length === 0) {
+      setActiveTutorial('friendsAdd');
+      return;
+    }
+
+    if (!isTutorialSeen('friendsSharing') && sentRequests.length > 0) {
+      setActiveTutorial('friendsSharing');
+    }
+  }, [activeTutorial, friends.length, pendingRequests.length, sentRequests.length]);
+
+  const dismissTutorial = (tutorialId: FriendsTutorialId) => {
+    markTutorialSeen(tutorialId);
+    setActiveTutorial((current) => (current === tutorialId ? null : current));
+  };
 
   // Supabase profile search results
   const [supabaseResults, setSupabaseResults] = useState<Friend[]>([]);
@@ -224,6 +242,7 @@ const Friends: FC = () => {
 
   const handleSendRequest = (friend: Friend) => {
     const { id, name } = friend;
+    dismissTutorial('friendsAdd');
     setSearchQuery('');
     setSupabaseResults([]);
 
@@ -402,7 +421,11 @@ const Friends: FC = () => {
               type="text"
               placeholder="Buscar o añadir amigos..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                if (value.trim()) dismissTutorial('friendsAdd');
+              }}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim().toLowerCase();
@@ -623,6 +646,19 @@ const Friends: FC = () => {
               </button>
             ))
           )}
+        {/* Tutorial about adding friends */}
+        {activeTutorial === 'friendsAdd' && (
+          <LuciTutorial
+            className="mt-5"
+            message={(
+              <>
+                Aquí puedes añadir amigos <strong className="text-accent">buscando</strong> sus nombres o <strong className="text-accent">compartiéndoles</strong> tu perfil.
+              </>
+            )}
+            onClose={() => dismissTutorial('friendsAdd')}
+            showPortrait
+          />
+        )}
         </div>
       </div>
 
@@ -999,8 +1035,22 @@ const Friends: FC = () => {
         </div>
       )}
 
+      {activeTutorial === 'friendsSharing' && (
+        <div className="absolute bottom-20 left-4 right-4">
+          <LuciTutorial
+            message={(
+              <>
+                Tus amigos podrán compartirte sus rutas o mirar las tuyas si las compartes con ellos.
+              </>
+            )}
+            onClose={() => dismissTutorial('friendsSharing')}
+            showPortrait
+          />
+        </div>
+      )}
+
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
         <button
           onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"

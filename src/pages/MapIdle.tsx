@@ -5,11 +5,28 @@ import { ZenitMap } from '@/components/ZenitMap';
 import { SearchBar } from '@/components/SearchBar';
 import { FriendActivityCard } from '@/components/FriendActivityCard';
 import { FriendsFab } from '../components/FriendsFab';
+import { LuciTutorial } from '@/components/LuciTutorial';
 import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
+import { isTutorialSeen, markTutorialSeen, type TutorialId } from '@/lib/tutorials';
 import { useAuth } from '@/contexts/AuthContext';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+type MapIdleTutorialId = Extract<TutorialId, 'mapSearch' | 'mapFriends'>;
+
+const MAP_SEARCH_TUTORIAL = (
+  <>
+    Haz tu <strong className="text-accent">primera ruta</strong> usando la
+    barra de búsqueda.
+  </>
+);
+
+const MAP_FRIENDS_TUTORIAL = (
+  <>
+    Mira las <strong className="text-accent">rutas de tus amigos</strong> cuando te las compartan.
+  </>
+);
 
 const FRIEND_ROUTES = [
   {
@@ -79,6 +96,7 @@ const MapIdle: FC = () => {
   });
   const [showFriends, setShowFriends] = useState(false);
   const [focusBounds, setFocusBounds] = useState<[number, number][] | undefined>(undefined);
+  const [activeTutorial, setActiveTutorial] = useState<MapIdleTutorialId | null>(null);
 
   const [acceptedFriends, setAcceptedFriends] = useState<string[]>(() => {
     try {
@@ -94,6 +112,14 @@ const MapIdle: FC = () => {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [activeFriendLabel, setActiveFriendLabel] = useState<string | null>(null);
   const [flyToPoint, setFlyToPoint] = useState<[number, number] | undefined>(undefined);
+
+  const dismissTutorial = useCallback((tutorialId: MapIdleTutorialId) => {
+    markTutorialSeen(tutorialId);
+    setActiveTutorial((current) => {
+      if (current !== tutorialId) return current;
+      return null;
+    });
+  }, []);
 
   // Auto-accept all friends when they share their location
   useEffect(() => {
@@ -166,6 +192,11 @@ const MapIdle: FC = () => {
     });
   }, []);
 
+  const handleNavBarClick = useCallback((path?: string) => {
+    dismissTutorial('mapSearch');
+    if (path) navigate(path);
+  }, [dismissTutorial, navigate]);
+
   // Only show routes for friends being actively tracked
   const acceptedFriendRoutes = friendData
     .filter(fd => {
@@ -186,6 +217,19 @@ const MapIdle: FC = () => {
     });
 
   const badgeCount = myFriendRoutes.filter(fr => SHARING_ROUTE_IDS.has(fr.id)).length;
+
+  useEffect(() => {
+    if (activeTutorial !== null) return;
+
+    if (!isTutorialSeen('mapSearch')) {
+      setActiveTutorial('mapSearch');
+      return;
+    }
+
+    if (!isTutorialSeen('mapFriends')) {
+      setActiveTutorial('mapFriends');
+    }
+  }, [activeTutorial]);
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
@@ -227,8 +271,11 @@ const MapIdle: FC = () => {
       <div className="absolute top-0 left-0 right-0 px-4 pt-12 pb-4 z-[1000] flex items-center gap-4">
         <div className="flex-1">
           <SearchBar
-            placeholder="Buscar"
-            onClick={() => navigate('/search')}
+            placeholder="Buscar ruta"
+            onClick={() => {
+              dismissTutorial('mapSearch');
+              navigate('/search');
+            }}
             readOnly
           />
         </div>
@@ -247,6 +294,27 @@ const MapIdle: FC = () => {
           )}
         </button>
       </div>
+
+      {/* Tutorial overlay */}
+      {activeTutorial === 'mapSearch' && (
+        <div className="absolute top-32 left-4 right-4 z-[1000]">
+          <LuciTutorial
+            message={MAP_SEARCH_TUTORIAL}
+            onClose={() => dismissTutorial('mapSearch')}
+            showPortrait
+          />
+        </div>
+      )}
+
+      {activeTutorial === 'mapFriends' && (
+        <div className="absolute bottom-40 left-4 right-4 z-[1000]">
+          <LuciTutorial
+            message={MAP_FRIENDS_TUTORIAL}
+            onClose={() => dismissTutorial('mapFriends')}
+            showPortrait
+          />
+        </div>
+      )}
 
       {/* Friends speed-dial */}
       <div className="absolute bottom-20 left-4 right-4 z-[1000] flex flex-col items-start gap-2">

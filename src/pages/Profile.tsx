@@ -6,6 +6,7 @@ import { AVATAR_BY_NAME } from '@/config/contacts';
 import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { SavedPlace, getSavedPlaces } from '@/pages/MapSearch';
 import { searchPlaces, GeocodingResult } from '@/lib/geocoding';
+import { resetTutorials } from '@/lib/tutorials';
 
 type Sheet = 'privacy' | 'notifications' | 'edit' | 'logout' | 'places' | null;
 
@@ -266,6 +267,20 @@ const Profile: FC = () => {
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         ))}
+
+        <button
+          onClick={() => {
+            resetTutorials();
+            toast.success('Los tutoriales volverán a mostrarse');
+          }}
+          className="w-full flex items-center justify-between px-4 py-4 rounded-2xl bg-card border border-border text-left active:opacity-70 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <MapPin className="w-5 h-5 text-muted-foreground" />
+            <span className="text-foreground text-sm">Reiniciar tutoriales</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
 
         <button
           onClick={() => openSheet('logout')}

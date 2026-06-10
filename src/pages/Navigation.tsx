@@ -10,7 +10,7 @@ import { FriendsFab } from '../components/FriendsFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
 import { getStoredRoute } from '@/lib/routing';
-import { CONTACTS, AVATAR_BY_NAME } from '@/config/contacts';
+import { AVATAR_BY_NAME, getStoredFriends } from '@/config/contacts';
 
 
 
@@ -114,6 +114,7 @@ const Navigation: FC = () => {
   const dragStartY = useRef<number | null>(null);
   const animRef = useRef<number | null>(null);
   const storedRoute = useMemo(() => getStoredRoute(), []);
+  const contacts = getStoredFriends();
 
   const routeCoords = useMemo<[number, number][]>(() => {
     return (storedRoute?.coordinates as [number, number][]) ?? [
@@ -563,7 +564,7 @@ const Navigation: FC = () => {
                   {sharedContacts.length > 0 ? (
                     <div className="space-y-2">
                       {sharedContacts.map(id => {
-                        const contact = CONTACTS.find(c => c.id === id);
+                        const contact = contacts.find(c => c.id === id);
                         if (!contact) return null;
 
                         if (confirmRemoveId === id) {

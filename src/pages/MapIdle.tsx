@@ -182,6 +182,11 @@ const MapIdle: FC = () => {
     });
   }, []);
 
+  const handleNavBarClick = useCallback((path?: string) => {
+    dismissTutorial('mapSearch');
+    if (path) navigate(path);
+  }, [dismissTutorial, navigate]);
+
   // Only show routes for friends being actively tracked
   const acceptedFriendRoutes = friendData
     .filter(fd => {
@@ -194,7 +199,6 @@ const MapIdle: FC = () => {
     });
 
   const badgeCount = myFriendRoutes.filter(fr => SHARING_ROUTE_IDS.has(fr.id)).length;
-  const hasFriendRoutes = badgeCount > 0;
 
   useEffect(() => {
     if (activeTutorial !== null) return;
@@ -204,10 +208,10 @@ const MapIdle: FC = () => {
       return;
     }
 
-    if (hasFriendRoutes && !isTutorialSeen('mapFriends')) {
+    if (!isTutorialSeen('mapFriends')) {
       setActiveTutorial('mapFriends');
     }
-  }, [activeTutorial, hasFriendRoutes]);
+  }, [activeTutorial]);
 
   // Compute real departure/arrival times
   const friendTimes = useMemo(() => {
@@ -275,7 +279,7 @@ const MapIdle: FC = () => {
 
       {/* Tutorial overlay */}
       {activeTutorial === 'mapSearch' && (
-        <div className="absolute top-28 left-4 right-4 z-[1000]">
+        <div className="absolute top-32 left-4 right-4 z-[1000]">
           <LuciTutorial
             message={MAP_SEARCH_TUTORIAL}
             onClose={() => dismissTutorial('mapSearch')}
@@ -434,14 +438,17 @@ const MapIdle: FC = () => {
 
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
-        <button className="flex flex-col items-center justify-center w-12 h-12 text-foreground">
+        <button
+          onClick={() => handleNavBarClick()}
+          className="flex flex-col items-center justify-center w-12 h-12 text-foreground"
+        >
           <Map className="w-6 h-6" />
           <p className="text-center text-sm font-semibold">
             Mapa
           </p>
         </button>
         <button
-          onClick={() => navigate('/friends')}
+          onClick={() => handleNavBarClick('/friends')}
           className="flex flex-col items-center justify-center text-muted-foreground w-12 h-12"
         >
           <Users className="w-6 h-6" />

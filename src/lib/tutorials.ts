@@ -53,6 +53,26 @@ export const markTutorialSeen = (id: TutorialId) => {
   writeStatus(next);
 };
 
+const FRIENDS_STORAGE_KEY = 'zenit_friends';
+
+export const shouldAutoCompleteShareRouteTutorial = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const raw = localStorage.getItem(FRIENDS_STORAGE_KEY);
+  if (!raw) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    return false;
+  }
+};
+
 export const resetTutorials = () => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TUTORIAL_STORAGE_KEY);

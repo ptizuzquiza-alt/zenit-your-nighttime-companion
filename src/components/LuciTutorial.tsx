@@ -8,6 +8,8 @@ interface LuciTutorialProps {
   onClose: () => void;
   showPortrait?: boolean;
   className?: string;
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 const SvgAsset = ({ raw, className }: { raw: string; className?: string }) => (
@@ -27,7 +29,14 @@ const Triangle = () => (
   </svg>
 );
 
-export const LuciTutorial: FC<LuciTutorialProps> = ({ message, onClose, showPortrait = false, className }) => {
+export const LuciTutorial: FC<LuciTutorialProps> = ({
+  message,
+  onClose,
+  showPortrait = false,
+  className,
+  imageSrc,
+  imageAlt,
+}) => {
   return (
     <div className={cn('flex w-full flex-col gap-2', className)}>
       <div className="flex w-full items-center gap-4">
@@ -49,17 +58,25 @@ export const LuciTutorial: FC<LuciTutorialProps> = ({ message, onClose, showPort
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <p className="h-fit w-full flex-1 text-sm font-regular leading-snug text-foreground">
-              {message}
-            </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-xl px-2 py-2 text-sm font-semibold leading-none text-accent transition-colors hover:bg-background/10"
-            >
-              ¡Vale!
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <p className="h-fit w-full flex-1 text-sm font-regular leading-snug text-foreground">
+                {message}
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="shrink-0 rounded-xl px-2 py-2 text-sm font-semibold leading-none text-accent transition-colors hover:bg-background/10"
+              >
+                ¡Vale!
+              </button>
+            </div>
+
+            {imageSrc && (
+              <div className="overflow-hidden rounded-2xl border border-background/70 bg-background/20">
+                <img src={imageSrc} alt={imageAlt ?? ''} className="block h-auto w-full" />
+              </div>
+            )}
           </div>
         </div>
       </div>

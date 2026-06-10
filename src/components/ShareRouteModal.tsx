@@ -1,7 +1,8 @@
 import { FC, useState, useEffect } from 'react';
 import { Search, Share2 } from 'lucide-react';
 import { LuciTutorial } from '@/components/LuciTutorial';
-import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
+import { isTutorialSeen, markTutorialSeen, shouldAutoCompleteShareRouteTutorial } from '@/lib/tutorials';
+import movilAmigosImage from '@/assets/movil-amigos.png';
 
 interface Contact {
   id: string;
@@ -52,12 +53,18 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
       setInitialSharedIds(initialShareSet);
       setPending(pendingFromContacts);
       setConfirm(null);
+      if (shouldAutoCompleteShareRouteTutorial()) {
+        markTutorialSeen('shareRoute');
+        setShowTutorial(false);
+        return;
+      }
+
       setShowTutorial(!isTutorialSeen('shareRoute'));
     } else {
       setShowTutorial(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, contacts.length]);
 
   if (!isOpen) return null;
 
@@ -175,12 +182,14 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
           })}
         </div>
 
-        {showTutorial && shareCount === 0 && (
+        {showTutorial && shareCount === 0 && !shouldAutoCompleteShareRouteTutorial() && (
           <LuciTutorial
             className="mb-5"
+            imageSrc={movilAmigosImage}
+            imageAlt="Apartado de amigos"
             message={(
               <>
-                Puedes compartir tu ruta con <strong className="text-accent">amigos</strong> que añadas antes de empezar rutas, en ese apartado.
+                Puedes compartir tu ruta con amigos que añadas antes de empezar rutas, <strong className="text-accent">en ese apartado:</strong>
               </>
             )}
             onClose={() => {

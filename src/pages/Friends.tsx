@@ -87,7 +87,7 @@ const Friends: FC = () => {
   useEffect(() => {
     if (activeTutorial !== null) return;
 
-    if (!isTutorialSeen('friendsAdd') && friends.length === 0 && pendingRequests.length === 0 && sentRequests.length === 0) {
+    if (!isTutorialSeen('friendsAdd') && friends.length === 0) {
       setActiveTutorial('friendsAdd');
       return;
     }
@@ -492,20 +492,6 @@ const Friends: FC = () => {
                 ))}
               </div>
             );
-
-            {activeTutorial === 'friendsAdd' && (
-              <LuciTutorial
-                className="mt-5"
-                message={(
-                  <>
-                    Aquí puedes añadir amigos <strong className="text-accent">buscando</strong>
-                    sus nombres o <strong className="text-accent">compartiéndoles</strong> tu perfil.
-                  </>
-                )}
-                onClose={() => dismissTutorial('friendsAdd')}
-                showPortrait
-              />
-            )}
           })()}
         </div>
 
@@ -578,20 +564,6 @@ const Friends: FC = () => {
               </div>
             ))}
           </div>
-        )}
-
-        {activeTutorial === 'friendsSharing' && (
-          <LuciTutorial
-            className="mt-2"
-            message={(
-              <>
-                Tus amigos podrán <strong className="text-accent">compartirte sus rutas</strong>
-                o mirar las tuyas si <strong className="text-accent">las compartes con ellos</strong>.
-              </>
-            )}
-            onClose={() => dismissTutorial('friendsSharing')}
-            showPortrait
-          />
         )}
 
         {/* Friends list */}
@@ -674,6 +646,19 @@ const Friends: FC = () => {
               </button>
             ))
           )}
+        {/* Tutorial about adding friends */}
+        {activeTutorial === 'friendsAdd' && (
+          <LuciTutorial
+            className="mt-5"
+            message={(
+              <>
+                Aquí puedes añadir amigos <strong className="text-accent">buscando</strong> sus nombres o <strong className="text-accent">compartiéndoles</strong> tu perfil.
+              </>
+            )}
+            onClose={() => dismissTutorial('friendsAdd')}
+            showPortrait
+          />
+        )}
         </div>
       </div>
 
@@ -1047,6 +1032,20 @@ const Friends: FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTutorial === 'friendsSharing' && (
+        <div className="absolute bottom-20 left-4 right-4">
+          <LuciTutorial
+            message={(
+              <>
+                Tus amigos podrán compartirte sus rutas o mirar las tuyas si las compartes con ellos.
+              </>
+            )}
+            onClose={() => dismissTutorial('friendsSharing')}
+            showPortrait
+          />
         </div>
       )}
 

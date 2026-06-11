@@ -1,6 +1,22 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import luciImg from '@/assets/luci-hablando.svg';
 
+const useMobileHeight = () => {
+  const [height, setHeight] = useState(() =>
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
+  useEffect(() => {
+    const update = () => setHeight(window.innerHeight);
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+  return height || '100svh';
+};
+
 const useIsDesktop = () => {
   const detect = () => {
     if (typeof window === 'undefined') return false;
@@ -75,10 +91,11 @@ const MobileBehavior: FC = () => {
 
 export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
   const isDesktop = useIsDesktop();
+  const mobileHeight = useMobileHeight();
 
   if (!isDesktop) {
     return (
-      <div className="w-full bg-background overflow-hidden" style={{ height: '100dvh' }}>
+      <div className="w-full bg-background overflow-hidden" style={{ height: mobileHeight }}>
         {children}
         <MobileBehavior />
       </div>

@@ -4,8 +4,27 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const DEMO_EMAIL = 'demo@zenit.app';
 const DEMO_PASSWORD = 'zenit2024!';
-const DEMO_NAME = 'Patricia';
-const DEMO_USERNAME = 'patricia';
+const DEMO_NAME = 'Maya';
+const DEMO_USERNAME = 'maya';
+
+const seedDemoData = () => {
+  localStorage.setItem('zenit_name', DEMO_NAME);
+  localStorage.setItem('zenit_username', `@${DEMO_USERNAME}`);
+  localStorage.setItem('zenit_friends', JSON.stringify([
+    { id: 'marta', name: 'Marta' },
+    { id: 'juan', name: 'Juan' },
+    { id: 'carla', name: 'Carla' },
+    { id: 'javier', name: 'Javier' },
+  ]));
+  localStorage.setItem('zenit_pending_requests', '[]');
+  localStorage.setItem('zenit_sent_requests', '[]');
+  localStorage.setItem('zenit_groups', '[]');
+  localStorage.setItem('zenit_onboarded', 'true');
+  localStorage.setItem('zenit_saved_places', JSON.stringify([
+    { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
+    { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },
+  ]));
+};
 
 export interface Profile {
   id: string;
@@ -82,9 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     localStorage.setItem('zenit_onboarded', 'true');
-    // For real (non-demo) accounts, make sure the contact lists are explicitly
-    // empty after sign-out cleared them — otherwise Friends.tsx's null fallback
-    // would seed Patricia's demo contacts. Supabase data, if any, overrides this.
+    // For real (non-demo) accounts, ensure contact lists start empty.
+    // Supabase data, if any, overrides this.
     if (email !== DEMO_EMAIL) {
       if (localStorage.getItem('zenit_friends') === null) localStorage.setItem('zenit_friends', '[]');
       if (localStorage.getItem('zenit_pending_requests') === null) localStorage.setItem('zenit_pending_requests', '[]');
@@ -98,34 +116,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Try login first; if account doesn't exist yet, create it
     const { error: loginErr } = await supabase.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
     if (!loginErr) {
-      localStorage.setItem('zenit_onboarded', 'true');
+      seedDemoData();
       return { error: null };
     }
-    // Account doesn't exist — create it (pass metadata so trigger creates profile)
+    // Account doesn't exist — create it
     const { data, error: signUpErr } = await supabase.auth.signUp({
       email: DEMO_EMAIL, password: DEMO_PASSWORD,
       options: { data: { name: DEMO_NAME, username: DEMO_USERNAME } },
     });
     if (signUpErr) return { error: signUpErr.message };
     if (data.user) {
-      // Belt-and-suspenders: also insert manually in case trigger races
       await supabase.from('profiles' as never).insert({
         id: data.user.id, name: DEMO_NAME, username: DEMO_USERNAME, avatar_url: null,
       } as never);
     }
-    // Always (re)seed Patricia's demo contacts — the Google/demo path must
-    // always land on the configured demo account regardless of prior state
-    // (e.g. user filled the register form first, which sets empty arrays).
-    localStorage.setItem('zenit_friends', JSON.stringify([
-      { id: 'juan', name: 'Juan' }, { id: 'marta', name: 'Marta' }, { id: 'javier', name: 'Javier' },
-    ]));
-    localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
-    localStorage.setItem('zenit_sent_requests', '[]');
-    localStorage.setItem('zenit_onboarded', 'true');
-    localStorage.setItem('zenit_saved_places', JSON.stringify([
-      { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
-      { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },
-    ]));
+    seedDemoData();
     return { error: null };
   };
 

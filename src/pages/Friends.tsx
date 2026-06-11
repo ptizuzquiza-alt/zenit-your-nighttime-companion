@@ -37,17 +37,16 @@ const Friends: FC = () => {
   const [friends, setFriends] = useState<Friend[]>(() => {
     const stored = localStorage.getItem('zenit_friends');
     if (stored !== null) {
-      try { return JSON.parse(stored); } catch { return [DEFAULT_FRIENDS]; }
+      try { return JSON.parse(stored); } catch { return []; }
     }
+    return [];
   });
   const [pendingRequests, setPendingRequests] = useState<Friend[]>(() => {
     const stored = localStorage.getItem('zenit_pending_requests');
     if (stored !== null) {
       try { return JSON.parse(stored); } catch { return []; }
     }
-    const defaults = DEFAULT_FRIENDS;
-    localStorage.setItem('zenit_pending_requests', JSON.stringify(defaults));
-    return defaults;
+    return [];
   });
   const [sentRequests, setSentRequests] = useState<Friend[]>(() => {
     const stored = localStorage.getItem('zenit_sent_requests');

@@ -337,7 +337,7 @@ const Navigation: FC = () => {
     ? '250px'
     : sheetState === 'middle'
       ? '250px'
-      : 'calc(100vh - 40px)';
+      : 'calc(100% - 40px)';
 
   const handleTouchStart = (e: React.TouchEvent) => {
     dragStartY.current = e.touches[0]?.clientY ?? null;
@@ -711,7 +711,7 @@ const Navigation: FC = () => {
             {alertSent ? (
               <>
                 <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-[hsl(var(--zenit-yellow)/0.15)] flex items-center justify-center">
                     <AlertTriangle className="w-7 h-7 text-amber-400" />
                   </div>
                   <h3 className="text-foreground font-semibold text-base">Aviso enviado</h3>
@@ -729,7 +729,7 @@ const Navigation: FC = () => {
             ) : (
               <>
                 <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-[hsl(var(--zenit-yellow)/0.15)] flex items-center justify-center">
                     <AlertTriangle className="w-7 h-7 text-amber-400" />
                   </div>
                   <h3 className="text-foreground font-semibold text-base">¿Necesitas ayuda?</h3>
@@ -746,7 +746,7 @@ const Navigation: FC = () => {
                   </button>
                   <button
                     onClick={() => setAlertSent(true)}
-                    className="flex-1 py-3 rounded-2xl bg-amber-500 text-white font-semibold text-sm"
+                    className="flex-1 py-3 rounded-2xl bg-[hsl(var(--zenit-yellow))] text-[#1a0a2e] font-semibold text-sm"
                   >
                     Avisar
                   </button>

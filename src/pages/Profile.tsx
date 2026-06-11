@@ -67,7 +67,7 @@ const Profile: FC = () => {
   // Seed demo places when user loads (covers Vercel/Supabase session)
   useEffect(() => {
     if (savedPlaces.length > 0) return;
-    const isDemo = user?.email === DEMO_EMAIL || localStorage.getItem('zenit_name') === 'Patricia';
+    const isDemo = user?.email === DEMO_EMAIL || localStorage.getItem('zenit_name') === 'Maya';
     if (isDemo) seedDemoPlaces();
   }, [user]);
   const [addingPlace, setAddingPlace] = useState(false);
@@ -533,45 +533,44 @@ const Profile: FC = () => {
               )}
               {savedPlaces.map(place => {
                 const Icon = place.icon === 'home' ? Home : place.icon === 'work' ? Briefcase : Star;
+                const isConfirming = confirmDeletePlace === place.id;
                 return (
-                  <div key={place.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40">
-                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-5 h-5 text-accent" />
+                  <div key={place.id} className="rounded-xl bg-secondary/40 overflow-hidden">
+                    <div className="flex items-center gap-3 p-3">
+                      <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-5 h-5 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-sm">{place.label}</p>
+                        <p className="text-xs text-muted-foreground truncate">{place.name}</p>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDeletePlace(isConfirming ? null : place.id)}
+                        className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm">{place.label}</p>
-                      <p className="text-xs text-muted-foreground truncate">{place.name}</p>
-                    </div>
-                    <button onClick={() => handleDeletePlace(place.id)} className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </button>
+                    {isConfirming && (
+                      <div className="flex gap-2 px-3 pb-3">
+                        <button
+                          onClick={() => setConfirmDeletePlace(null)}
+                          className="flex-1 py-2 rounded-xl bg-secondary text-foreground text-sm font-medium"
+                        >
+                          No
+                        </button>
+                        <button
+                          onClick={confirmDelete}
+                          className="flex-1 py-2 rounded-xl bg-destructive text-white text-sm font-medium"
+                        >
+                          Sí, eliminar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-
-            {/* Confirm delete dialog */}
-            {confirmDeletePlace && (
-              <div className="mb-4 p-4 rounded-xl bg-secondary/60 border border-destructive/20 space-y-3">
-                <p className="text-sm font-medium text-foreground text-center">
-                  ¿Eliminar "{savedPlaces.find(p => p.id === confirmDeletePlace)?.label}"?
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setConfirmDeletePlace(null)}
-                    className="flex-1 py-2 rounded-xl bg-secondary text-foreground text-sm font-medium"
-                  >
-                    No
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    className="flex-1 py-2 rounded-xl bg-destructive text-white text-sm font-medium"
-                  >
-                    Sí, eliminar
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Add new place */}
             {!addingPlace ? (

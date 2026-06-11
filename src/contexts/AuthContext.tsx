@@ -155,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('zenit_pending_requests', '[]');
       localStorage.setItem('zenit_sent_requests', '[]');
       localStorage.setItem('zenit_groups', '[]');
+      localStorage.setItem('zenit_saved_places', '[]');
       localStorage.setItem('zenit_onboarded', 'true');
     }
     return { error: null };

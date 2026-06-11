@@ -287,7 +287,7 @@ const MapRoutes: FC = () => {
   const getPanelHeight = () => {
     if (panelState === 'minimized') return '295px';
     if (panelState === 'half-expanded') return 'calc(15vh + 295px)';
-    return 'calc(100vh - 40px)'; // fully-expanded, leaving 50px at top for search bar interaction
+    return 'calc(100% - 40px)'; // fully-expanded, leaving 50px at top for search bar interaction
   };
 
   const panelHeight = getPanelHeight();

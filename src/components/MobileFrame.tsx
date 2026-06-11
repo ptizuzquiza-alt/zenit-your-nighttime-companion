@@ -41,15 +41,6 @@ const MobileBehavior: FC = () => {
         const t = setTimeout(() => setShowIOSBanner(true), 2000);
         return () => clearTimeout(t);
       }
-    } else {
-      // Android / Chrome — request fullscreen on first tap
-      const requestFS = () => {
-        const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-        document.removeEventListener('touchstart', requestFS);
-      };
-      document.addEventListener('touchstart', requestFS, { once: true });
-      return () => document.removeEventListener('touchstart', requestFS);
     }
   }, []);
 
@@ -87,7 +78,7 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
 
   if (!isDesktop) {
     return (
-      <div className="w-full min-h-[100dvh] bg-background overflow-hidden">
+      <div className="w-full bg-background overflow-hidden" style={{ height: '100dvh' }}>
         {children}
         <MobileBehavior />
       </div>
@@ -128,10 +119,10 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
         {/* Power button */}
         <div className="absolute -right-[3px] top-40 w-[3px] h-20 rounded-r-full" style={{ background: '#1e1e2a' }} />
 
-        {/* Screen area */}
+        {/* Screen area — transform creates a new containing block so fixed children stay inside the frame */}
         <div
           className="absolute overflow-hidden"
-          style={{ inset: 2, borderRadius: 52, background: 'hsl(249 42% 12%)' }}
+          style={{ inset: 2, borderRadius: 52, background: 'hsl(249 42% 12%)', transform: 'translateZ(0)' }}
         >
           {/* Dynamic island */}
           <div
@@ -139,9 +130,11 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
             style={{ top: 14, width: 126, height: 37, borderRadius: 20, background: '#0a0a0f' }}
           />
 
-          {/* App content */}
-          <div className="w-full h-full overflow-hidden">
+          {/* App content — explicit height so pages with h-full fill exactly the screen area */}
+          <div className="w-full overflow-hidden relative" style={{ height: 840 }}>
             {children}
+            {/* Home indicator */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-white/20 pointer-events-none z-[9999]" />
           </div>
         </div>
 

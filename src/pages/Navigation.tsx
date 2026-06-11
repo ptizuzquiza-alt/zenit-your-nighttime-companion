@@ -422,9 +422,8 @@ const Navigation: FC = () => {
       })()}
 
       {/* Bottom sheet */}
-      {createPortal(
-        <div
-          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto flex flex-col bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9999] ${!isDragging ? 'transition-[height] duration-300 ease-out' : ''}`}
+      {<div
+          className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto flex flex-col bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border/50 p-6 pb-8 z-[9000] ${!isDragging ? 'transition-[height] duration-300 ease-out' : ''}`}
           style={{
             height: sheetHeight,
             boxShadow: '0 -10px 40px -10px hsla(240, 25%, 5%, 0.5)',
@@ -647,9 +646,7 @@ const Navigation: FC = () => {
               </div>
             )}
           </div>
-        </div>,
-        document.body
-      )}
+        </div>}
 
       {/* Share modal */}
       <ShareRouteModal

@@ -1,4 +1,5 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
+import luciImg from '@/assets/luci-hablando.svg';
 
 const useIsDesktop = () => {
   const detect = () => {
@@ -60,7 +61,7 @@ const MobileBehavior: FC = () => {
       style={{ background: 'linear-gradient(to top, rgba(14,10,31,0.98) 80%, transparent)' }}
     >
       <div className="flex items-start gap-3 bg-card border border-border rounded-2xl px-4 py-3.5 shadow-xl">
-        <img src="/logo.png" alt="Zenit" className="w-10 h-10 rounded-xl flex-shrink-0" />
+        <img src={luciImg} alt="Luci" className="w-10 h-10 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">Añade Zenit a tu inicio</p>
           <p className="text-xs text-muted-foreground mt-0.5">

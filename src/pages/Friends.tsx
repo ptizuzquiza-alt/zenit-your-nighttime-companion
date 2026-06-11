@@ -1,6 +1,6 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus, UserMinus, Link, Download } from 'lucide-react';
+import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus, UserMinus, Link, Download, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { toDataURL } from 'qrcode';
 import { AVATAR_BY_NAME, DEFAULT_FRIENDS, SHARING_ROUTE_IDS } from '@/config/contacts';
@@ -13,6 +13,7 @@ interface Group {
   id: string;
   name: string;
   members: string[];
+  photo?: string;
 }
 
 type Friend = { id: string; name: string };
@@ -29,6 +30,7 @@ const DISCOVERABLE_USERS: Friend[] = [
 const Friends: FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const groupPhotoInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [groupName, setGroupName] = useState('');
@@ -328,6 +330,20 @@ const Friends: FC = () => {
   const saveGroups = (updated: Group[]) => {
     setGroups(updated);
     localStorage.setItem('zenit_groups', JSON.stringify(updated));
+  };
+
+  const handleGroupPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedGroup) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const photo = ev.target?.result as string;
+      const updated = groups.map(g => g.id === selectedGroup.id ? { ...g, photo } : g);
+      saveGroups(updated);
+      setSelectedGroup({ ...selectedGroup, photo });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleDeleteGroup = (id: string) => {
@@ -718,11 +734,27 @@ const Friends: FC = () => {
       {selectedGroup && !showAddToGroup && (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[1100] flex items-end">
           <div className="w-full bg-card border-t border-border rounded-t-3xl px-5 pt-5 pb-10 space-y-4">
+            <input
+              ref={groupPhotoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleGroupPhotoChange}
+            />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
+                <button
+                  onClick={() => groupPhotoInputRef.current?.click()}
+                  className="relative w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group"
+                >
+                  {selectedGroup.photo
+                    ? <img src={selectedGroup.photo} alt={selectedGroup.name} className="w-full h-full object-cover" />
+                    : <Users className="w-5 h-5 text-primary" />
+                  }
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Pencil className="w-3.5 h-3.5 text-white" />
+                  </div>
+                </button>
                 <div>
                   <h2 className="text-foreground font-semibold">{selectedGroup.name}</h2>
                   <p className="text-xs text-muted-foreground">

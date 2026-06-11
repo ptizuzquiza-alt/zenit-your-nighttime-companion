@@ -19,8 +19,9 @@ import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isDemo = user?.email === DEMO_EMAIL;
+  const { user, loading: authLoading } = useAuth();
+  // Check demo via email (auth) OR via localStorage name as synchronous fallback
+  const isDemo = user?.email === DEMO_EMAIL || localStorage.getItem('zenit_name') === 'Maya';
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,11 @@ const MapRoutes: FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!isDemo && !showShareModal && !showInfoModal && !isTutorialSeen('routeZenit')) {
+    if (isDemo) {
+      setShowTutorial(false);
+      return;
+    }
+    if (!showShareModal && !showInfoModal && !isTutorialSeen('routeZenit')) {
       setShowTutorial(true);
     }
   }, [showShareModal, showInfoModal, isDemo]);

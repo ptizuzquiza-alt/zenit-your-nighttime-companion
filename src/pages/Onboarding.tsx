@@ -752,9 +752,8 @@ const RegisterScreen: FC<{ onBack: () => void; onSuccess: () => void; onDemoLogi
 
 // ─── Login screen ───────────────────────────────────────────────
 
-const LoginScreen: FC<{ onDemoLogin: () => void; onRegister: () => void; demoLoading?: boolean }> = ({ onDemoLogin, onRegister, demoLoading }) => {
+const LoginScreen: FC<{ onDemoLogin: () => void; onRegister: () => void; onSuccess: () => void; demoLoading?: boolean }> = ({ onDemoLogin, onRegister, onSuccess, demoLoading }) => {
   const { signIn } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -767,7 +766,7 @@ const LoginScreen: FC<{ onDemoLogin: () => void; onRegister: () => void; demoLoa
     const { error: err } = await signIn(email.trim(), password.trim());
     setLoading(false);
     if (err) { setError('Email o contraseña incorrectos'); return; }
-    navigate('/', { replace: true });
+    onSuccess();
   };
 
   return (
@@ -973,7 +972,7 @@ const Onboarding: FC = () => {
             demoLoading={demoLoading}
           />
         ) : (
-          <LoginScreen onDemoLogin={handleDemoLogin} onRegister={() => setSubScreen('register')} demoLoading={demoLoading} />
+          <LoginScreen onDemoLogin={handleDemoLogin} onRegister={() => setSubScreen('register')} onSuccess={handleRequestLocation} demoLoading={demoLoading} />
         )}
       </div>
 

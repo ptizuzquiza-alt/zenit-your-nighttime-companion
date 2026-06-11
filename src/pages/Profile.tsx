@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin, Home, Briefcase, Star, Plus, Trash2, Search } from 'lucide-react';
+import { Map, User, Shield, Bell, ChevronRight, LogOut, Users, ChevronLeft, X, Eye, EyeOff, MapPin, Home, Briefcase, Star, Plus, Trash2, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { AVATAR_BY_NAME } from '@/config/contacts';
 import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
@@ -276,8 +276,8 @@ const Profile: FC = () => {
           className="w-full flex items-center justify-between px-4 py-4 rounded-2xl bg-card border border-border text-left active:opacity-70 transition-opacity"
         >
           <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-muted-foreground" />
-            <span className="text-foreground text-sm">Reiniciar tutoriales</span>
+            <Sparkles className="w-5 h-5 text-muted-foreground" />
+            <span className="text-foreground text-sm">Más de Zenit</span>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>

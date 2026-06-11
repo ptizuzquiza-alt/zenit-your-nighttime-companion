@@ -103,6 +103,8 @@ const Navigation: FC = () => {
   const [showProblemModal, setShowProblemModal] = useState(() => !!(location.state as { showProblemModal?: boolean })?.showProblemModal);
   const [problemAlerted, setProblemAlerted] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertSent, setAlertSent] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [sharedContacts, setSharedContacts] = useState<string[]>(() => {
     try {
@@ -555,6 +557,14 @@ const Navigation: FC = () => {
                       <span className="text-2xl text-foreground">{arrivalLabel}</span>
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setShowAlertModal(true); setAlertSent(false); }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold flex-shrink-0"
+                    style={{ background: 'hsl(var(--zenit-yellow) / 0.15)', border: '1px solid hsl(var(--zenit-yellow) / 0.35)', color: 'hsl(var(--zenit-yellow))' }}
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Avisar
+                  </button>
                 </div>
               </div>
 
@@ -688,6 +698,59 @@ const Navigation: FC = () => {
                 >
                   No, estoy bien
                 </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Alert modal */}
+      {showAlertModal && (
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4">
+            {alertSent ? (
+              <>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center">
+                    <AlertTriangle className="w-7 h-7 text-amber-400" />
+                  </div>
+                  <h3 className="text-foreground font-semibold text-base">Aviso enviado</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Tus contactos han sido notificados de que necesitas ayuda.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAlertModal(false)}
+                  className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm"
+                >
+                  Cerrar
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center">
+                    <AlertTriangle className="w-7 h-7 text-amber-400" />
+                  </div>
+                  <h3 className="text-foreground font-semibold text-base">¿Necesitas ayuda?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Se enviará un aviso a tus contactos con tu ubicación actual.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAlertModal(false)}
+                    className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => setAlertSent(true)}
+                    className="flex-1 py-3 rounded-2xl bg-amber-500 text-white font-semibold text-sm"
+                  >
+                    Avisar
+                  </button>
+                </div>
               </>
             )}
           </div>

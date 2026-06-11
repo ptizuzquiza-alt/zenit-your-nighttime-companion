@@ -13,10 +13,9 @@ const seedDemoData = () => {
   localStorage.setItem('zenit_friends', JSON.stringify([
     { id: 'marta', name: 'Marta' },
     { id: 'juan', name: 'Juan' },
-    { id: 'carla', name: 'Carla' },
     { id: 'javier', name: 'Javier' },
   ]));
-  localStorage.setItem('zenit_pending_requests', '[]');
+  localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
   localStorage.setItem('zenit_sent_requests', '[]');
   localStorage.setItem('zenit_groups', '[]');
   localStorage.setItem('zenit_onboarded', 'true');

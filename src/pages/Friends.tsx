@@ -16,7 +16,7 @@ interface Group {
   photo?: string;
 }
 
-type Friend = { id: string; name: string };
+type Friend = { id: string; name: string; username?: string };
 type FriendsTutorialId = 'friendsAdd' | 'friendsSharing';
 
 const DISCOVERABLE_USERS: Friend[] = [
@@ -201,7 +201,7 @@ const Friends: FC = () => {
           .or(`name.ilike.%${q}%,username.ilike.%${q}%`)
           .neq('id', user.id)
           .limit(5) as { data: Array<{id: string, name: string, username: string}> | null };
-        if (data) setSupabaseResults(data.map(p => ({ id: p.id, name: p.name })));
+        if (data) setSupabaseResults(data.map(p => ({ id: p.id, name: p.name, username: p.username })));
       } catch { setSupabaseResults([]); }
     }, 300);
     return () => clearTimeout(timer);
@@ -439,9 +439,10 @@ const Friends: FC = () => {
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim().toLowerCase();
-                  const match =
-                    supabaseResults.find(u => u.name.toLowerCase() === q) ||
-                    DISCOVERABLE_USERS.find(u => u.name.toLowerCase() === q);
+                  const isDemo = user?.email === DEMO_EMAIL;
+                  const match = isDemo
+                    ? DISCOVERABLE_USERS.find(u => u.name.toLowerCase() === q)
+                    : supabaseResults.find(u => u.name.toLowerCase() === q);
                   if (match) handleSendRequest(match);
                 }
               }}
@@ -453,26 +454,27 @@ const Friends: FC = () => {
           {(() => {
             if (!searchQuery.trim()) return null;
 
-            // Combine Supabase real results + mock DISCOVERABLE_USERS
-            const mockSuggestions = DISCOVERABLE_USERS.filter(u =>
-              u.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-              !friends.some(f => f.id === u.id) &&
-              !pendingRequests.some(r => r.id === u.id) &&
-              !sentRequests.some(r => r.id === u.id)
-            );
-            const allSuggestions: Friend[] = [
-              ...supabaseResults.filter(
-                sr => !friends.some(f => f.id === sr.id)
-                  && !pendingRequests.some(r => r.id === sr.id)
-                  && !sentRequests.some(r => r.id === sr.id)
-              ),
-              ...mockSuggestions.filter(m => !supabaseResults.some(sr => sr.id === m.id)),
-            ];
+            const isDemo = user?.email === DEMO_EMAIL;
+
+            const allSuggestions: Friend[] = isDemo
+              ? DISCOVERABLE_USERS.filter(u =>
+                  u.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                  !friends.some(f => f.id === u.id) &&
+                  !pendingRequests.some(r => r.id === u.id) &&
+                  !sentRequests.some(r => r.id === u.id)
+                )
+              : supabaseResults.filter(
+                  sr => !friends.some(f => f.id === sr.id)
+                    && !pendingRequests.some(r => r.id === sr.id)
+                    && !sentRequests.some(r => r.id === sr.id)
+                );
 
             if (allSuggestions.length === 0) {
               return (
                 <p className="text-xs text-muted-foreground px-1 py-2">
-                  No se encontró ningún usuario con ese nombre.
+                  {isDemo
+                    ? 'No se encontró ningún contacto con ese nombre.'
+                    : 'No se encontró ningún usuario registrado con ese nombre.'}
                 </p>
               );
             }
@@ -493,7 +495,9 @@ const Friends: FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{u.name}</p>
-                      <p className="text-xs text-muted-foreground">@{u.name.toLowerCase()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        @{u.username ?? u.name.toLowerCase()}
+                      </p>
                     </div>
                     <span className="text-xs text-primary font-medium px-2.5 py-1 rounded-lg bg-primary/10 flex-shrink-0">
                       Añadir

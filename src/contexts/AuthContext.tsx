@@ -19,6 +19,16 @@ const seedDemoData = () => {
   localStorage.setItem('zenit_sent_requests', '[]');
   localStorage.setItem('zenit_groups', '[]');
   localStorage.setItem('zenit_onboarded', 'true');
+  // Demo only shows mapSearch + mapFriends tutorials; all others pre-marked as seen
+  localStorage.setItem('zenit_tutorials_seen', JSON.stringify({
+    mapSearch: false,
+    mapFriends: false,
+    routeZenit: true,
+    shareRoute: true,
+    friendsAdd: true,
+    friendsSharing: true,
+    navigationEnd: true,
+  }));
   localStorage.setItem('zenit_saved_places', JSON.stringify([
     { id: 'demo-casa', label: 'Casa', name: 'Carrer de Provença 321, Barcelona', address: 'Eixample, Barcelona', lat: 41.3963, lon: 2.1607, icon: 'home' },
     { id: 'demo-trabajo', label: 'Trabajo', name: 'Passeig de Gràcia 92, Barcelona', address: 'Eixample, Barcelona', lat: 41.3952, lon: 2.1617, icon: 'work' },

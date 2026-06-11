@@ -247,7 +247,7 @@ const Profile: FC = () => {
       </div>
 
       {/* Options */}
-      <div className="flex-1 min-h-0 px-4 space-y-2 overflow-y-auto pb-24">
+      <div className="flex-1 min-h-0 px-4 space-y-2 overflow-y-auto pb-28">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">Cuenta</p>
         {[
           { icon: Shield, label: 'Privacidad y seguridad', sheet: 'privacy' as Sheet },
@@ -292,7 +292,7 @@ const Profile: FC = () => {
       </div>
 
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", minHeight: "4rem" }}>
         <button
           onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"

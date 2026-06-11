@@ -1085,7 +1085,7 @@ const Friends: FC = () => {
       )}
 
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]">
+      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-center justify-around px-8 z-[1000]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", minHeight: "4rem" }}>
         <button
           onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"

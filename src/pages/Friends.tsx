@@ -747,18 +747,23 @@ const Friends: FC = () => {
             />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => groupPhotoInputRef.current?.click()}
-                  className="relative w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group"
-                >
-                  {selectedGroup.photo
-                    ? <img src={selectedGroup.photo} alt={selectedGroup.name} className="w-full h-full object-cover" />
-                    : <Users className="w-5 h-5 text-primary" />
-                  }
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Pencil className="w-3.5 h-3.5 text-white" />
-                  </div>
-                </button>
+                <div className="relative w-10 h-10">
+                  <button
+                    onClick={() => groupPhotoInputRef.current?.click()}
+                    className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden"
+                  >
+                    {selectedGroup.photo
+                      ? <img src={selectedGroup.photo} alt={selectedGroup.name} className="w-full h-full object-cover" />
+                      : <Users className="w-5 h-5 text-primary" />
+                    }
+                  </button>
+                  <button
+                    onClick={() => groupPhotoInputRef.current?.click()}
+                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-card border border-border flex items-center justify-center"
+                  >
+                    <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
+                  </button>
+                </div>
                 <div>
                   <h2 className="text-foreground font-semibold">{selectedGroup.name}</h2>
                   <p className="text-xs text-muted-foreground">

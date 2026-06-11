@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Friends from "./pages/Friends";
 import Onboarding from "./pages/Onboarding";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { MobileFrame } from "./components/MobileFrame";
 
 const queryClient = new QueryClient();
 
@@ -34,22 +35,19 @@ const App = () => (
       <Sonner position="bottom-center" />
       <BrowserRouter>
         <AuthProvider>
-          {/* Outer shell: fills viewport with branded dark bg on tablet/desktop */}
-          <div className="min-h-screen w-full flex items-start justify-center">
-            <div className="w-full max-w-md bg-background min-h-screen relative overflow-hidden">
-              <Routes>
-                <Route path="/" element={<HomeRoute />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/search" element={<MapSearch />} />
-                <Route path="/routes" element={<MapRoutes />} />
-                <Route path="/navigation" element={<Navigation />} />
-                <Route path="/navigation-end" element={<NavigationEnd />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/friends" element={<Friends />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </div>
+          <MobileFrame>
+            <Routes>
+              <Route path="/" element={<HomeRoute />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/search" element={<MapSearch />} />
+              <Route path="/routes" element={<MapRoutes />} />
+              <Route path="/navigation" element={<Navigation />} />
+              <Route path="/navigation-end" element={<NavigationEnd />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MobileFrame>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

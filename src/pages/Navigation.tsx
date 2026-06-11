@@ -563,7 +563,7 @@ const Navigation: FC = () => {
                     style={{ background: 'hsl(var(--zenit-yellow) / 0.15)', border: '1px solid hsl(var(--zenit-yellow) / 0.35)', color: 'hsl(var(--zenit-yellow))' }}
                   >
                     <AlertTriangle className="w-4 h-4" />
-                    Avisar
+                    SOS
                   </button>
                 </div>
               </div>

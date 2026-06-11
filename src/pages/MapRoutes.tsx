@@ -7,6 +7,7 @@ import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
 import { LuciTutorial } from '@/components/LuciTutorial';
+import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { ShareIcon } from '@/components/icons/ShareIcon';
 import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
@@ -18,6 +19,8 @@ import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 const MapRoutes: FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isDemo = user?.email === DEMO_EMAIL;
   const [userLocation, setUserLocation] = useState<[number, number]>([41.4036, 2.1744]);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,10 +59,10 @@ const MapRoutes: FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!showShareModal && !showInfoModal && !isTutorialSeen('routeZenit')) {
+    if (!isDemo && !showShareModal && !showInfoModal && !isTutorialSeen('routeZenit')) {
       setShowTutorial(true);
     }
-  }, [showShareModal, showInfoModal]);
+  }, [showShareModal, showInfoModal, isDemo]);
 
   useEffect(() => {
     const html = document.documentElement;

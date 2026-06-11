@@ -7,7 +7,6 @@ import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteInfoModal } from '@/components/RouteInfoModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
 import { LuciTutorial } from '@/components/LuciTutorial';
-import { ShieldCheckIcon } from '@/components/icons/ShieldCheckIcon';
 import { ShareIcon } from '@/components/icons/ShareIcon';
 import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 

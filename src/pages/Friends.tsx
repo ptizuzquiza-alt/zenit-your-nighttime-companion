@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Map, User, Search, Users, Check, X, Plus, Share2, ChevronRight, Trash2, UserPlus, UserMinus, Link, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { toDataURL } from 'qrcode';
-import { AVATAR_BY_NAME, SHARING_ROUTE_IDS } from '@/config/contacts';
+import { AVATAR_BY_NAME, DEFAULT_FRIENDS, SHARING_ROUTE_IDS } from '@/config/contacts';
 import { useAuth, DEMO_EMAIL } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LuciTutorial } from '@/components/LuciTutorial';
@@ -37,7 +37,7 @@ const Friends: FC = () => {
   const [friends, setFriends] = useState<Friend[]>(() => {
     const stored = localStorage.getItem('zenit_friends');
     if (stored !== null) {
-      try { return JSON.parse(stored); } catch { return []; }
+      try { return JSON.parse(stored); } catch { return [DEFAULT_FRIENDS]; }
     }
   });
   const [pendingRequests, setPendingRequests] = useState<Friend[]>(() => {
@@ -45,7 +45,7 @@ const Friends: FC = () => {
     if (stored !== null) {
       try { return JSON.parse(stored); } catch { return []; }
     }
-    const defaults = [{ id: 'carla', name: 'Carla' }];
+    const defaults = DEFAULT_FRIENDS;
     localStorage.setItem('zenit_pending_requests', JSON.stringify(defaults));
     return defaults;
   });

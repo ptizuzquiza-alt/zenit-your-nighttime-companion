@@ -247,7 +247,7 @@ const Profile: FC = () => {
       </div>
 
       {/* Options */}
-      <div className="flex-1 px-4 space-y-2 overflow-y-auto pb-24">
+      <div className="flex-1 min-h-0 px-4 space-y-2 overflow-y-auto pb-24">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">Cuenta</p>
         {[
           { icon: Shield, label: 'Privacidad y seguridad', sheet: 'privacy' as Sheet },

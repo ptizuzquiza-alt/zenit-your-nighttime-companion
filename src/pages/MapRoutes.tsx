@@ -13,7 +13,7 @@ import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 
 import { fetchZenitRoute, fetchTransitRoute, storeSelectedRoute, RouteResult, TransitRoute } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
-import { getStoredFriends } from '@/config/contacts';
+import { getStoredFriends, CONTACTS } from '@/config/contacts';
 import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
 import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 

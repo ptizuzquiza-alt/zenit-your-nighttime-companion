@@ -10,7 +10,7 @@ import { FriendsFab } from '../components/FriendsFab';
 import { ShareRouteModal } from '@/components/ShareRouteModal';
 import { RouteTimeline } from '@/components/RouteTimeline';
 import { getStoredRoute } from '@/lib/routing';
-import { AVATAR_BY_NAME, getStoredFriends } from '@/config/contacts';
+import { AVATAR_BY_NAME, getStoredFriends, CONTACTS } from '@/config/contacts';
 
 
 

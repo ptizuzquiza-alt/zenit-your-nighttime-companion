@@ -7,6 +7,13 @@ export interface FriendContact {
 // IDs of friends currently broadcasting an active route
 export const SHARING_ROUTE_IDS = new Set(['juan', 'marta']);
 
+export const CONTACTS = [
+  { id: '1', name: 'Juan' },
+  { id: '2', name: 'María' },
+  { id: '3', name: 'Carla' },
+  { id: '4', name: 'Javier' },
+];
+
 export const DEFAULT_FRIENDS: FriendContact[] = [
   { id: 'juan', name: 'Juan' },
   { id: 'marta', name: 'Marta' },

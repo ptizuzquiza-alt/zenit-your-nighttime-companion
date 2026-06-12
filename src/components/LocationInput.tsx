@@ -62,7 +62,7 @@ export const LocationInput: FC<LocationInputProps> = ({
         {/* Swap button */}
         <button 
           onClick={onSwap}
-          className="self-center w-10 h-10 rounded-xl bg-primary flex items-center justify-center hover:bg-primary/80 transition-colors"
+          className="self-center w-10 h-10 rounded-xl bg-popover flex items-center justify-center hover:bg-popover/80 transition-colors"
         >
           <ArrowUpDown className="w-5 h-5" />
         </button>

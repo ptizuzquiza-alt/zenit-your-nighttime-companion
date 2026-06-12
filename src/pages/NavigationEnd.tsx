@@ -46,19 +46,19 @@ const NavigationEnd: FC = () => {
 
       <div className="w-full max-w-md mx-auto flex flex-col gap-4">
         <button
-          onClick={() => navigate('/navigation', { state: { showProblemModal: true } })}
-          className="zenit-btn-secondary w-full flex items-center justify-center gap-2"
-        >
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          Aún no he llegado
-        </button>
-
-        <button
           onClick={() => navigate('/')}
           className="zenit-btn-primary w-full flex items-center justify-center gap-2"
         >
           <Home className="w-5 h-5" />
           Volver al inicio
+        </button>
+
+        <button
+          onClick={() => navigate('/navigation', { state: { showProblemModal: true } })}
+          className="zenit-btn-secondary w-full flex items-center justify-center gap-2"
+        >
+          <AlertTriangle className="w-5 h-5 shrink-0" style={{ color: 'hsl(var(--zenit-yellow))' }} />
+          Aún no he llegado
         </button>
       </div>
     </div>

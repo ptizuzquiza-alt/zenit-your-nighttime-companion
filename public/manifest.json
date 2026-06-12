@@ -1,7 +1,7 @@
 {
   "name": "Zenit",
   "short_name": "Zenit",
-  "description": "Planifica rutas seguras e iluminadas por Barcelona de noche.",
+  "description": "Planifica rutas seguras e iluminadas.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

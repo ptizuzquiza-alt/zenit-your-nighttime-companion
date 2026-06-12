@@ -163,7 +163,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
 
         {/* Count banner */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#5B568A] px-4 py-3 mb-4">
-          <div className="flex items-center gap-2 rounded-full border border-white px-4 py-3 text-white">
+          <div className="flex items-center gap-2 rounded-full bg-black/30 px-4 py-3 text-white">
             <Share2 className="w-5 h-5" />
             <span className="text-lg">{shareCount}</span>
           </div>

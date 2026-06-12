@@ -17,7 +17,9 @@ const seedDemoData = () => {
   ]));
   localStorage.setItem('zenit_pending_requests', JSON.stringify([{ id: 'carla', name: 'Carla' }]));
   localStorage.setItem('zenit_sent_requests', '[]');
-  localStorage.setItem('zenit_groups', '[]');
+  localStorage.setItem('zenit_groups', JSON.stringify([
+    { id: 'uni', name: 'Uni', members: ['marta', 'juan'] },
+  ]));
   localStorage.setItem('zenit_onboarded', 'true');
   // Demo only shows mapSearch + mapFriends tutorials; all others pre-marked as seen
   localStorage.setItem('zenit_tutorials_seen', JSON.stringify({

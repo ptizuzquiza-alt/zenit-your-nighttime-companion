@@ -118,6 +118,8 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
         style={{
           width: 390,
           height: 844,
+          transform: 'scale(0.85)',
+          transformOrigin: 'center center',
           borderRadius: 54,
           background: '#0a0a0f',
           boxShadow: `

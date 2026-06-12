@@ -703,9 +703,9 @@ const Navigation: FC = () => {
           <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4 relative">
             <button
               onClick={() => setShowAlertModal(false)}
-              className="absolute top-4 right-4 w-7 h-7 rounded-full bg-muted flex items-center justify-center"
+              className="absolute top-4 right-4 flex items-center justify-center"
             >
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
+              <X className="w-5 h-5 text-muted-foreground" />
             </button>
             {alertSent ? (
               <>

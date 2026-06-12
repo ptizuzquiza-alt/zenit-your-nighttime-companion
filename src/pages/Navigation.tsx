@@ -700,7 +700,13 @@ const Navigation: FC = () => {
       {/* Alert modal */}
       {showAlertModal && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
-          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4">
+          <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4 relative">
+            <button
+              onClick={() => setShowAlertModal(false)}
+              className="absolute top-4 right-4 w-7 h-7 rounded-full bg-muted flex items-center justify-center"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
             {alertSent ? (
               <>
                 <div className="flex flex-col items-center gap-3 text-center">
@@ -712,12 +718,6 @@ const Navigation: FC = () => {
                     Tus contactos han sido notificados de que necesitas ayuda.
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowAlertModal(false)}
-                  className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm"
-                >
-                  Cerrar
-                </button>
               </>
             ) : (
               <>
@@ -732,16 +732,16 @@ const Navigation: FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowAlertModal(false)}
-                    className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                    onClick={() => setAlertSent(true)}
+                    className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm"
                   >
-                    Cancelar
+                    Avisar a contactos
                   </button>
                   <button
-                    onClick={() => setAlertSent(true)}
+                    onClick={() => window.open('tel:112')}
                     className="flex-1 py-3 rounded-2xl bg-[hsl(var(--zenit-yellow))] text-[#1a0a2e] font-semibold text-sm"
                   >
-                    Avisar
+                    Llamar al 112
                   </button>
                 </div>
               </>

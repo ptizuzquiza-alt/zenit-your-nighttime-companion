@@ -141,7 +141,7 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
         {/* Screen area — transform creates a new containing block so fixed children stay inside the frame */}
         <div
           className="absolute overflow-hidden"
-          style={{ inset: 2, borderRadius: 52, background: 'hsl(249 42% 12%)', transform: 'translateZ(0)' }}
+          style={{ inset: 2, borderRadius: 52, background: 'hsl(240 20% 12%)', transform: 'translateZ(0)' }}
         >
           {/* Dynamic island */}
           <div

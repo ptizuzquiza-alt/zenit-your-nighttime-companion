@@ -317,7 +317,7 @@ const MapIdle: FC = () => {
       )}
 
       {/* Friends speed-dial */}
-      <div className="absolute bottom-20 left-4 right-4 z-[1000] flex flex-col items-start gap-2">
+      <div className="absolute bottom-24 left-4 right-4 z-[1000] flex flex-col items-start gap-2">
         {/* Label card above the row */}
         {showFriends && activeFriendLabel && (() => {
           const fr = acceptedFriendData.find(f => f.name === activeFriendLabel);
@@ -399,7 +399,7 @@ const MapIdle: FC = () => {
       </div>
 
       {/* Center button */}
-      <div className="absolute bottom-20 right-4 z-[1000]">
+      <div className="absolute bottom-24 right-4 z-[1000]">
         <button
           onClick={() => {
             setFocusBounds(undefined);
@@ -458,17 +458,17 @@ const MapIdle: FC = () => {
       )}
 
       {/* Bottom navigation bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.75rem", paddingBottom: "env(safe-area-inset-bottom, 1.5rem)", minHeight: "5.5rem" }}>
-        <button className="flex flex-col items-center justify-center gap-1 w-16">
-          <Map className="w-7 h-7" />
-          <span className="text-xs font-medium">Mapa</span>
+      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.5rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
+        <button className="flex flex-col items-center justify-center gap-0.5 w-14">
+          <Map className="w-6 h-6" />
+          <span className="text-[11px] font-medium">Mapa</span>
         </button>
         <button
           onClick={() => navigate('/friends')}
-          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-12"
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-14"
         >
-          <Users className="w-7 h-7" />
-          <span className="text-xs font-medium">Amigos</span>
+          <Users className="w-6 h-6" />
+          <span className="text-[11px] font-medium">Amigos</span>
         </button>
       </div>
     </div>

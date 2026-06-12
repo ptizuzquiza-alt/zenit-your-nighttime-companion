@@ -706,8 +706,12 @@ const Friends: FC = () => {
                   onClick={() => toggleMember(friend.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-background border border-border text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {AVATAR_BY_NAME[friend.name] ? (
+                      <img src={AVATAR_BY_NAME[friend.name]} alt={friend.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                    )}
                   </div>
                   <span className="flex-1 text-foreground text-sm">{friend.name}</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -790,8 +794,12 @@ const Friends: FC = () => {
                   if (!friend) return null;
                   return (
                     <div key={memberId} className="flex items-center gap-3 bg-background rounded-xl px-3 py-2.5 border border-border">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {AVATAR_BY_NAME[friend.name] ? (
+                          <img src={AVATAR_BY_NAME[friend.name]} alt={friend.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                        )}
                       </div>
                       <span className="flex-1 text-sm text-foreground">{friend.name}</span>
                       <button
@@ -847,8 +855,12 @@ const Friends: FC = () => {
                   )}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-background border border-border text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {AVATAR_BY_NAME[friend.name] ? (
+                      <img src={AVATAR_BY_NAME[friend.name]} alt={friend.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
+                    )}
                   </div>
                   <span className="flex-1 text-sm text-foreground">{friend.name}</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${

@@ -647,8 +647,12 @@ const Friends: FC = () => {
                 onClick={() => setSelectedGroup(group)}
                 className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3 text-left"
               >
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-4 h-4 text-primary" />
+                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {group.photo ? (
+                    <img src={group.photo} alt={group.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-4 h-4 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1">
                   <p className="text-foreground text-sm font-medium">{group.name}</p>

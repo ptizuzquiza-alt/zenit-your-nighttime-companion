@@ -67,6 +67,7 @@ const Friends: FC = () => {
   const [viewFriend, setViewFriend] = useState<Friend | null>(null);
   const [confirmUnfriend, setConfirmUnfriend] = useState(false);
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(false);
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [activeTutorial, setActiveTutorial] = useState<FriendsTutorialId | null>(null);
@@ -807,7 +808,7 @@ const Friends: FC = () => {
                       </div>
                       <span className="flex-1 text-sm text-foreground">{friend.name}</span>
                       <button
-                        onClick={() => handleRemoveMember(selectedGroup.id, memberId)}
+                        onClick={() => setConfirmRemoveMember(memberId)}
                         className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"
                       >
                         <X className="w-3.5 h-3.5 text-muted-foreground" />
@@ -888,6 +889,45 @@ const Friends: FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm remove member popup */}
+      {confirmRemoveMember && selectedGroup && (() => {
+        const friend = friends.find(f => f.id === confirmRemoveMember);
+        if (!friend) return null;
+        return (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[1200] flex items-center justify-center px-6">
+            <div className="w-full bg-card border border-border rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                  {AVATAR_BY_NAME[friend.name] ? (
+                    <img src={AVATAR_BY_NAME[friend.name]} alt={friend.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-primary font-semibold">{friend.name[0]}</span>
+                  )}
+                </div>
+                <h3 className="text-foreground font-semibold text-base">¿Eliminar del grupo?</h3>
+                <p className="text-muted-foreground text-sm">
+                  <span className="font-medium text-foreground">{friend.name}</span> dejará de formar parte de <span className="font-medium text-foreground">"{selectedGroup.name}"</span>.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmRemoveMember(null)}
+                  className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => { handleRemoveMember(selectedGroup.id, confirmRemoveMember); setConfirmRemoveMember(null); }}
+                  className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-sm"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Confirm delete group popup */}
       {confirmDeleteGroup && selectedGroup && (

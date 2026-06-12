@@ -8,6 +8,7 @@ interface Group {
   id: string;
   name: string;
   members: string[];
+  photo?: string;
 }
 
 interface Contact {
@@ -195,8 +196,12 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                   const fullySelected = isGroupFullySelected(group);
                   return (
                     <div key={group.id} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/20 flex-shrink-0">
-                        <Users className="w-5 h-5 text-accent" />
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/20 flex-shrink-0 overflow-hidden">
+                        {group.photo ? (
+                          <img src={group.photo} alt={group.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Users className="w-5 h-5 text-accent" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-foreground">{group.name}</span>

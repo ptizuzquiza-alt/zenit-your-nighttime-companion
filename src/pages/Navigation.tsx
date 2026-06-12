@@ -410,7 +410,7 @@ const Navigation: FC = () => {
           : `En ${Math.round(distToTurnM)} m`;
         const instrLabel = dir === 'right' ? 'gire a la derecha' : dir === 'left' ? 'gire a la izquierda' : 'has llegado';
         return (
-          <div className="fixed top-12 left-4 right-4 z-[1000]">
+          <div className="fixed top-0 left-0 right-0 z-[1000] pt-12 px-4 pb-2">
             <DirectionCard
               distance={distLabel}
               instruction={instrLabel}

@@ -60,7 +60,7 @@ export const LuciTutorial: FC<LuciTutorialProps> = ({
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <p className="h-fit w-full flex-1 text-sm font-regular leading-snug text-foreground">
+              <p className="h-fit w-full flex-1 text-base font-regular leading-snug text-foreground">
                 {message}
               </p>
               <button

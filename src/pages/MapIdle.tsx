@@ -252,7 +252,7 @@ const MapIdle: FC = () => {
   const acceptedFriendData = myFriendRoutes.filter(fr => acceptedFriends.includes(fr.id));
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative h-[100dvh] w-full overflow-hidden">
       <ZenitMap
         center={userLocation}
         zoom={15}

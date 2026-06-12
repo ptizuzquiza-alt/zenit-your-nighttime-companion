@@ -391,7 +391,7 @@ const Friends: FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-background flex flex-col">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-background flex flex-col">
       {/* Top bar */}
       <div className="pt-12 pb-4 px-4 flex items-center justify-between">
         <h1 className="text-foreground font-semibold text-lg">Amigos</h1>

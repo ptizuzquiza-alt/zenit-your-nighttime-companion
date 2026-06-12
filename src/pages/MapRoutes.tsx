@@ -309,7 +309,7 @@ const MapRoutes: FC = () => {
     : PANEL_HALF_EXPANDED_BOTTOM;
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative h-[100dvh] w-full overflow-hidden">
       <ZenitMap
         center={mapCenter}
         zoom={14}

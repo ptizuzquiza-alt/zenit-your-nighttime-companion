@@ -662,8 +662,8 @@ const Navigation: FC = () => {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
           <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col gap-4">
             <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-zenit-purple/20 flex items-center justify-center mb-1">
-                <AlertTriangle className="w-6 h-6 text-zenit-purple" />
+              <div className="w-12 h-12 rounded-full bg-[hsl(var(--zenit-yellow)/0.15)] flex items-center justify-center mb-1">
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
               </div>
               <h3 className="text-lg font-bold text-foreground">¿Ha habido algún problema?</h3>
             </div>
@@ -689,7 +689,7 @@ const Navigation: FC = () => {
                   onClick={() => setShowProblemModal(false)}
                   className="zenit-btn-secondary flex items-center justify-center"
                 >
-                  No, estoy bien
+                  Estoy bien
                 </button>
               </>
             )}

@@ -95,7 +95,7 @@ export const MobileFrame: FC<{ children: ReactNode }> = ({ children }) => {
 
   if (!isDesktop) {
     return (
-      <div className="w-full bg-background overflow-hidden" style={{ height: mobileHeight }}>
+      <div className="w-full bg-background overflow-hidden" style={{ height: '100dvh' }}>
         {children}
         <MobileBehavior />
       </div>

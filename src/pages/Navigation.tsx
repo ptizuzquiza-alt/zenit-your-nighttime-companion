@@ -441,6 +441,7 @@ const Navigation: FC = () => {
                 <div className="flex flex-row items-center gap-2">
                   <FriendsFab
                     active={showFriendsPopup}
+                    badgeCount={friendRoutes.length}
                     onClick={() => {
                       setShowFriendsPopup(prev => {
                         const next = !prev;
@@ -532,7 +533,7 @@ const Navigation: FC = () => {
                         setShowShareModal(true);
                         setShowViewers(false);
                       }}
-                      className="flex items-center gap-2 px-5 py-4 rounded-full bg-popover hover:text-muted-foreground transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-5 py-4 rounded-full bg-primary hover:bg-primary/80 transition-colors cursor-pointer"
                     >
                       <Share2 className="w-5 h-5" />
                       <span className="text-lg">{sharedContacts.length}</span>

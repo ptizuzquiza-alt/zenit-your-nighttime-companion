@@ -25,7 +25,7 @@ export const FriendsFab: FC<FriendsFabProps> = ({
   badgeClassName = 'absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center shadow-md',
   children,
 }) => {
-  const stateClasses = active ? activeClassName : inactiveClassName;
+  const stateClasses = (active || badgeCount > 0) ? activeClassName : inactiveClassName;
 
   const defaultIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 424.66 438.93" className={iconClassName} fill="currentColor">

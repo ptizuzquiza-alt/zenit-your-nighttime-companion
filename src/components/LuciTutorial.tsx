@@ -66,7 +66,7 @@ export const LuciTutorial: FC<LuciTutorialProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 rounded-xl px-2 py-2 text-base font-semibold leading-none text-accent transition-colors hover:bg-background/10"
+                className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold leading-none text-background transition-colors hover:opacity-80" style={{ background: 'hsl(var(--zenit-yellow))' }}
               >
                 ¡Vale!
               </button>

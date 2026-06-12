@@ -153,7 +153,7 @@ const MapSearch: FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] bg-background overflow-y-auto">
       {/* Header with back and location input */}
       <div className="p-4 pt-12">
         <div className="flex items-start gap-3">

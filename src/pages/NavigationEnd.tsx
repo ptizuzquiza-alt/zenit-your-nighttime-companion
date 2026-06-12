@@ -10,7 +10,7 @@ const NavigationEnd: FC = () => {
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialSeen('navigationEnd'));
 
   return (
-    <div className="min-h-screen bg-background flex flex-col p-6">
+    <div className="h-[100dvh] bg-background flex flex-col p-6">
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="w-20 h-20 rounded-full bg-zenit-green/15 flex items-center justify-center mb-6">
           <div className="w-14 h-14 rounded-full bg-zenit-green flex items-center justify-center">

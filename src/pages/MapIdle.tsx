@@ -458,7 +458,7 @@ const MapIdle: FC = () => {
       )}
 
       {/* Bottom navigation bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.5rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
+      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.875rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
         <button className="flex flex-col items-center justify-center gap-0.5 w-14">
           <Map className="w-6 h-6" />
           <span className="text-[11px] font-medium">Mapa</span>

@@ -72,7 +72,7 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
             </div>
             {tracking && (
               <>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-base text-muted-foreground mt-0.5">
                   Hacia <span className="text-foreground font-medium">{destination}</span>, en {address}
                 </p>
                 {(departureTime || estimatedArrival) && (
@@ -103,19 +103,19 @@ export const FriendActivityCard: FC<FriendActivityCardProps> = ({
             <p className="text-foreground font-semibold text-center text-base mb-1">
               ¿Dejar de seguir a {name}?
             </p>
-            <p className="text-muted-foreground text-sm text-center mb-5">
+            <p className="text-muted-foreground text-base text-center mb-5">
               Ya no verás su ruta ni ubicación en el mapa.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground font-medium text-sm hover:bg-secondary/80 transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground font-medium text-base hover:bg-secondary/80 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => { setShowConfirm(false); onToggleTracking?.(); }}
-                className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium text-sm hover:bg-destructive/90 transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium text-base hover:bg-destructive/90 transition-colors"
               >
                 Dejar de seguir
               </button>

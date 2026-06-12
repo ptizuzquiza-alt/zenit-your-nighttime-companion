@@ -262,7 +262,7 @@ const Profile: FC = () => {
           >
             <div className="flex items-center gap-3">
               <Icon className="w-5 h-5 text-muted-foreground" />
-              <span className="text-foreground text-sm">{label}</span>
+              <span className="text-foreground text-base">{label}</span>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -292,7 +292,7 @@ const Profile: FC = () => {
       </div>
 
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.5rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
+      <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.875rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
         <button
           onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-14"
@@ -331,7 +331,7 @@ const Profile: FC = () => {
                 <div key={label} className="flex items-center gap-3 bg-background rounded-xl px-4 py-3 border border-border">
                   <Icon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm text-foreground font-medium">{label}</p>
+                    <p className="text-base text-foreground font-medium">{label}</p>
                     <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
                   <Toggle value={value} onChange={onChange} />
@@ -363,7 +363,7 @@ const Profile: FC = () => {
               ].map(({ label, desc, value, onChange }) => (
                 <div key={label} className="flex items-center gap-3 bg-background rounded-xl px-4 py-3 border border-border">
                   <div className="flex-1">
-                    <p className="text-sm text-foreground font-medium">{label}</p>
+                    <p className="text-base text-foreground font-medium">{label}</p>
                     <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
                   <Toggle value={value} onChange={onChange} />

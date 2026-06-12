@@ -168,7 +168,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
             <Share2 className="w-5 h-5" />
             <span className="text-lg">{shareCount}</span>
           </div>
-          <p className="text-sm text-white/90">
+          <p className="text-base text-white/90">
             Amigos que pueden ver tu ubicacion en directo hasta el final del trayecto actual.
           </p>
         </div>
@@ -209,7 +209,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                       </div>
                       <button
                         onClick={() => handleGroupClick(group)}
-                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${fullySelected ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-white'}`}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${fullySelected ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-white'}`}
                       >
                         {fullySelected ? 'Dejar de compartir' : 'Compartir con grupo'}
                       </button>
@@ -254,7 +254,7 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                 <span className="flex-1 text-left font-medium text-foreground">{contact.name}</span>
                 <button
                   onClick={() => handleActionClick(contact)}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${actionClass}`}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${actionClass}`}
                 >
                   {actionLabel}
                 </button>
@@ -319,25 +319,25 @@ export const ShareRouteModal: FC<ShareRouteModalProps> = ({
                     : '¿Salir sin guardar tus cambios?'}
             </p>
             {(confirm.action === 'share' || confirm.action === 'share-group') && (
-              <p className="text-xs text-muted-foreground text-center mb-4">
+              <p className="text-sm text-muted-foreground text-center mb-4">
                 Podrán ver tu ubicación en directo hasta que llegues a tu destino.
               </p>
             )}
             {(confirm.action === 'unshare' || confirm.action === 'cancel') && (
-              <p className="text-xs text-muted-foreground text-center mb-4">
+              <p className="text-sm text-muted-foreground text-center mb-4">
                 {confirm.action === 'cancel' ? 'Los cambios no se guardarán.' : 'Dejarán de ver tu ubicación en tiempo real.'}
               </p>
             )}
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-3 rounded-3xl bg-popover text-foreground font-medium text-sm"
+                className="flex-1 py-3 rounded-3xl bg-popover text-foreground font-medium text-base"
               >
                 No
               </button>
               <button
                 onClick={handleConfirm}
-                className={`flex-1 py-3 rounded-3xl font-medium text-sm text-white ${confirm.action === 'unshare' ? 'bg-destructive' : confirm.action === 'cancel' ? 'bg-destructive' : 'bg-primary'}`}
+                className={`flex-1 py-3 rounded-3xl font-medium text-base text-white ${confirm.action === 'unshare' ? 'bg-destructive' : confirm.action === 'cancel' ? 'bg-destructive' : 'bg-primary'}`}
               >
                 {confirm.action === 'cancel' ? 'Salir sin guardar' : confirm.action === 'unshare' ? 'Dejar de compartir' : 'Sí, compartir'}
               </button>

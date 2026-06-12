@@ -419,7 +419,7 @@ const Friends: FC = () => {
             <Share2 className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Compartir perfil</p>
+            <p className="text-base font-medium text-foreground">Compartir perfil</p>
             <p className="text-xs text-muted-foreground">Invita a amigos a unirse a Zenit</p>
           </div>
         </button>
@@ -447,7 +447,7 @@ const Friends: FC = () => {
                   if (match) handleSendRequest(match);
                 }
               }}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>
 
@@ -495,7 +495,7 @@ const Friends: FC = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{u.name}</p>
+                      <p className="text-base font-medium text-foreground">{u.name}</p>
                       <p className="text-xs text-muted-foreground">
                         @{u.username ?? u.name.toLowerCase()}
                       </p>
@@ -530,7 +530,7 @@ const Friends: FC = () => {
                   </span>
                 )}
               </div>
-                <span className="flex-1 text-foreground text-sm font-medium">{req.name}</span>
+                <span className="flex-1 text-foreground text-base font-medium">{req.name}</span>
                 <button
                   onClick={() => handleAccept(req.id, req.name)}
                   className="w-8 h-8 rounded-full bg-green-500/80 flex items-center justify-center"
@@ -567,7 +567,7 @@ const Friends: FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-medium">{req.name}</p>
+                  <p className="text-foreground text-base font-medium">{req.name}</p>
                   <p className="text-xs text-muted-foreground">Esperando respuesta</p>
                 </div>
                 <button
@@ -604,7 +604,7 @@ const Friends: FC = () => {
                   <span className="text-primary font-semibold text-sm">{friend.name[0]}</span>
                 )}
               </div>
-              <span className="flex-1 text-foreground text-sm font-medium">{friend.name}</span>
+              <span className="flex-1 text-foreground text-base font-medium">{friend.name}</span>
               <div className="flex items-center gap-1.5">
                 {SHARING_ROUTE_IDS.has(friend.id) ? (
                   <>
@@ -656,7 +656,7 @@ const Friends: FC = () => {
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="text-foreground text-sm font-medium">{group.name}</p>
+                  <p className="text-foreground text-base font-medium">{group.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {group.members.length} {group.members.length === 1 ? 'miembro' : 'miembros'}
                   </p>
@@ -718,7 +718,7 @@ const Friends: FC = () => {
                       <span className="text-primary font-semibold text-xs">{friend.name[0]}</span>
                     )}
                   </div>
-                  <span className="flex-1 text-foreground text-sm">{friend.name}</span>
+                  <span className="flex-1 text-foreground text-base">{friend.name}</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                     selectedMembers.includes(friend.id)
                       ? 'bg-primary border-primary'
@@ -913,13 +913,13 @@ const Friends: FC = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setConfirmRemoveMember(null)}
-                  className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                  className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => { handleRemoveMember(selectedGroup.id, confirmRemoveMember); setConfirmRemoveMember(null); }}
-                  className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-sm"
+                  className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-base"
                 >
                   Eliminar
                 </button>
@@ -945,13 +945,13 @@ const Friends: FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDeleteGroup(false)}
-                className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-base"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => { setConfirmDeleteGroup(false); handleDeleteGroup(selectedGroup.id); }}
-                className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-sm"
+                className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-base"
               >
                 Eliminar
               </button>
@@ -1106,7 +1106,7 @@ const Friends: FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmUnfriend(false)}
-                className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-sm"
+                className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold text-base"
               >
                 Cancelar
               </button>
@@ -1117,7 +1117,7 @@ const Friends: FC = () => {
                   setConfirmUnfriend(false);
                   setViewFriend(null);
                 }}
-                className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-sm"
+                className="flex-1 py-3 rounded-2xl bg-destructive text-white font-semibold text-base"
               >
                 Confirmar
               </button>
@@ -1141,7 +1141,7 @@ const Friends: FC = () => {
       )}
 
       {/* Bottom nav */}
-      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.5rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
+      <div className="absolute bottom-0 left-0 right-0 bg-card backdrop-blur-md border-t border-border flex items-start justify-around px-8 z-[1000]" style={{ paddingTop: "0.875rem", paddingBottom: "env(safe-area-inset-bottom, 1.25rem)", minHeight: "4.5rem" }}>
         <button
           onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground w-14"

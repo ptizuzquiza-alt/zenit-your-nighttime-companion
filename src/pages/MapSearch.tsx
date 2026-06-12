@@ -180,13 +180,13 @@ const MapSearch: FC = () => {
       {/* Results list */}
       <div className="px-4 pt-4">
         {activeField === 'origin' && origin === 'Tu ubicación' && (
-          <p className="text-sm text-muted-foreground mb-3">Escribe para buscar un origen personalizado</p>
+          <p className="text-base text-muted-foreground mb-3">Escribe para buscar un origen personalizado</p>
         )}
         {loading && (
-          <p className="text-sm text-muted-foreground mb-3">Buscando…</p>
+          <p className="text-base text-muted-foreground mb-3">Buscando…</p>
         )}
         {!loading && results.length === 0 && activeQuery.length >= 2 && !(activeField === 'origin' && origin === 'Tu ubicación') && (
-          <p className="text-sm text-muted-foreground mb-3">No se encontraron resultados</p>
+          <p className="text-base text-muted-foreground mb-3">No se encontraron resultados</p>
         )}
 
         {/* Search results */}
@@ -261,7 +261,7 @@ const MapSearch: FC = () => {
             )}
 
             {filteredSaved.length === 0 && filteredRecent.length === 0 && (
-              <p className="text-sm font-medium text-muted-foreground">Escribe para buscar lugares</p>
+              <p className="text-base font-medium text-muted-foreground">Escribe para buscar lugares</p>
             )}
           </>
         )}

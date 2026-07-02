@@ -1,7 +1,11 @@
 import { fetchStreetLamps, scoreLighting, getBoundingBox } from './streetlamps';
+import { supabase } from '@/integrations/supabase/client';
 
-// OSRM public routing API (CORS enabled)
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+// OSRM routing API with a genuine pedestrian profile (CORS enabled).
+// Note: router.project-osrm.org's public demo does NOT have a distinct foot
+// profile — /foot/ and /driving/ return identical car-network geometry there.
+// routing.openstreetmap.de/routed-foot is a real OSM-pedestrian-tag-aware graph.
+const OSRM_BASE = 'https://routing.openstreetmap.de/routed-foot/route/v1';
 
 // Average walking speed in m/s (~5 km/h)
 const WALKING_SPEED = 1.4;
@@ -280,70 +284,112 @@ export interface TransitRoute {
   coordinates: [number, number][];
 }
 
+/** Decodes a Google-encoded polyline (used by TMB's OpenTripPlanner legGeometry) */
+function decodePolyline(encoded: string, precision = 5): [number, number][] {
+  const factor = Math.pow(10, precision);
+  let index = 0, lat = 0, lng = 0;
+  const coordinates: [number, number][] = [];
+  while (index < encoded.length) {
+    let shift = 0, result = 0, byte: number;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+    shift = 0; result = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+    coordinates.push([lat / factor, lng / factor]);
+  }
+  return coordinates;
+}
+
+interface TMBPlace {
+  name: string;
+  lat: number;
+  lon: number;
+  arrival?: number;
+  departure?: number;
+  stopId?: string;
+}
+
+interface TMBLeg {
+  mode: string;
+  transitLeg: boolean;
+  route?: string;
+  routeShortName?: string;
+  headsign?: string;
+  distance: number;
+  duration: number;
+  from: TMBPlace;
+  to: TMBPlace;
+  legGeometry: { points: string };
+}
+
+interface TMBItinerary {
+  duration: number;
+  legs: TMBLeg[];
+}
+
 /**
- * Builds a transit route by fetching the OSRM walking geometry and splitting it
- * into walk → bus/metro → walk legs with realistic durations.
+ * Fetches a real public-transport itinerary (real bus/metro lines, real stops,
+ * real timetabled waits) from TMB's trip planner via a Supabase Edge Function.
+ * Returns null if TMB finds no transit itinerary (only walking) between the points.
  */
 export async function fetchTransitRoute(
   origin: [number, number],
   destination: [number, number]
 ): Promise<TransitRoute | null> {
-  const directCoords = `${origin[1]},${origin[0]};${destination[1]},${destination[0]}`;
-  const res = await fetchWithTimeout(
-    `foot/${directCoords}?overview=full&geometries=geojson&steps=false`
-  );
-  if (!res || res.code !== 'Ok' || !res.routes?.length) return null;
+  const { data, error } = await supabase.functions.invoke('tmb-planner', {
+    body: { fromLat: origin[0], fromLon: origin[1], toLat: destination[0], toLon: destination[1] },
+  });
+  if (error || data?.error) return null;
 
-  const route = res.routes[0];
-  const fullCoords: [number, number][] = route.geometry.coordinates.map(
-    ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
-  );
-  const totalDist: number = route.distance;
+  const itineraries: TMBItinerary[] = data?.plan?.itineraries ?? [];
+  const transitItineraries = itineraries.filter((it) => it.legs.some((leg) => leg.transitLeg));
+  if (transitItineraries.length === 0) return null;
 
-  const n = fullCoords.length;
-  const splitA = Math.max(2, Math.floor(n * 0.18));
-  const splitB = Math.max(splitA + 2, n - Math.floor(n * 0.18));
+  const best = transitItineraries.sort((a, b) => a.duration - b.duration)[0];
 
-  const walkToDist  = totalDist * 0.18;
-  const transitDist = totalDist * 0.64;
-  const walkFromDist = totalDist * 0.18;
-
-  const WAIT = 180; // 3 min average wait
-  const isMetro = totalDist > 1800;
-  const transitSpeed = isMetro ? 11.0 : 7.0; // metro ~40 km/h, bus ~25 km/h
-
-  const legs: TransitLeg[] = [
-    {
-      type: 'walk',
-      coordinates: fullCoords.slice(0, splitA + 1),
-      distance: walkToDist,
-      duration: walkToDist / WALKING_SPEED,
-      toStop: isMetro ? 'Estación de metro' : 'Parada de bus',
-    },
-    {
-      type: isMetro ? 'metro' : 'bus',
-      line: isMetro ? 'L3' : '7',
-      headsign: isMetro ? 'Zona Universitaria' : 'Estació del Nord',
-      fromStop: isMetro ? 'Estación de metro' : 'Parada de bus',
-      toStop: isMetro ? 'Estación destino' : 'Parada destino',
-      coordinates: fullCoords.slice(splitA, splitB + 1),
-      distance: transitDist,
-      duration: transitDist / transitSpeed,
-      waitTime: WAIT,
-    },
-    {
-      type: 'walk',
-      coordinates: fullCoords.slice(splitB),
-      distance: walkFromDist,
-      duration: walkFromDist / WALKING_SPEED,
-    },
-  ];
+  const legs: TransitLeg[] = best.legs.map((leg) => {
+    const coordinates = decodePolyline(leg.legGeometry.points);
+    if (!leg.transitLeg) {
+      return {
+        type: 'walk',
+        coordinates,
+        distance: leg.distance,
+        duration: leg.duration,
+        toStop: leg.to?.stopId ? leg.to.name : undefined,
+      };
+    }
+    const waitTime = leg.from.arrival != null && leg.from.departure != null
+      ? Math.max(0, (leg.from.departure - leg.from.arrival) / 1000)
+      : undefined;
+    return {
+      type: leg.mode === 'BUS' ? 'bus' : 'metro',
+      line: leg.routeShortName || leg.route,
+      headsign: leg.headsign,
+      fromStop: leg.from.name,
+      toStop: leg.to.name,
+      coordinates,
+      distance: leg.distance,
+      duration: leg.duration,
+      waitTime,
+    };
+  });
 
   return {
     legs,
-    totalDistance: totalDist,
-    totalDuration: walkToDist / WALKING_SPEED + WAIT + transitDist / transitSpeed + walkFromDist / WALKING_SPEED,
-    coordinates: fullCoords,
+    totalDistance: legs.reduce((sum, l) => sum + l.distance, 0),
+    totalDuration: best.duration,
+    coordinates: legs.flatMap((l) => l.coordinates),
   };
 }
 

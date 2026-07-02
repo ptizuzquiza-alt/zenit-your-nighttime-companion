@@ -52,6 +52,8 @@ export const MAP_TILE_FILTER = 'sepia(0.6) hue-rotate(220deg) saturate(2.5) brig
 export const MAP_ROUTE_SAFE_COLOR = '#FFEE02';
 // Color de la ruta estándar (rápida) — lila
 export const MAP_ROUTE_FAST_COLOR = '#a78bfa';
+// Color de la ruta de transporte público — azul
+export const MAP_ROUTE_TRANSIT_COLOR = '#60a5fa';
 // Color del marcador de origen
 export const MAP_MARKER_ORIGIN_COLOR = '#FFEE02';
 // Color de marcadores de amigos

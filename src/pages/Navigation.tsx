@@ -146,7 +146,7 @@ const Navigation: FC = () => {
   // Fetch Juan's real street route from OSRM
   useEffect(() => {
     const coords = `${JUAN_ORIGIN[1]},${JUAN_ORIGIN[0]};${JUAN_DEST[1]},${JUAN_DEST[0]}`;
-    fetch(`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`)
+    fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
         if (data?.code === 'Ok' && data.routes?.length) {
@@ -317,6 +317,8 @@ const Navigation: FC = () => {
           avatar: AVATAR_BY_NAME['Juan'],
           coordinates: juanRoute,
           position: juanPosition,
+          routeOrigin: JUAN_ORIGIN,
+          routeDest: JUAN_DEST,
         };
       }
       if (id === 'marta') {
@@ -326,11 +328,13 @@ const Navigation: FC = () => {
           avatar: AVATAR_BY_NAME['Marta'],
           coordinates: MARTA_FALLBACK,
           position: martaPosition,
+          routeOrigin: MARTA_ORIGIN,
+          routeDest: MARTA_DEST,
         };
       }
       return null;
     })
-    .filter((route): route is { id: string; name: string; avatar: string; coordinates: [number, number][]; position: [number, number] } => route !== null);
+    .filter((route): route is { id: string; name: string; avatar: string; coordinates: [number, number][]; position: [number, number]; routeOrigin: [number, number]; routeDest: [number, number] } => route !== null);
 
   const focusedFriendRoute = focusedFriend ? friendRoutes.find(fr => fr.id === focusedFriend) : undefined;
   const sheetHeight = sheetState === 'collapsed'

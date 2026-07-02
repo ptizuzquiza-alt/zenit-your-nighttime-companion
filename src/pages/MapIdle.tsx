@@ -166,7 +166,7 @@ const MapIdle: FC = () => {
         try {
           const coords = `${fr.origin[1]},${fr.origin[0]};${fr.dest[1]},${fr.dest[0]}`;
           const res = await fetch(
-            `https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`
+            `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`
           );
           const data = await res.json();
           if (data?.code === 'Ok' && data.routes?.length) {

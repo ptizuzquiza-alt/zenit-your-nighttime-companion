@@ -14,7 +14,7 @@ import { ArrowDiagonalIcon } from '@/components/icons/ArrowDiagonalIcon';
 import { fetchZenitRoute, fetchTransitRoute, storeSelectedRoute, RouteResult, TransitRoute } from '@/lib/routing';
 import { getStoredDestination, getStoredOrigin } from '@/lib/geocoding';
 import { getStoredFriends, CONTACTS } from '@/config/contacts';
-import { MAP_ROUTE_SAFE_COLOR } from '@/config/theme';
+import { MAP_ROUTE_SAFE_COLOR, MAP_ROUTE_TRANSIT_COLOR } from '@/config/theme';
 import { isTutorialSeen, markTutorialSeen } from '@/lib/tutorials';
 
 const MapRoutes: FC = () => {
@@ -315,8 +315,8 @@ const MapRoutes: FC = () => {
         zoom={14}
         origin={userLocation}
         destination={destination}
-        route={transportMode === 'transit' ? (transitRoute?.coordinates ?? route?.coordinates) : route?.coordinates}
-        routeColor={transportMode === 'transit' ? MAP_ROUTE_SAFE_COLOR : undefined}
+        route={transportMode === 'transit' ? transitRoute?.coordinates : route?.coordinates}
+        routeColor={transportMode === 'transit' ? MAP_ROUTE_TRANSIT_COLOR : undefined}
         fitToRoute
         className="absolute inset-0"
       />
@@ -432,6 +432,11 @@ const MapRoutes: FC = () => {
                   <span>{formatDistance(transitRoute.totalDistance)}</span>
                 </div>
               )}
+              {panelState === 'minimized' && transportMode === 'transit' && !loadingTransit && !transitRoute && (
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <span>No disponible</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -530,7 +535,7 @@ const MapRoutes: FC = () => {
                   </div>
                 </>
               ) : (
-                <p className="text-muted-foreground text-sm">No se encontró ruta de transporte.</p>
+                <p className="text-muted-foreground text-sm">No hay ruta disponible en transporte público para este trayecto.</p>
               )
             )}
           </div>

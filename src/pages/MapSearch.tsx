@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Home, Briefcase, Star, Clock } from 'lucide-react';
 import { LocationInput } from '@/components/LocationInput';
 import { SearchSuggestion } from '@/components/SearchSuggestion';
-import { searchPlaces, storeDestination, storeOrigin, clearOrigin, GeocodingResult } from '@/lib/geocoding';
+import { searchPlaces, storeDestination, storeOrigin, clearOrigin, getStoredOrigin, getStoredDestination, GeocodingResult } from '@/lib/geocoding';
 
 export interface SavedPlace {
   id: string;
@@ -46,13 +46,17 @@ type ActiveField = 'origin' | 'destination';
 
 const MapSearch: FC = () => {
   const navigate = useNavigate();
-  const [origin, setOrigin] = useState('Tu ubicación');
-  const [destination, setDestination] = useState('');
+  const storedOrigin = getStoredOrigin();
+  const storedDestination = getStoredDestination();
+  const [origin, setOrigin] = useState(storedOrigin?.name ?? 'Tu ubicación');
+  const [destination, setDestination] = useState(storedDestination?.name ?? '');
   const [activeField, setActiveField] = useState<ActiveField>('destination');
   const [results, setResults] = useState<GeocodingResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [customOrigin, setCustomOrigin] = useState<GeocodingResult | null>(null);
+  const [customOrigin, setCustomOrigin] = useState<GeocodingResult | null>(
+    storedOrigin ? { id: 'stored-origin', name: storedOrigin.name, lat: storedOrigin.lat, lon: storedOrigin.lon, address: '' } : null
+  );
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 

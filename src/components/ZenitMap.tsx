@@ -12,8 +12,13 @@ import { OriginMarkerIcon } from '@/components/icons/OriginMarkerIcon';
 import { destinationMarkerHtml } from '@/components/icons/DestinationMarkerIcon';
 import { userNavigationArrowHtml } from '@/components/icons/UserNavigationArrowIcon';
 
-const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
-const LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
+// CARTO now requires a free API key for basemap tiles (unauthenticated requests
+// return a watermarked "API KEY REQUIRED" tile). Get one at
+// https://dashboard.basemaps.carto.com/keys and set VITE_CARTO_API_KEY.
+const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY;
+const CARTO_KEY_PARAM = CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : '';
+const DARK_TILE_URL = `https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png${CARTO_KEY_PARAM}`;
+const LABELS_TILE_URL = `https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png${CARTO_KEY_PARAM}`;
 
 const MAP_CSS = `
   .leaflet-tile-pane { filter: ${MAP_TILE_FILTER}; }

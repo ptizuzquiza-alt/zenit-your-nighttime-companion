@@ -440,7 +440,7 @@ const Friends: FC = () => {
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim().toLowerCase();
-                  const isDemo = user?.email === DEMO_EMAIL;
+                  const isDemo = !user || user.email === DEMO_EMAIL;
                   const match = isDemo
                     ? DISCOVERABLE_USERS.find(u => u.name.toLowerCase() === q)
                     : supabaseResults.find(u => u.name.toLowerCase() === q);
@@ -455,7 +455,7 @@ const Friends: FC = () => {
           {(() => {
             if (!searchQuery.trim()) return null;
 
-            const isDemo = user?.email === DEMO_EMAIL;
+            const isDemo = !user || user.email === DEMO_EMAIL;
 
             const allSuggestions: Friend[] = isDemo
               ? DISCOVERABLE_USERS.filter(u =>

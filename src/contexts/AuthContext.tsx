@@ -3,7 +3,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 export const DEMO_EMAIL = 'demo@zenit.app';
-const DEMO_PASSWORD = 'zenit2024!';
 const DEMO_NAME = 'Maya';
 const DEMO_USERNAME = 'maya';
 
@@ -124,23 +123,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInAsDemo = async () => {
-    // Try login first; if account doesn't exist yet, create it
-    const { error: loginErr } = await supabase.auth.signInWithPassword({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
-    if (!loginErr) {
-      seedDemoData();
-      return { error: null };
-    }
-    // Account doesn't exist — create it
-    const { data, error: signUpErr } = await supabase.auth.signUp({
-      email: DEMO_EMAIL, password: DEMO_PASSWORD,
-      options: { data: { name: DEMO_NAME, username: DEMO_USERNAME } },
-    });
-    if (signUpErr) return { error: signUpErr.message };
-    if (data.user) {
-      await supabase.from('profiles' as never).insert({
-        id: data.user.id, name: DEMO_NAME, username: DEMO_USERNAME, avatar_url: null,
-      } as never);
-    }
+    // Demo mode is fully local — it no longer depends on a Supabase account
+    // or network call, so it works reliably even if the backend is down,
+    // paused, or rate-limited. user/session/profile stay null; every screen
+    // already falls back to localStorage when there's no authenticated user.
     seedDemoData();
     return { error: null };
   };

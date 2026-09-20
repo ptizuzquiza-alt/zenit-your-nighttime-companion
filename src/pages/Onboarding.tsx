@@ -838,7 +838,7 @@ const Onboarding: FC = () => {
     setTimeout(() => setIsAnimating(false), 400);
   }, []);
 
-  // Demo path — authenticates as Patricia via Supabase, then shows location modal
+  // Demo path — seeds Maya's local demo state, then shows the location modal.
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     await signInAsDemo();
